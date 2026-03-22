@@ -32,7 +32,6 @@ yarn-error.log
 # Docker
 docker-compose.yml
 Dockerfile
-docker/
 
 # Docs
 docs/

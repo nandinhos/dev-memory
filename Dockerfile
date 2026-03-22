@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
@@ -38,7 +39,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer update --no-dev --optimize-autoloader --no-interaction
 
 # Build assets
 RUN npm ci \
@@ -47,6 +48,7 @@ RUN npm ci \
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN mkdir -p /var/www/html/storage/logs && chmod -R 777 /var/www/html/storage/logs
 
 # Create storage link
 RUN php artisan storage:link
@@ -68,6 +70,9 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Create logs directory
 RUN mkdir -p /var/log/supervisor
+
+# Fix temp directory permissions
+RUN chmod 777 /tmp
 
 EXPOSE 80
 
