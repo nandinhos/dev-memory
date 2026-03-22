@@ -66,7 +66,12 @@ $statusBg = $statusColors[$memoria->validation_status->value] ?? 'bg-gray-400';
         </div>
     </div>
     
-    <div class="mt-3 pt-3 border-t-2 border-black/20 flex items-center justify-between">
+    @if($memoria->validation_status->value === 'validated')
+        <div class="sep-validated mt-3"></div>
+    @else
+        <div class="mt-3 border-t-2 border-black/20"></div>
+    @endif
+    <div class="pt-3 flex items-center justify-between">
         <span class="text-[10px] font-mono text-gray-500">
             {{ $memoria->created_at->format('d/m/Y') }}
         </span>

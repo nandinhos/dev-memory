@@ -40,7 +40,7 @@
                     </span>
                 </div>
 
-                <div class="flex flex-wrap gap-2 mb-4 pb-4 border-b-2 border-black">
+                <div class="flex flex-wrap gap-2 mb-4 pb-4">
                     <span class="inline-block {{ $memory->type->color() }} border-2 border-black px-3 py-1 text-xs font-bold font-heading">
                         {{ $memory->type->label() }}
                     </span>
@@ -51,6 +51,12 @@
                         {{ $memory->validation_status->label() }}
                     </span>
                 </div>
+
+                @if($memory->validation_status->value === 'validated')
+                    <div class="sep-validated mb-4"></div>
+                @else
+                    <div class="border-b-2 border-black mb-4"></div>
+                @endif
 
                 <h1 class="font-heading text-3xl mb-6">{{ $memory->title }}</h1>
 
