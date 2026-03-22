@@ -62,6 +62,7 @@
             }
         });
     </script>
+    <x-neo.toast />
     @livewireScripts
 </body>
 </html>
