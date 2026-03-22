@@ -6,8 +6,10 @@ Sistema de memória técnica para capturar, organizar e reutilizar aprendizados 
 
 - **Backend**: Laravel 13 + PHP 8.3
 - **Frontend**: Livewire 4 + Tailwind CSS 4
-- **Banco de dados**: SQLite (dev) / PostgreSQL/MySQL (prod)
+- **Banco de dados**: PostgreSQL 16
+- **Cache/Queue**: Redis 7
 - **Protocolo**: MCP (Model Context Protocol) para integração com IAs
+- **Container**: Docker + Docker Compose
 
 ## Arquitetura
 
@@ -111,6 +113,24 @@ Localização: `resources/views/components/neo/`
 
 ## Setup Local
 
+### Com Docker (Recomendado)
+
+```bash
+# Copiar variáveis de ambiente
+cp .env.docker .env
+
+# Build e start dos containers
+make build
+make up
+
+# Ou diretamente:
+docker compose up -d
+
+# Acessar em http://localhost:8000
+```
+
+### Sem Docker
+
 ```bash
 # Instalar dependências
 composer setup
@@ -129,8 +149,27 @@ composer dev
 
 ## Comandos Úteis
 
+### Makefile (Docker)
+
 ```bash
-# Servidor local
+make up          # Iniciar containers
+make down        # Parar containers
+make restart     # Reiniciar containers
+make logs        # Ver todos os logs
+make shell       # Entrar no container
+make migrate     # Executar migrations
+make seed        # Seed database
+make test        # Rodar testes
+make clean       # Remover containers e volumes
+```
+
+### Artisan (dentro do container)
+
+```bash
+# Shell no container
+docker compose exec app bash
+
+# Servidor local (sem Docker)
 php artisan serve
 
 # Migrar banco

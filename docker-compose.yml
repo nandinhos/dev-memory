@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+        NODE_VERSION: '20'
+    image: dev-memory:latest
+    container_name: dev-memory-app
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-8000}:80'
+    environment:
+      APP_ENV: '${APP_ENV:-production}'
+      APP_DEBUG: '${APP_DEBUG:-false}'
+      APP_URL: '${APP_URL:-http://localhost}'
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: '${DB_DATABASE:-dev_memory}'
+      DB_USERNAME: '${DB_USERNAME:-dev_memory}'
+      DB_PASSWORD: '${DB_PASSWORD:-secret}'
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      REDIS_HOST: redis
+    volumes:
+      - ./storage:/var/www/html/storage:delegated
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dev-memory
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: dev-memory-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: '${DB_DATABASE:-dev_memory}'
+      POSTGRES_USER: '${DB_USERNAME:-dev_memory}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dev-memory
+
+  redis:
+    image: redis:7-alpine
+    container_name: dev-memory-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - dev-memory
+
+networks:
+  dev-memory:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
