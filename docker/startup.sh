@@ -27,10 +27,9 @@ echo "PostgreSQL is up!"
 echo "Running migrations..."
 php artisan migrate --force --no-interaction
 
-# Fix storage permissions for www-data
+# Fix storage permissions — 777 para funcionar em bind mount (host e container)
 echo "Fixing storage permissions..."
-chown -R www-data:www-data storage bootstrap/cache
-chmod -R 775 storage bootstrap/cache
+chmod -R 777 storage bootstrap/cache
 
 # Clear all caches
 echo "Clearing caches..."

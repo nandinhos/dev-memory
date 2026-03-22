@@ -45,10 +45,9 @@ RUN composer update --no-dev --optimize-autoloader --no-interaction
 RUN npm ci \
     && npm run build
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-RUN mkdir -p /var/www/html/storage/logs && chmod -R 777 /var/www/html/storage/logs
+# Set permissions — 777 garante escrita por qualquer usuário (bind mount com host)
+RUN chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN mkdir -p /var/www/html/storage/logs /var/www/html/storage/framework/views /var/www/html/storage/framework/cache/data /var/www/html/storage/framework/sessions
 
 # Create storage link
 RUN php artisan storage:link
