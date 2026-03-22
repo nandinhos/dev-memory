@@ -22,7 +22,7 @@ O projeto já utiliza o design system neo-brutalist com as cores, fontes e token
 - Fundo do corpo `#1e1e2e` (Catppuccin Mocha base)
 - Syntax highlighting via `highlight.js` já carregado — trocar tema para **Catppuccin Mocha** via CDN (`highlight.js/styles/base16/catppuccin-mocha.min.css`)
 - Números de linha como `<span>` antes de cada linha, cor `#45475a`, largura fixa `28px`, alinhados à direita, separados do código por `12px`
-- Botão "Copiar" no canto superior direito do titlebar: ícone clipboard, ao clicar muda para "✓ Copiado" em `neo-teal` por 2s via Alpine.js `x-data`
+- Botão "Copiar" no canto superior direito do titlebar: ícone clipboard, ao clicar muda para "✓ Copiado" em `neo-teal` por 2s via Alpine.js `x-data` (feedback local no botão apenas — sem toast global para esta ação)
 - Container com `border: 2px solid #000` + `box-shadow: 4px 4px 0 #000` — mantém DNA neo-brutalist
 - Suporte ao prop `filename` (opcional) — exibe no titlebar quando presente
 - Suporte ao prop `lang` para `highlight.js` language class (default: `plaintext`)
@@ -39,10 +39,9 @@ O projeto já utiliza o design system neo-brutalist com as cores, fontes e token
 - Usado em: `memory-card.blade.php` (entre corpo e rodapé) e `memory-detail.blade.php` (entre badges e título)
 
 ### R3 — Entrada Stagger dos Cards (Memory List)
-- Em `memory-list.blade.php`, cada `<x-neo.memory-card>` recebe `style="animation-delay: {{ $loop->index * 80 }}ms"`
-- A animação base `fade-in-up` já existe no `app.css` — adicionar `opacity: 0; animation-fill-mode: forwards` como padrão para o card
-- Cap de delay: máximo `480ms` (6 cards) — após o 6º card, delay fixo para não atrasar demais listas longas
-- Lógica: `min($loop->index, 6) * 80`
+- Em `memory-list.blade.php`, envolver cada `<x-neo.memory-card>` em `<div class="card-stagger-item" style="animation-delay: {{ min($loop->index, 6) * 80 }}ms">`
+- Adicionar `.card-stagger-item` ao `app.css` com `opacity: 0; animation: fade-in-up 0.5s ease-out forwards` — **não modificar `.card-neo` globalmente** para evitar quebrar cards fora do contexto de lista (sidebar, dashboard, etc.)
+- Cap de delay: `min($loop->index, 6) * 80` — máximo `480ms`, após o 6º card o delay não aumenta
 
 ### R4 — Efeitos de Hover e Active padronizados
 - Padronizar `.card-neo` hover: `transform: translate(-2px, -2px)` + `box-shadow: 8px 8px 0 #000`
@@ -50,12 +49,16 @@ O projeto já utiliza o design system neo-brutalist com as cores, fontes e token
 - O active já existe (`.btn-neo:active`, `.card-neo:active`) — verificar e consolidar no CSS
 
 ### R5 — Toast de Feedback
-- Usar `<x-neo.toast>` do kit ao:
-  - Copiar código (evento Alpine)
-  - Validar uma memória (`markAsValidated`)
-  - Incrementar ocorrência (`incrementRecurrence`)
-- Toast entra pela direita com `slide-in` e sai com `fade-out` após 3s
-- Implementar via `$dispatch('toast', ['message' => '...', 'type' => 'sucesso'])` no Livewire + listener Alpine no layout
+- **Criar** `resources/views/components/neo/toast.blade.php` (não existe ainda — baseado no kit de inspiração em `docs/inspirations/neo-brutalist/components/toast.blade.php`)
+- O toast é um componente Alpine standalone posicionado `fixed bottom-4 right-4 z-50`
+- Props: `message` (string), `type` (sucesso/erro/aviso, default: sucesso) — mapeia para cores neo do kit (green/magenta/yellow)
+- Visual: `neo-border shadow-neo` com fundo colorido pelo tipo, fonte `font-heading uppercase`, ícone de check/x/warning
+- Animação de entrada: `translate-x-full → translate-x-0` (desliza da direita, 200ms ease-out)
+- Auto-dismiss: após 3s faz `translate-x-0 → translate-x-full opacity-0` e remove do DOM
+- Acionado quando:
+  - Validar memória (`markAsValidated` Livewire → `$this->dispatch('show-toast', [...])`)
+  - Incrementar ocorrência (`incrementRecurrence` Livewire → `$this->dispatch('show-toast', [...])`)
+- Listener Alpine no `layouts/app.blade.php` via `@on('show-toast')` no `x-data` do body
 
 ---
 
@@ -63,11 +66,12 @@ O projeto já utiliza o design system neo-brutalist com as cores, fontes e token
 
 | Arquivo | Mudança |
 |---|---|
-| `resources/css/app.css` | Adicionar `.sep-validated`, `.sep-validated::after`, keyframe `sep-shine-sweep`, ajustar `.card-neo` hover |
+| `resources/css/app.css` | Adicionar `.sep-validated`, `.sep-validated::after`, keyframe `sep-shine-sweep`, `.card-stagger-item`, ajustar `.card-neo` hover |
 | `resources/views/components/neo/code-block.blade.php` | Reescrever completo com macOS titlebar + copiar + line numbers |
 | `resources/views/components/neo/memory-card.blade.php` | Adicionar separador condicional para `validated` |
 | `resources/views/livewire/memory-list.blade.php` | Adicionar stagger delay por `$loop->index` |
 | `resources/views/livewire/memory-detail.blade.php` | Adicionar separador condicional no body do card |
+| `app/Livewire/MemoryDetail.php` | Adicionar `$this->dispatch('show-toast', [...])` em `markAsValidated` e `incrementRecurrence` |
 | `resources/views/layouts/app.blade.php` | Trocar CDN do highlight.js theme + adicionar listener de toast |
 
 ---
@@ -76,7 +80,7 @@ O projeto já utiliza o design system neo-brutalist com as cores, fontes e token
 
 - Modificações no backend / Livewire components (exceto dispatch de toast)
 - Mudança de paleta de cores
-- Novos componentes além dos listados
+- Novos componentes além dos listados (exceto `toast.blade.php` que é parte do R5)
 - Testes automatizados (mudanças puramente visuais)
 
 ---
