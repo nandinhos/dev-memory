@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "dev-memory": {
+      "command": "php",
+      "args": ["artisan", "mcp:serve"],
+      "env": {
+        "APP_ENV": "local"
+      }
+    }
+  },
+  "description": "Dev Memory - Sistema de Memória Técnica",
+  "tools": [
+    {
+      "name": "memory_list",
+      "description": "Lista memórias técnicas com filtros"
+    },
+    {
+      "name": "memory_search", 
+      "description": "Busca memórias por texto"
+    },
+    {
+      "name": "memory_get",
+      "description": "Retorna detalhes de uma memória"
+    },
+    {
+      "name": "memory_create",
+      "description": "Cria uma nova memória técnica"
+    },
+    {
+      "name": "memory_stats",
+      "description": "Retorna estatísticas das memórias"
+    }
+  ]
+}
