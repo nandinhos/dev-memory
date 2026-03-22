@@ -77,6 +77,48 @@
         border-color: var(--color-neo-magenta) !important;
     }
 
+    /* Separador de validação — bandeira quadriculada com shine sweep */
+    .sep-validated {
+        position: relative;
+        height: 10px;
+        border-top: 1.5px solid #000;
+        border-bottom: 1.5px solid #000;
+        background-image: repeating-linear-gradient(
+            90deg,
+            #000 0px, #000 8px,
+            #fff 8px, #fff 16px
+        );
+        overflow: hidden;
+    }
+
+    .sep-validated::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -60%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(253, 224, 71, 0.75),
+            transparent
+        );
+        animation: sep-shine-sweep 2.5s ease-in-out infinite;
+    }
+
+    /* Stagger de entrada para cards na lista */
+    .card-stagger-item {
+        opacity: 0;
+        animation: fade-in-up 0.5s ease-out forwards;
+    }
+
+    /* Hover padronizado para card-neo */
+    .card-neo:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 8px 8px 0px 0px #000;
+    }
+
     .feedback-banner { animation: bounce-in 0.5s ease-out forwards; }
     .feedback-banner:hover { animation: wiggle 0.3s ease-in-out infinite; }
     .progress-pulse { animation: pulse-loading 1.5s ease-in-out infinite; }
@@ -126,6 +168,11 @@
     50% { opacity: 0.6; }
 }
 
+@keyframes sep-shine-sweep {
+    0%   { left: -60%; }
+    100% { left: 120%; }
+}
+
 @layer utilities {
     .bg-neo-bg { background-color: var(--color-neo-bg); }
     .bg-neo-teal { background-color: var(--color-neo-teal); }
@@ -145,6 +192,8 @@
     .border-neo-magenta { border-color: var(--color-neo-magenta); }
     .border-neo-yellow { border-color: var(--color-neo-yellow); }
     .border-neo-green { border-color: var(--color-neo-green); }
+
+    .font-body { font-family: var(--font-mono); }
 }
 
 @layer components {
