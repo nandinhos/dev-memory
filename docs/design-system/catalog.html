@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Memory — Neo-Brutalist Design System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'neo-bg': '#F0EAD6',
+            'neo-black': '#000000',
+            'neo-white': '#FFFFFF',
+            'neo-teal': '#22D3EE',
+            'neo-magenta': '#E879F9',
+            'neo-yellow': '#FACC15',
+            'neo-salmon': '#FDA4AF',
+            'neo-green': '#00FF7F',
+            'neo-purple': '#9370DB',
+          },
+          fontFamily: {
+            heading: ['Oswald', 'Impact', 'ui-sans-serif'],
+            mono: ['Space Mono', 'ui-monospace'],
+          },
+          boxShadow: {
+            'neo-sm': '2px 2px 0px 0px #000000',
+            'neo': '4px 4px 0px 0px #000000',
+            'neo-lg': '8px 8px 0px 0px #000000',
+            'neo-xl': '12px 12px 0px 0px #000000',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F0EAD6;
+      color: #000;
+      font-family: 'Space Mono', ui-monospace;
+    }
+    h1, h2, h3, h4, h5, h6, .font-heading {
+      font-family: 'Oswald', Impact, ui-sans-serif;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .neo-border { border: 4px solid #000; }
+    .neo-border-sm { border: 2px solid #000; }
+    .btn-neo, .card-neo, .input-neo {
+      transition: all 0.1s ease;
+      cursor: pointer;
+    }
+    .btn-neo:active, .card-neo:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0px 0px #000 !important;
+    }
+    .input-neo:focus {
+      border-color: #E879F9 !important;
+      outline: none;
+    }
+    .input-neo:hover { border-color: #E879F9 !important; }
+    .feedback-banner { animation: bounce-in 0.5s ease-out forwards; }
+    .feedback-banner:hover { animation: wiggle 0.3s ease-in-out infinite; }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-1deg); }
+      50% { transform: rotate(1deg); }
+    }
+    @keyframes bounce-in {
+      0% { transform: scale(0.9); opacity: 0; }
+      70% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    @keyframes fade-in-up {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+      20%, 40%, 60%, 80% { transform: translateX(4px); }
+    }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    @keyframes pulse-loading {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
+    .animate-bounce-in { animation: bounce-in 0.5s ease-out forwards; }
+    .ds-preview { background-image: repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(0,0,0,.02) 10px,rgba(0,0,0,.02) 11px); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #000; border-radius: 0; }
+    ::selection { background-color: #22D3EE; color: #000; }
+    .token.comment, .token.prolog { color: #6A9955; }
+    .token.keyword { color: #569cd6; }
+    .token.function { color: #dcdcaa; }
+    .token.string { color: #ce9178; }
+    .token.number { color: #b5cea8; }
+    .token.class-name { color: #4ec9b0; }
+    .token.variable { color: #9cdcfe; }
+    .token.operator { color: #d4d4d4; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- HEADER -->
+  <header class="fixed top-0 inset-x-0 z-50 bg-white neo-border shadow-neo p-4">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-neo-teal neo-border-sm flex items-center justify-center">
+          <span class="font-heading text-xl font-bold">DM</span>
+        </div>
+        <div>
+          <span class="font-heading text-xl tracking-wide">DEV MEMORY</span>
+          <span class="block text-[10px] font-mono text-gray-600">Neo-Brutalist Design System</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-1 bg-neo-yellow neo-border-sm">v1.0</span>
+        <span class="text-[10px] font-mono text-gray-500">Laravel 13 · Livewire 4 · Tailwind v4</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex pt-20 min-h-screen">
+    <!-- SIDEBAR -->
+    <aside class="fixed left-0 top-20 w-56 h-[calc(100vh-5rem)] overflow-y-auto bg-white neo-border-r p-4">
+      <nav class="space-y-1 text-sm">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 py-2">Design Tokens</p>
+        <a href="#tokens-colors" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">
+          <span class="w-2 h-2" style="background:#22D3EE"></span> Cores
+        </a>
+        <a href="#tokens-typography" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">
+          <span class="w-2 h-2 bg-black"></span> Tipografia
+        </a>
+        <a href="#tokens-shadows" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">
+          <span class="w-2 h-2 shadow-neo"></span> Sombras
+        </a>
+        <a href="#tokens-animations" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">
+          <span class="w-2 h-2 bg-neo-magenta"></span> Animações
+        </a>
+
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 py-2 pt-6">Componentes</p>
+        <a href="#comp-button" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Button</a>
+        <a href="#comp-input" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Input</a>
+        <a href="#comp-select" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Select</a>
+        <a href="#comp-textarea" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Textarea</a>
+        <a href="#comp-badge" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Badge</a>
+        <a href="#comp-alert" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Alert</a>
+        <a href="#comp-card" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Card</a>
+        <a href="#comp-empty-state" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Empty State</a>
+        <a href="#comp-page-header" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Page Header</a>
+        <a href="#comp-memory-card" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Memory Card</a>
+        <a href="#comp-code-block" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Code Block</a>
+        <a href="#comp-content-block" class="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:bg-neo-yellow hover:text-black transition">Content Block</a>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="ml-56 flex-1 px-10 py-10 max-w-5xl">
+
+      <!-- HERO -->
+      <div class="mb-14 pb-10 border-b-4 border-black">
+        <h1 class="text-5xl font-black tracking-tight mb-2">NEO-BRUTALIST</h1>
+        <p class="text-gray-600 text-sm font-mono">Design System para Dev Memory · Laravel + Livewire + Tailwind v4</p>
+        <div class="flex gap-8 mt-8">
+          <div><div class="text-4xl font-black" style="color:#22D3EE">12</div><div class="text-xs font-mono text-gray-500 uppercase tracking-wider mt-1">Componentes</div></div>
+          <div><div class="text-4xl font-black" style="color:#E879F9">9</div><div class="text-xs font-mono text-gray-500 uppercase tracking-wider mt-1">Cores</div></div>
+          <div><div class="text-4xl font-black" style="color:#FACC15">4</div><div class="text-xs font-mono text-gray-500 uppercase tracking-wider mt-1">Sombras</div></div>
+          <div><div class="text-4xl font-black text-black">6</div><div class="text-xs font-mono text-gray-500 uppercase tracking-wider mt-1">Animações</div></div>
+        </div>
+      </div>
+
+      <!-- ===== TOKENS: CORES ===== -->
+      <section id="tokens-colors" class="mb-14">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 bg-neo-teal neo-border-sm flex items-center justify-center text-sm">🎨</span>
+          Tokens de Cores
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#F0EAD6"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-bg</div>
+              <div class="text-[10px] font-mono text-gray-400">#F0EAD6</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20 bg-black"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-black</div>
+              <div class="text-[10px] font-mono text-gray-400">#000000</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#22D3EE"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-teal</div>
+              <div class="text-[10px] font-mono text-gray-400">#22D3EE</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#E879F9"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-magenta</div>
+              <div class="text-[10px] font-mono text-gray-400">#E879F9</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#FACC15"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-yellow</div>
+              <div class="text-[10px] font-mono text-gray-400">#FACC15</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#FDA4AF"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-salmon</div>
+              <div class="text-[10px] font-mono text-gray-400">#FDA4AF</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#00FF7F"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-green</div>
+              <div class="text-[10px] font-mono text-gray-400">#00FF7F</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20" style="background:#9370DB"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-purple</div>
+              <div class="text-[10px] font-mono text-gray-400">#9370DB</div>
+            </div>
+          </div>
+          <div class="neo-border overflow-hidden cursor-pointer hover:scale-105 transition-transform" onclick="copyColor(this)" title="Clique para copiar">
+            <div class="h-20 bg-white"></div>
+            <div class="p-3 bg-white">
+              <div class="text-xs font-bold font-heading">neo-white</div>
+              <div class="text-[10px] font-mono text-gray-400">#FFFFFF</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== TOKENS: TIPOGRAFIA ===== -->
+      <section id="tokens-typography" class="mb-14">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 bg-neo-yellow neo-border-sm flex items-center justify-center text-sm">🔤</span>
+          Tipografia
+        </h2>
+        <div class="bg-white neo-border overflow-hidden divide-y-4 divide-black">
+          <div class="p-6">
+            <span class="font-mono text-[10px] text-gray-400 block mb-2">font-heading · Oswald · uppercase</span>
+            <span class="font-heading text-4xl tracking-wide">TÍTULO PRINCIPAL</span>
+          </div>
+          <div class="p-6">
+            <span class="font-mono text-[10px] text-gray-400 block mb-2">font-heading · text-2xl</span>
+            <span class="font-heading text-2xl">Heading Secundário</span>
+          </div>
+          <div class="p-6">
+            <span class="font-mono text-[10px] text-gray-400 block mb-2">font-mono · Space Mono · text-sm</span>
+            <span class="font-mono text-sm">Corpo do texto · font-family: 'Space Mono'</span>
+          </div>
+          <div class="p-6">
+            <span class="font-mono text-[10px] text-gray-400 block mb-2">font-mono · text-xs · uppercase · tracking-widest</span>
+            <span class="font-mono text-xs font-bold uppercase tracking-widest text-gray-500">Caption / Label</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== TOKENS: SOMBRAS ===== -->
+      <section id="tokens-shadows" class="mb-14">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 bg-neo-purple neo-border-sm flex items-center justify-center text-sm">◼</span>
+          Sombras Neo-Brutalist
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="w-24 h-24 mx-auto mb-3 bg-neo-teal neo-border-sm shadow-neo-sm flex items-center justify-center font-heading text-xs">shadow-neo-sm</div>
+            <span class="font-mono text-[10px]">2px 2px 0 #000</span>
+          </div>
+          <div class="text-center">
+            <div class="w-24 h-24 mx-auto mb-3 bg-neo-magenta neo-border-sm shadow-neo flex items-center justify-center font-heading text-xs">shadow-neo</div>
+            <span class="font-mono text-[10px]">4px 4px 0 #000</span>
+          </div>
+          <div class="text-center">
+            <div class="w-24 h-24 mx-auto mb-3 bg-neo-yellow neo-border-sm shadow-neo-lg flex items-center justify-center font-heading text-xs">shadow-neo-lg</div>
+            <span class="font-mono text-[10px]">8px 8px 0 #000</span>
+          </div>
+          <div class="text-center">
+            <div class="w-24 h-24 mx-auto mb-3 bg-neo-green neo-border-sm shadow-neo-xl flex items-center justify-center font-heading text-xs">shadow-neo-xl</div>
+            <span class="font-mono text-[10px]">12px 12px 0 #000</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== TOKENS: ANIMAÇÕES ===== -->
+      <section id="tokens-animations" class="mb-14">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 bg-neo-green neo-border-sm flex items-center justify-center text-sm">▶</span>
+          Animações
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div class="bg-white neo-border p-4 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-neo-teal neo-border-sm" style="animation: wiggle 0.3s ease-in-out infinite"></div>
+            <span class="font-heading text-sm">wiggle</span>
+            <span class="block font-mono text-[10px] text-gray-400">rotate ±1deg</span>
+          </div>
+          <div class="bg-white neo-border p-4 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-neo-magenta neo-border-sm animate-bounce-in"></div>
+            <span class="font-heading text-sm">bounce-in</span>
+            <span class="block font-mono text-[10px] text-gray-400">scale + opacity</span>
+          </div>
+          <div class="bg-white neo-border p-4 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-neo-yellow neo-border-sm animate-fade-in-up"></div>
+            <span class="font-heading text-sm">fade-in-up</span>
+            <span class="block font-mono text-[10px] text-gray-400">translateY + opacity</span>
+          </div>
+          <div class="bg-white neo-border p-4 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-neo-salmon neo-border-sm" style="animation: shake 0.5s ease-in-out"></div>
+            <span class="font-heading text-sm">shake</span>
+            <span class="block font-mono text-[10px] text-gray-400">translateX</span>
+          </div>
+          <div class="bg-white neo-border p-4 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-neo-purple neo-border-sm" style="animation: pop 0.3s ease-in-out"></div>
+            <span class="font-heading text-sm">pop</span>
+            <span class="block font-mono text-[10px] text-gray-400">scale pulse</span>
+          </div>
+          <div class="bg-white neo-border p-4 text-center">
+            <div class="w-12 h-12 mx-auto mb-3 bg-gray-300 neo-border-sm progress-pulse"></div>
+            <span class="font-heading text-sm">pulse-loading</span>
+            <span class="block font-mono text-[10px] text-gray-400">opacity</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: BUTTON ===== -->
+      <section id="comp-button" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-teal neo-border-sm text-sm">&lt;x-neo.button&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Componente de ação primária</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/button.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 flex flex-wrap items-center justify-center gap-4 bg-white">
+          <button class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-6 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors">Primário</button>
+          <button class="btn-neo bg-neo-white neo-border-sm shadow-neo font-heading text-sm hover:bg-neo-yellow transition-colors">Contorno</button>
+          <button class="btn-neo bg-neo-magenta neo-border-sm shadow-neo px-6 py-2 font-heading text-sm -rotate-2 hover:rotate-0 transition-transform">Destrutivo</button>
+          <button class="btn-neo bg-neo-green neo-border-sm shadow-neo px-6 py-2 font-heading text-sm hover:shadow-neo-lg transition-all">Sucesso</button>
+          <button class="btn-neo bg-neo-teal neo-border-sm shadow-neo rounded-full px-6 py-2 font-heading text-sm hover:shadow-neo-lg transition-all">Pilula</button>
+          <button class="underline underline-offset-2 font-heading font-bold px-4 py-2 hover:text-gray-600 transition-colors">Texto</button>
+        </div>
+
+        <div class="neo-border overflow-hidden text-sm">
+          <div class="bg-gray-100 px-4 py-2 border-b-2 border-black flex gap-4">
+            <span class="font-bold text-xs uppercase tracking-wider">Código</span>
+          </div>
+          <pre class="bg-zinc-900 text-zinc-300 p-5 text-xs leading-relaxed overflow-x-auto"><code>&lt;x-neo.button&gt;Primário&lt;/x-neo.button&gt;
+&lt;x-neo.button variante="contorno"&gt;Contorno&lt;/x-neo.button&gt;
+&lt;x-neo.button variante="destrutivo"&gt;Excluir&lt;/x-neo.button&gt;
+&lt;x-neo.button variante="sucesso"&gt;Confirmar&lt;/x-neo.button&gt;
+&lt;x-neo.button variante="pilula"&gt;Continuar&lt;/x-neo.button&gt;</code></pre>
+        </div>
+
+        <table class="w-full mt-4 text-xs bg-white neo-border">
+          <thead class="bg-gray-100 border-b-2 border-black">
+            <tr>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Prop</th>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Tipo</th>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Valores</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y-2 divide-black">
+            <tr><td class="px-4 py-2 font-mono">variante</td><td class="px-4 py-2 font-mono">string</td><td class="px-4 py-2 font-mono">primario, contorno, destrutivo, sucesso, pilula, texto</td></tr>
+            <tr><td class="px-4 py-2 font-mono">tipo</td><td class="px-4 py-2 font-mono">string</td><td class="px-4 py-2 font-mono">button, submit, reset</td></tr>
+            <tr><td class="px-4 py-2 font-mono">tamanho</td><td class="px-4 py-2 font-mono">string</td><td class="px-4 py-2 font-mono">sm, md, lg</td></tr>
+            <tr><td class="px-4 py-2 font-mono">desativado</td><td class="px-4 py-2 font-mono">boolean</td><td class="px-4 py-2 font-mono">true, false</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== COMPONENTE: INPUT ===== -->
+      <section id="comp-input" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-magenta neo-border-sm text-sm">&lt;x-neo.input&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Campo de entrada de texto</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/input.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white">
+          <div>
+            <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Label</label>
+            <input type="text" placeholder="Digite aqui..." class="input-neo w-full neo-border-sm shadow-neo px-3 py-2 outline-none font-mono bg-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Com Erro</label>
+            <div class="relative">
+              <input type="text" value="Valor inválido" class="w-full border-4 border-red-500 bg-red-50 text-red-600 shadow-neo px-3 py-2 outline-none font-mono">
+              <span class="absolute -top-3 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 border-2 border-black font-mono">ERRO</span>
+            </div>
+            <p class="text-red-600 text-xs font-mono font-bold mt-1">Mensagem de erro aqui</p>
+          </div>
+        </div>
+
+        <div class="neo-border overflow-hidden text-sm">
+          <div class="bg-gray-100 px-4 py-2 border-b-2 border-black flex gap-4">
+            <span class="font-bold text-xs uppercase tracking-wider">Código</span>
+          </div>
+          <pre class="bg-zinc-900 text-zinc-300 p-5 text-xs leading-relaxed overflow-x-auto"><code>&lt;x-neo.input 
+    id="nome"
+    rotulo="Nome completo"
+    placeholder="Seu nome"
+/&gt;
+
+&lt;x-neo.input
+    id="email"
+    tipo="email"
+    erro="Email inválido"
+/&gt;</code></pre>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: SELECT ===== -->
+      <section id="comp-select" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-yellow neo-border-sm text-sm">&lt;x-neo.select&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Dropdown de seleção</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/select.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <div class="max-w-sm">
+            <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Selecione uma opção</label>
+            <div class="relative">
+              <select class="input-neo w-full neo-border-sm shadow-neo px-3 py-2 outline-none font-mono bg-white cursor-pointer appearance-none">
+                <option value="">Selecione...</option>
+                <option value="1">Opção 1</option>
+                <option value="2">Opção 2</option>
+                <option value="3">Opção 3</option>
+              </select>
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="neo-border overflow-hidden text-sm">
+          <div class="bg-gray-100 px-4 py-2 border-b-2 border-black">
+            <span class="font-bold text-xs uppercase tracking-wider">Código</span>
+          </div>
+          <pre class="bg-zinc-900 text-zinc-300 p-5 text-xs leading-relaxed overflow-x-auto"><code>&lt;x-neo.select id="tipo" rotulo="Tipo" wire:model="tipo"&gt;
+    &lt;option value="error"&gt;Erro&lt;/option&gt;
+    &lt;option value="lesson"&gt;Lição&lt;/option&gt;
+    &lt;option value="best_practice"&gt;Boa Prática&lt;/option&gt;
+&lt;/x-neo.select&gt;</code></pre>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: TEXTAREA ===== -->
+      <section id="comp-textarea" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-salmon neo-border-sm text-sm">&lt;x-neo.textarea&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Área de texto multilinha</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/textarea.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <div class="max-w-lg">
+            <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Descrição</label>
+            <textarea rows="4" placeholder="Digite sua descrição..." class="input-neo w-full neo-border-sm shadow-neo px-3 py-2 outline-none font-mono bg-white resize-y">Texto pré-preenchido</textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: BADGE ===== -->
+      <section id="comp-badge" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-purple neo-border-sm text-sm">&lt;x-neo.badge&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Etiqueta de status/categoria</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/badge.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 flex flex-wrap items-center justify-center gap-3 bg-white">
+          <span class="inline-block bg-neo-teal border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Default</span>
+          <span class="inline-block bg-neo-magenta border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Magenta</span>
+          <span class="inline-block bg-neo-yellow border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Yellow</span>
+          <span class="inline-block bg-neo-green border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Green</span>
+          <span class="inline-block bg-neo-salmon border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Salmon</span>
+          <span class="inline-block bg-neo-purple border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Purple</span>
+          <span class="inline-block bg-white border-2 border-black px-2 py-0.5 text-xs font-bold font-heading">Contorno</span>
+        </div>
+
+        <table class="w-full mt-4 text-xs bg-white neo-border">
+          <thead class="bg-gray-100 border-b-2 border-black">
+            <tr>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Prop</th>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Valores</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y-2 divide-black">
+            <tr><td class="px-4 py-2 font-mono">variante</td><td class="px-4 py-2 font-mono">teal, magenta, yellow, green, salmon, purple, contorno</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== COMPONENTE: ALERT ===== -->
+      <section id="comp-alert" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-green neo-border-sm text-sm">&lt;x-neo.alert&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Mensagens de feedback</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/alert.blade.php</span>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-neo-green neo-border-sm p-3 font-bold flex items-center gap-3 shadow-neo font-mono feedback-banner">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            <span>Operação realizada com sucesso!</span>
+          </div>
+          <div class="bg-neo-yellow neo-border-sm p-3 font-bold flex items-center gap-3 shadow-neo font-mono feedback-banner">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <span>Verifique os campos obrigatórios.</span>
+          </div>
+          <div class="bg-neo-magenta neo-border-sm p-3 font-bold flex items-center gap-3 shadow-neo font-mono feedback-banner">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <span>Falha ao processar solicitação.</span>
+          </div>
+          <div class="bg-neo-teal neo-border-sm p-3 font-bold flex items-center gap-3 shadow-neo font-mono feedback-banner">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>Novas atualizações disponíveis.</span>
+          </div>
+        </div>
+
+        <table class="w-full mt-4 text-xs bg-white neo-border">
+          <thead class="bg-gray-100 border-b-2 border-black">
+            <tr>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Prop</th>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Valores</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y-2 divide-black">
+            <tr><td class="px-4 py-2 font-mono">tipo</td><td class="px-4 py-2 font-mono">sucesso, aviso, erro, info</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== COMPONENTE: CARD ===== -->
+      <section id="comp-card" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-teal neo-border-sm text-sm">&lt;x-neo.card&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Container genérico com borda e sombra</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/card.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <div class="card-neo bg-white neo-border shadow-neo p-6 max-w-md">
+            <h4 class="font-heading text-lg mb-2">Título do Card</h4>
+            <p class="font-mono text-sm text-gray-700">Conteúdo do card com estilo Neo-Brutalist. Clique para ver o efeito de afundar.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: EMPTY STATE ===== -->
+      <section id="comp-empty-state" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-salmon neo-border-sm text-sm">&lt;x-neo.empty-state&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Estado vazio para listas/sections</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/empty-state.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <div class="bg-white neo-border shadow-neo p-8 text-center animate-bounce-in max-w-md mx-auto">
+            <div class="w-16 h-16 mx-auto mb-4 bg-neo-teal neo-border-sm shadow-neo flex items-center justify-center">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 class="font-heading text-xl mb-2">Nenhum resultado</h3>
+            <p class="font-mono text-sm text-gray-600">Comece adicionando sua primeira memória técnica!</p>
+            <div class="mt-4 flex gap-2 justify-center">
+              <button class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow">+ Nova Memória</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: PAGE HEADER ===== -->
+      <section id="comp-page-header" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-purple neo-border-sm text-sm">&lt;x-neo.page-header&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Cabeçalho de página com branding</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/page-header.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-4 mb-4 bg-white">
+          <div class="bg-white neo-border shadow-neo p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-neo-teal neo-border-sm shadow-neo flex items-center justify-center">
+                  <span class="font-heading text-3xl font-bold">DM</span>
+                </div>
+                <div>
+                  <h1 class="font-heading text-2xl tracking-wide m-0">DEV MEMORY</h1>
+                  <span class="text-xs font-mono text-gray-600">Sistema de Memória Técnica</span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow">Lista</button>
+                <button class="btn-neo bg-neo-yellow neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-teal">+ Novo</button>
+              </div>
+            </div>
+            <div class="mt-4 pt-4 border-t-2 border-black">
+              <nav class="flex items-center gap-2 text-sm font-mono text-gray-600">
+                <a href="#" class="hover:text-neo-magenta">Lista</a>
+                <span>/</span>
+                <span class="font-bold">Nova</span>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: MEMORY CARD ===== -->
+      <section id="comp-memory-card" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-neo-magenta neo-border-sm text-sm">&lt;x-neo.memory-card&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Card especializado para memórias</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/memory-card.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <a href="#" class="block card-neo bg-white neo-border shadow-neo p-5 hover:shadow-neo-lg transition-all group relative overflow-hidden max-w-2xl">
+            <div class="absolute -top-8 -right-2 flex flex-col items-center gap-1">
+              <span class="bg-black text-white px-2 py-1 text-[10px] font-bold font-heading rotate-3 shadow-neo-sm">Laravel</span>
+              <span class="bg-neo-magenta border-2 border-black px-2 py-1 text-[10px] font-bold font-heading -rotate-2 shadow-neo-sm">3x</span>
+            </div>
+            
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <h3 class="font-heading text-lg leading-tight group-hover:text-neo-magenta transition-colors flex-1">Erro CSRF Token inválido após deploy</h3>
+              <span class="inline-block bg-neo-green border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading shrink-0">VALIDADO</span>
+            </div>
+            
+            <p class="font-mono text-sm text-gray-700 mb-4 line-clamp-2">Ao fazer deploy no servidor de produção, os tokens CSRF expiram causando logout automático dos usuários...</p>
+            
+            <div class="flex flex-wrap gap-1">
+              <span class="inline-block bg-neo-magenta border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">ERRO</span>
+              <span class="inline-block bg-neo-teal border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">PROJETO</span>
+            </div>
+            
+            <div class="mt-3 pt-3 border-t-2 border-black/20 flex items-center justify-between">
+              <span class="text-[10px] font-mono text-gray-500">22/03/2026</span>
+              <span class="text-[10px] font-mono text-gray-400 group-hover:text-neo-magenta transition-colors">Ver →</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: CODE BLOCK ===== -->
+      <section id="comp-code-block" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-black text-neo-teal neo-border-sm text-sm">&lt;x-neo.code-block&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Bloco de código com visual terminal</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/code-block.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <div class="code-block rounded-lg overflow-hidden border-2 border-black shadow-neo-sm max-w-lg">
+            <div class="bg-zinc-800 px-4 py-2 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+              </div>
+              <span class="text-zinc-400 text-xs font-mono uppercase">php</span>
+            </div>
+            <div class="bg-[#1e1e1e] px-4 py-3 overflow-x-auto">
+              <pre class="!bg-transparent !m-0 !p-0"><code class="language-php"><span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function">boot</span><span class="token punctuation">():</span> <span class="token keyword">void</span>
+<span class="token punctuation">{</span>
+    <span class="token function">set_error_handler</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token punctuation">(</span><span class="token variable">$errno</span><span class="token punctuation">,</span> <span class="token variable">$errstr</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token variable">$errno</span> <span class="token operator">===</span> <span class="token constant">E_WARNING</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">);</span>
+<span class="token punctuation">}</span></code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="neo-border overflow-hidden text-sm">
+          <div class="bg-gray-100 px-4 py-2 border-b-2 border-black">
+            <span class="font-bold text-xs uppercase tracking-wider">Código</span>
+          </div>
+          <pre class="bg-zinc-900 text-zinc-300 p-5 text-xs leading-relaxed overflow-x-auto"><code>&lt;x-neo.code-block language="php"&gt;
+    public function boot(): void
+    {
+        // seu código aqui
+    }
+&lt;/x-neo.code-block&gt;</code></pre>
+        </div>
+      </section>
+
+      <!-- ===== COMPONENTE: CONTENT BLOCK ===== -->
+      <section id="comp-content-block" class="mb-14">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">
+              <code class="font-mono px-2 py-1 bg-black text-neo-yellow neo-border-sm text-sm">&lt;x-neo.content-block&gt;</code>
+            </h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">Renderiza texto com code blocks formatados</p>
+          </div>
+          <span class="font-mono text-[10px] text-gray-400">components/neo/content-block.blade.php</span>
+        </div>
+
+        <div class="ds-preview rounded-3xl neo-border p-8 mb-4 bg-white">
+          <div class="prose-content font-mono text-sm leading-relaxed space-y-4 max-w-lg">
+            <p>PROBLEMA: Livewire 4 já injeta Alpine.</p>
+            <div class="code-block rounded-lg overflow-hidden border-2 border-black">
+              <div class="bg-zinc-800 px-4 py-2 flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+              </div>
+              <div class="bg-zinc-900 px-4 py-3">
+                <pre class="font-mono text-xs text-zinc-300"><code>import './bootstrap';</code></pre>
+              </div>
+            </div>
+            <p>Não importar Alpine manualmente.</p>
+          </div>
+        </div>
+
+        <div class="neo-border overflow-hidden text-sm">
+          <div class="bg-gray-100 px-4 py-2 border-b-2 border-black">
+            <span class="font-bold text-xs uppercase tracking-wider">Uso</span>
+          </div>
+          <pre class="bg-zinc-900 text-zinc-300 p-5 text-xs leading-relaxed overflow-x-auto"><code>&lt;x-neo.content-block :text="$memory->description" /&gt;</code></pre>
+        </div>
+
+        <table class="w-full mt-4 text-xs bg-white neo-border">
+          <thead class="bg-gray-100 border-b-2 border-black">
+            <tr>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Prop</th>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Tipo</th>
+              <th class="px-4 py-2 text-left font-bold uppercase tracking-wider">Descrição</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y-2 divide-black">
+            <tr><td class="px-4 py-2 font-mono">text</td><td class="px-4 py-2 font-mono">string</td><td class="px-4 py-2 font-mono">Texto com ```code blocks```</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="mt-24 pt-8 border-t-4 border-black text-center pb-10">
+        <p class="font-mono text-sm text-gray-500">
+          <span class="text-neo-teal">DEV</span>MEMORY <span class="text-gray-400">·</span> Neo-Brutalist Design System
+        </p>
+        <p class="font-mono text-xs text-gray-400 mt-2">Gerado em 22/03/2026 · Laravel 13 + Livewire 4 + Tailwind v4</p>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    function copyColor(el) {
+      const hex = el.querySelector('.font-mono').textContent;
+      navigator.clipboard.writeText(hex);
+      el.querySelector('div:first-child').style.opacity = '0.5';
+      setTimeout(() => el.querySelector('div:first-child').style.opacity = '1', 200);
+    }
+  </script>
+</body>
+</html>

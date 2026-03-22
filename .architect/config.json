@@ -1,0 +1,24 @@
+{
+  "autoFix": false,
+  "failOn": "high",
+  "rules": {
+    "SEC-001": {
+      "enabled": true
+    },
+    "SEC-002": {
+      "enabled": true
+    },
+    "TEST-001": {
+      "enabled": true
+    },
+    "CQ-001": {
+      "enabled": true
+    },
+    "LOG-001": {
+      "enabled": true
+    },
+    "DES-001": {
+      "enabled": true
+    }
+  }
+}

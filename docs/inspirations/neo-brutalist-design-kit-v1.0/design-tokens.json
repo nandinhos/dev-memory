@@ -1,0 +1,185 @@
+{
+  "$schema": "https://designtokens.org/json",
+  "name": "Neo-Brutalist Design System",
+  "version": "1.0.0",
+  "description": "Design System Neo-Brutalista para Laravel TALL Stack",
+  
+  "typography": {
+    "heading": {
+      "fontFamily": {
+        "value": "'Oswald', 'Impact', ui-sans-serif",
+        "type": "fontFamily"
+      },
+      "transform": {
+        "value": "uppercase",
+        "type": "textTransform"
+      },
+      "weight": {
+        "value": "700",
+        "type": "fontWeight"
+      }
+    },
+    "body": {
+      "fontFamily": {
+        "value": "'Space Mono', ui-monospace",
+        "type": "fontFamily"
+      }
+    }
+  },
+
+  "colors": {
+    "background": {
+      "value": "#F0EAD6",
+      "type": "color",
+      "description": "Off-white/beige base"
+    },
+    "black": {
+      "value": "#000000",
+      "type": "color",
+      "description": "Pure black for borders and shadows"
+    },
+    "white": {
+      "value": "#FFFFFF",
+      "type": "color"
+    },
+    "teal": {
+      "value": "#22D3EE",
+      "type": "color",
+      "description": "Primary accent"
+    },
+    "magenta": {
+      "value": "#E879F9",
+      "type": "color",
+      "description": "Destructive/warning"
+    },
+    "yellow": {
+      "value": "#FACC15",
+      "type": "color",
+      "description": "Warning/attention"
+    },
+    "salmon": {
+      "value": "#FDA4AF",
+      "type": "color"
+    },
+    "green": {
+      "value": "#00FF7F",
+      "type": "color",
+      "description": "Success state"
+    },
+    "purple": {
+      "value": "#9370DB",
+      "type": "color"
+    }
+  },
+
+  "borders": {
+    "standard": {
+      "value": "4px solid #000000",
+      "type": "border"
+    }
+  },
+
+  "shadows": {
+    "neo-sm": {
+      "value": "2px 2px 0px 0px #000000",
+      "type": "shadow"
+    },
+    "neo": {
+      "value": "4px 4px 0px 0px #000000",
+      "type": "shadow"
+    },
+    "neo-lg": {
+      "value": "8px 8px 0px 0px #000000",
+      "type": "shadow"
+    },
+    "neo-xl": {
+      "value": "12px 12px 0px 0px #000000",
+      "type": "shadow"
+    }
+  },
+
+  "spacing": {
+    "base": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "2xl": "48px"
+  },
+
+  "animations": {
+    "wiggle": {
+      "value": "wiggle 0.3s ease-in-out infinite",
+      "type": "animation"
+    },
+    "bounceIn": {
+      "value": "bounce-in 0.5s ease-out forwards",
+      "type": "animation"
+    },
+    "fadeInUp": {
+      "value": "fade-in-up 0.6s ease-out forwards",
+      "type": "animation"
+    },
+    "shake": {
+      "value": "shake 0.5s ease-in-out",
+      "type": "animation"
+    },
+    "pop": {
+      "value": "pop 0.3s ease-in-out",
+      "type": "animation"
+    },
+    "pulseLoading": {
+      "value": "pulse-loading 1.5s ease-in-out infinite",
+      "type": "animation"
+    }
+  },
+
+  "components": {
+    "button": {
+      "variants": {
+        "primario": {
+          "classes": "btn-neo bg-neo-teal neo-border shadow-neo px-6 py-2 font-heading hover:bg-neo-yellow transition-colors duration-100"
+        },
+        "pilula": {
+          "classes": "btn-neo bg-neo-teal neo-border shadow-neo rounded-full px-6 py-2 font-heading hover:shadow-neo-lg transition-all duration-100"
+        },
+        "contorno": {
+          "classes": "btn-neo bg-white neo-border shadow-neo rounded-xl px-6 py-2 font-heading hover:bg-neo-yellow transition-colors duration-100"
+        },
+        "destrutivo": {
+          "classes": "btn-neo bg-neo-magenta neo-border shadow-neo px-6 py-2 font-heading -rotate-2 hover:rotate-0 transition-transform duration-100"
+        },
+        "texto": {
+          "classes": "underline underline-offset-2 font-heading font-bold px-4 py-2 hover:text-gray-600 transition-colors duration-100"
+        }
+      }
+    },
+    "input": {
+      "default": {
+        "classes": "input-neo w-full neo-border shadow-neo px-3 py-2 outline-none font-body bg-white"
+      },
+      "error": {
+        "classes": "w-full border-4 border-red-500 bg-red-50 text-red-600 shadow-[4px_4px_0_#ef4444] px-3 py-2 outline-none font-body"
+      }
+    },
+    "card": {
+      "default": {
+        "classes": "card-neo bg-white neo-border shadow-neo p-4"
+      }
+    },
+    "alert": {
+      "sucesso": {
+        "classes": "bg-green-400 neo-border p-3 font-bold flex items-center gap-3 shadow-neo font-body feedback-banner"
+      },
+      "aviso": {
+        "classes": "bg-neo-yellow neo-border p-3 font-bold flex items-center gap-3 shadow-neo font-body feedback-banner"
+      },
+      "erro": {
+        "classes": "bg-neo-magenta neo-border p-3 font-bold flex items-center gap-3 shadow-neo font-body feedback-banner"
+      },
+      "info": {
+        "classes": "bg-neo-teal neo-border p-3 font-bold flex items-center gap-3 shadow-neo font-body feedback-banner"
+      }
+    }
+  }
+}
