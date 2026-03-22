@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMemoryRequest;
-use App\Models\Memory;
+use App\Http\Requests\UpdateMemoryRequest;
 use App\Services\MemoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 
 class MemoryController extends Controller
 {
@@ -49,7 +50,7 @@ class MemoryController extends Controller
         ]);
     }
 
-    public function update(StoreMemoryRequest $request, string $id): JsonResponse
+    public function update(UpdateMemoryRequest $request, string $id): JsonResponse
     {
         $memory = $this->service->findById($id);
         $updated = $this->service->update($memory, $request->validated());
@@ -95,7 +96,14 @@ class MemoryController extends Controller
     public function promoteToGlobal(string $id): JsonResponse
     {
         $memory = $this->service->findById($id);
-        $promoted = $this->service->promoteToGlobal($memory);
+
+        try {
+            $promoted = $this->service->promoteToGlobal($memory);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return response()->json([
             'message' => 'Memória promotionsada para escopo global',
@@ -105,8 +113,6 @@ class MemoryController extends Controller
 
     public function stats(): JsonResponse
     {
-        return response()->json([
-            'data' => $this->service->getStats(),
-        ]);
+        return response()->json($this->service->getStats());
     }
 }
