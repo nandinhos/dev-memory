@@ -126,7 +126,7 @@ make up
 # Ou diretamente:
 docker compose up -d
 
-# Acessar em http://localhost:8000
+# Acessar em http://localhost:9587
 ```
 
 ### Sem Docker
