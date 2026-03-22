@@ -212,6 +212,16 @@
         font-variant-ligatures: none;
     }
 
+    .code-ln {
+        display: inline-block;
+        width: 28px;
+        color: #45475a;
+        text-align: right;
+        margin-right: 12px;
+        user-select: none;
+        font-size: 0.75em;
+    }
+
     .prose-content pre {
         background-color: #18181b;
         color: #e4e4e7;
