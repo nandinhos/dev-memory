@@ -34,11 +34,15 @@ $numbered = implode("\n", array_map(
     x-data="{
         copied: false,
         copyCode() {
-            const code = this.\$el.querySelector('code').innerText;
+            const codeEl = this.\$el.querySelector('code');
+            const code = Array.from(codeEl.childNodes)
+                .filter(n => !(n.nodeType === 1 && n.classList.contains('code-ln')))
+                .map(n => n.textContent)
+                .join('');
             navigator.clipboard.writeText(code).then(() => {
                 this.copied = true;
                 setTimeout(() => { this.copied = false; }, 2000);
-            });
+            }).catch(() => {});
         }
     }"
     class="code-block border-2 border-black shadow-neo my-4 overflow-hidden"
@@ -84,6 +88,6 @@ $numbered = implode("\n", array_map(
     {{-- Corpo do código --}}
     <div class="overflow-x-auto" style="background-color: #1e1e2e;">
         <pre class="{{ $langClass }} !m-0 !rounded-none !border-0"
-             style="background:transparent !important; padding: 1rem 1.25rem;"><code class="{{ $langClass }} code-with-lines">{!! $numbered !!}</code></pre>
+             style="background:transparent !important; padding: 1rem 1.25rem;"><code class="{{ $langClass }}">{!! $numbered !!}</code></pre>
     </div>
 </div>
