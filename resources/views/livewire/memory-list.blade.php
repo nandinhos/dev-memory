@@ -108,7 +108,10 @@
             @else
                 <div class="space-y-4">
                     @foreach($memories as $memory)
-                        <x-neo.memory-card :memoria="$memory" />
+                        <div class="card-stagger-item"
+                             style="animation-delay: {{ min($loop->index, 6) * 80 }}ms">
+                            <x-neo.memory-card :memoria="$memory" />
+                        </div>
                     @endforeach
                 </div>
 
