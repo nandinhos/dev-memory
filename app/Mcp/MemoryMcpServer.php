@@ -3,11 +3,11 @@
 namespace App\Mcp;
 
 use App\Models\Memory;
-use Illuminate\Support\Facades\Log;
 
 class MemoryMcpServer
 {
     private array $tools = [];
+
     private array $resources = [];
 
     public function __construct()
@@ -185,16 +185,16 @@ class MemoryMcpServer
     private function toolMemoryList(array $args): array
     {
         $query = Memory::query()
-            ->when($args['type'] ?? null, fn($q, $t) => $q->where('type', $t))
-            ->when($args['scope'] ?? null, fn($q, $s) => $q->where('scope', $s))
-            ->when($args['stack'] ?? null, fn($q, $s) => $q->where('stack', 'ILIKE', "%{$s}%"))
+            ->when($args['type'] ?? null, fn ($q, $t) => $q->where('type', $t))
+            ->when($args['scope'] ?? null, fn ($q, $s) => $q->where('scope', $s))
+            ->when($args['stack'] ?? null, fn ($q, $s) => $q->where('stack', 'like', "%{$s}%"))
             ->orderBy('created_at', 'desc')
             ->limit($args['limit'] ?? 20)
             ->get();
 
         return [
             'total' => $query->count(),
-            'memories' => $query->map(fn($m) => [
+            'memories' => $query->map(fn ($m) => [
                 'id' => $m->id,
                 'title' => $m->title,
                 'type' => $m->type->value,
@@ -210,10 +210,9 @@ class MemoryMcpServer
         $query = $args['query'] ?? '';
         $limit = $args['limit'] ?? 10;
 
-        $results = Memory::where(fn($q) => 
-                $q->where('title', 'ILIKE', "%{$query}%")
-                  ->orWhere('description', 'ILIKE', "%{$query}%")
-            )
+        $results = Memory::where(fn ($q) => $q->where('title', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+        )
             ->orderBy('recurrence_count', 'desc')
             ->limit($limit)
             ->get();
@@ -221,10 +220,10 @@ class MemoryMcpServer
         return [
             'query' => $query,
             'total' => $results->count(),
-            'results' => $results->map(fn($m) => [
+            'results' => $results->map(fn ($m) => [
                 'id' => $m->id,
                 'title' => $m->title,
-                'description' => substr($m->description, 0, 200) . (strlen($m->description) > 200 ? '...' : ''),
+                'description' => substr($m->description, 0, 200).(strlen($m->description) > 200 ? '...' : ''),
                 'type' => $m->type->value,
                 'score' => $m->recurrence_count,
             ])->toArray(),
@@ -234,8 +233,8 @@ class MemoryMcpServer
     private function toolMemoryGet(array $args): array
     {
         $memory = Memory::find($args['id'] ?? '');
-        
-        if (!$memory) {
+
+        if (! $memory) {
             return ['error' => 'Memória não encontrada'];
         }
 

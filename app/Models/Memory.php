@@ -36,12 +36,12 @@ class Memory extends Model
     {
         $query->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type)
         );
-        $query->when($filters['stack'] ?? null, fn ($q, $stack) => $q->where('stack', 'ILIKE', "%{$stack}%")
+        $query->when($filters['stack'] ?? null, fn ($q, $stack) => $q->where('stack', 'like', "%{$stack}%")
         );
         $query->when($filters['scope'] ?? null, fn ($q, $scope) => $q->where('scope', $scope)
         );
-        $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('title', 'ILIKE', "%{$search}%")
-            ->orWhere('description', 'ILIKE', "%{$search}%")
+        $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('title', 'like', "%{$search}%")
+            ->orWhere('description', 'like', "%{$search}%")
         )
         );
     }

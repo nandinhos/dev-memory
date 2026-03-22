@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\MemoryScope;
+use App\Enums\ValidationStatus;
 use App\Models\Memory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class MemoryService
@@ -15,10 +18,12 @@ class MemoryService
             ->paginate($perPage);
     }
 
-    public function search(string $query): \Illuminate\Database\Eloquent\Collection
+    public function search(string $query): Collection
     {
         return Memory::query()
-            ->filter(['search' => $query])
+            ->where(fn ($q) => $q->where('title', 'like', "%{$query}%")
+                ->orWhere('description', 'like', "%{$query}%")
+            )
             ->orderBy('recurrence_count', 'desc')
             ->limit(20)
             ->get();
@@ -37,6 +42,7 @@ class MemoryService
     public function update(Memory $memory, array $data): Memory
     {
         $memory->update($data);
+
         return $memory->fresh();
     }
 
@@ -48,28 +54,32 @@ class MemoryService
     public function incrementRecurrence(Memory $memory): Memory
     {
         $memory->increment('recurrence_count');
+
         return $memory->fresh();
     }
 
     public function validate(Memory $memory): Memory
     {
-        $memory->update(['validation_status' => \App\Enums\ValidationStatus::VALIDATED]);
+        $memory->update(['validation_status' => ValidationStatus::VALIDATED]);
+
         return $memory->fresh();
     }
 
     public function reject(Memory $memory): Memory
     {
-        $memory->update(['validation_status' => \App\Enums\ValidationStatus::REJECTED]);
+        $memory->update(['validation_status' => ValidationStatus::REJECTED]);
+
         return $memory->fresh();
     }
 
     public function promoteToGlobal(Memory $memory): Memory
     {
-        if ($memory->validation_status !== \App\Enums\ValidationStatus::VALIDATED) {
+        if ($memory->validation_status !== ValidationStatus::VALIDATED) {
             throw new \InvalidArgumentException('Memory must be validated before promoting to global');
         }
-        
-        $memory->update(['scope' => \App\Enums\MemoryScope::GLOBAL]);
+
+        $memory->update(['scope' => MemoryScope::GLOBAL]);
+
         return $memory->fresh();
     }
 
