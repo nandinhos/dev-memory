@@ -28,12 +28,20 @@ class MemoryDetail extends Component
     {
         $this->memory->increment('recurrence_count');
         $this->memory->refresh();
+        $this->dispatch('show-toast',
+            message: '+1 ocorrência registrada',
+            type: 'sucesso'
+        );
     }
 
     public function markAsValidated(): void
     {
         $this->memory->update(['validation_status' => ValidationStatus::VALIDATED]);
         $this->memory->refresh();
+        $this->dispatch('show-toast',
+            message: 'Memória validada com sucesso!',
+            type: 'sucesso'
+        );
     }
 
     public function render()

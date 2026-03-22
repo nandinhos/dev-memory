@@ -3,46 +3,10 @@
 ])
 
 @php
+use App\Helpers\CodeBlockHelper;
+
 $content = $text ?? $slot ?? '';
 $blocks = preg_split('/(```[\s\S]*?```)/', (string) $content, -1, PREG_SPLIT_DELIM_CAPTURE);
-
-function getHljsLang($lang) {
-    $map = [
-        'php' => 'php',
-        'js' => 'javascript',
-        'javascript' => 'javascript',
-        'ts' => 'typescript',
-        'typescript' => 'typescript',
-        'css' => 'css',
-        'html' => 'html',
-        'blade' => 'html',
-        'json' => 'json',
-        'bash' => 'bash',
-        'sh' => 'bash',
-        'shell' => 'bash',
-        'sql' => 'sql',
-        'yaml' => 'yaml',
-        'yml' => 'yaml',
-        'jsx' => 'javascript',
-        'tsx' => 'typescript',
-        'md' => 'markdown',
-        'markdown' => 'markdown',
-        'python' => 'python',
-        'py' => 'python',
-        'ruby' => 'ruby',
-        'go' => 'go',
-        'rust' => 'rust',
-        'java' => 'java',
-        'c' => 'c',
-        'cpp' => 'cpp',
-        'dockerfile' => 'dockerfile',
-        'nginx' => 'nginx',
-        'vue' => 'xml',
-        'xml' => 'xml',
-        'jsx' => 'javascript',
-    ];
-    return $map[$lang] ?? 'plaintext';
-}
 @endphp
 
 <div class="prose-content font-mono text-sm leading-relaxed space-y-4">
@@ -64,7 +28,7 @@ function getHljsLang($lang) {
             $lang = !empty($matches[1]) ? $matches[1] : 'plaintext';
             $code = preg_replace('/^```\w*\n?/', '', $block);
             $code = preg_replace('/```$/', '', $code);
-            $hljsLang = getHljsLang($lang);
+            $hljsLang = CodeBlockHelper::getHljsLang($lang);
             @endphp
             
             <div class="code-block rounded-lg overflow-hidden border-2 border-black shadow-neo-sm">
