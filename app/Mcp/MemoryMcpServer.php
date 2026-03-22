@@ -2,6 +2,8 @@
 
 namespace App\Mcp;
 
+use App\Enums\MemoryScope;
+use App\Enums\MemoryType;
 use App\Models\Memory;
 
 class MemoryMcpServer
@@ -255,12 +257,26 @@ class MemoryMcpServer
 
     private function toolMemoryCreate(array $args): array
     {
+        $allowedTypes = array_column(MemoryType::cases(), 'value');
+        $allowedScopes = array_column(MemoryScope::cases(), 'value');
+
+        $type = $args['type'] ?? null;
+        $scope = $args['scope'] ?? 'project';
+
+        if (! in_array($type, $allowedTypes, true)) {
+            return ['error' => 'Tipo inválido. Valores permitidos: '.implode(', ', $allowedTypes)];
+        }
+
+        if (! in_array($scope, $allowedScopes, true)) {
+            return ['error' => 'Escopo inválido. Valores permitidos: '.implode(', ', $allowedScopes)];
+        }
+
         $memory = Memory::create([
             'title' => $args['title'],
             'description' => $args['description'],
-            'type' => $args['type'],
+            'type' => $type,
             'stack' => $args['stack'] ?? null,
-            'scope' => $args['scope'] ?? 'project',
+            'scope' => $scope,
         ]);
 
         return [

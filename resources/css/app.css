@@ -31,6 +31,8 @@
 @layer base {
     body {
         background-color: var(--color-neo-bg);
+        background-image: radial-gradient(circle, rgba(0,0,0,0.13) 1.5px, transparent 1.5px);
+        background-size: 22px 22px;
         color: var(--color-neo-black);
         font-family: var(--font-mono);
         -webkit-font-smoothing: antialiased;
@@ -117,6 +119,37 @@
     .card-neo:hover {
         transform: translate(-2px, -2px);
         box-shadow: 8px 8px 0px 0px #000;
+    }
+
+    /* Faixa separadora de seção — variante sem dots (sólida) */
+    .sep-stripe {
+        position: relative;
+        height: 8px;
+        background-image: repeating-linear-gradient(
+            90deg,
+            #000 0px, #000 6px,
+            #fff 6px, #fff 12px
+        );
+        border-top: 2px solid #000;
+        border-bottom: 2px solid #000;
+    }
+
+    /* Rótulo de seção numerado */
+    .section-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: var(--font-heading);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .section-tag .num {
+        background: #000;
+        color: #fff;
+        padding: 0.1rem 0.4rem;
+        font-size: 0.6rem;
     }
 
     .feedback-banner { animation: bounce-in 0.5s ease-out forwards; }

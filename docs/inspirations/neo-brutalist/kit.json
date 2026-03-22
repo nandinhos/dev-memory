@@ -1,0 +1,19 @@
+{
+  "slug": "neo-brutalist",
+  "name": "Neo-Brutalist",
+  "version": "1.0.0",
+  "description": "Design system com estética neo-brutalist: bordas grossas, sombras sólidas, tipografia Oswald e paleta vibrante sobre fundo creme.",
+  "status": "stable",
+  "previewImage": "/kit-previews/neo-brutalist/screen.png",
+  "colors": [
+    { "name": "Background", "hex": "#F0EAD6", "role": "bg" },
+    { "name": "Teal", "hex": "#22D3EE", "role": "primary" },
+    { "name": "Yellow", "hex": "#FDE047", "role": "accent" },
+    { "name": "Magenta", "hex": "#E879F9", "role": "destructive" },
+    { "name": "Black", "hex": "#000000", "role": "border" }
+  ],
+  "fonts": { "heading": "Oswald", "body": "Space Mono" },
+  "componentCount": 36,
+  "tags": ["neo-brutalist", "bold", "retro", "gamified"],
+  "showcaseView": "kits.neo-brutalist.showcase"
+}

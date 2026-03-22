@@ -136,7 +136,7 @@ class MemoryServiceTest extends TestCase
 
         $this->service->delete($memory);
 
-        $this->assertDatabaseMissing('memories', ['id' => $memory->id]);
+        $this->assertSoftDeleted('memories', ['id' => $memory->id]);
     }
 
     public function test_increment_recurrence(): void

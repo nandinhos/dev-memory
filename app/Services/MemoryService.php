@@ -97,7 +97,7 @@ class MemoryService
                 'global' => Memory::global()->count(),
             ],
             'by_validation' => [
-                'pending' => Memory::where('validation_status', 'pending')->count(),
+                'pending' => Memory::where('validation_status', ValidationStatus::PENDING)->count(),
                 'validated' => Memory::validated()->count(),
             ],
             'top_stacks' => Memory::selectRaw('stack, COUNT(*) as count')

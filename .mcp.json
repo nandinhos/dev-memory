@@ -6,6 +6,13 @@
       "env": {
         "APP_ENV": "local"
       }
+    },
+    "dev-memory-docker": {
+      "command": "docker",
+      "args": ["compose", "exec", "-T", "app", "php", "artisan", "mcp:serve"],
+      "env": {
+        "APP_ENV": "local"
+      }
     }
   },
   "description": "Dev Memory - Sistema de Memória Técnica",
@@ -15,7 +22,7 @@
       "description": "Lista memórias técnicas com filtros"
     },
     {
-      "name": "memory_search", 
+      "name": "memory_search",
       "description": "Busca memórias por texto"
     },
     {

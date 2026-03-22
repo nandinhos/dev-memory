@@ -106,7 +106,7 @@ class MemoryController extends Controller
         }
 
         return response()->json([
-            'message' => 'Memória promotionsada para escopo global',
+            'message' => 'Memória promovida para escopo global',
             'data' => $promoted,
         ]);
     }

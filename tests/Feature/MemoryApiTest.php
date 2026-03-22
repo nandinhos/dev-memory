@@ -76,7 +76,7 @@ class MemoryApiTest extends TestCase
         $response = $this->deleteJson("/api/memories/{$memory->id}");
 
         $response->assertOk();
-        $this->assertDatabaseMissing('memories', ['id' => $memory->id]);
+        $this->assertSoftDeleted('memories', ['id' => $memory->id]);
     }
 
     public function test_can_search_memories(): void

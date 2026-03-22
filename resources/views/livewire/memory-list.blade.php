@@ -12,8 +12,11 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside class="lg:col-span-1">
-            <div class="card-neo bg-neo-white neo-border shadow-neo p-4 sticky top-4">
-                <h3 class="font-heading text-lg mb-4 pb-2 border-b-2 border-black">Filtros</h3>
+            <div class="card-neo neo-border shadow-neo overflow-hidden sticky top-4">
+                <div class="bg-neo-teal px-4 py-3 border-b-2 border-black">
+                    <h3 class="font-heading text-lg m-0">Filtros</h3>
+                </div>
+                <div class="bg-neo-white p-4">
                 
                 <div class="mb-4">
                     <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Buscar</label>
@@ -62,10 +65,14 @@
                         Limpar Filtros
                     </button>
                 @endif
+                </div>{{-- fim bg-neo-white --}}
             </div>
 
-            <div class="card-neo bg-neo-white neo-border shadow-neo p-4 mt-4">
-                <h3 class="font-heading text-sm mb-2 pb-2 border-b-2 border-black">Estatísticas</h3>
+            <div class="card-neo neo-border shadow-neo overflow-hidden mt-4">
+                <div class="bg-neo-magenta px-4 py-2 border-b-2 border-black">
+                    <h3 class="font-heading text-sm m-0">Estatísticas</h3>
+                </div>
+                <div class="bg-neo-white p-4">
                 <div class="space-y-2 text-xs font-mono">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Total:</span>
@@ -93,6 +100,7 @@
                         <span class="font-bold">{{ $memories->where('type', 'best_practice')->count() }}</span>
                     </div>
                 </div>
+                </div>{{-- fim bg-neo-white --}}
             </div>
         </aside>
 

@@ -2,8 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
+use App\Enums\ValidationStatus;
 use App\Models\Memory;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -39,34 +42,47 @@ class Dashboard extends Component
 
     private function loadStats(): void
     {
-        $this->totalMemories = Memory::count();
-        $this->totalErrors = Memory::where('type', MemoryType::ERROR)->count();
-        $this->totalLessons = Memory::where('type', MemoryType::LESSON)->count();
-        $this->totalBestPractices = Memory::where('type', MemoryType::BEST_PRACTICE)->count();
-        $this->totalValidated = Memory::where('validation_status', 'validated')->count();
-        $this->totalPending = Memory::where('validation_status', 'pending')->count();
-        $this->totalGlobal = Memory::where('scope', 'global')->count();
-        $this->totalProject = Memory::where('scope', 'project')->count();
+        $stats = Cache::remember('dashboard_stats', 60, function () {
+            return [
+                'totalMemories'      => Memory::count(),
+                'totalErrors'        => Memory::where('type', MemoryType::ERROR)->count(),
+                'totalLessons'       => Memory::where('type', MemoryType::LESSON)->count(),
+                'totalBestPractices' => Memory::where('type', MemoryType::BEST_PRACTICE)->count(),
+                'totalValidated'     => Memory::where('validation_status', ValidationStatus::VALIDATED)->count(),
+                'totalPending'       => Memory::where('validation_status', ValidationStatus::PENDING)->count(),
+                'totalGlobal'        => Memory::where('scope', MemoryScope::GLOBAL)->count(),
+                'totalProject'       => Memory::where('scope', MemoryScope::PROJECT)->count(),
+                'recentMemories'     => Memory::orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn ($m) => [
+                        'id'         => $m->id,
+                        'title'      => $m->title,
+                        'type'       => $m->type->label(),
+                        'type_color' => $m->type->value,
+                        'created_at' => $m->created_at->format('d/m/Y'),
+                    ])
+                    ->toArray(),
+                'topStacks' => Memory::selectRaw('stack, COUNT(*) as count')
+                    ->whereNotNull('stack')
+                    ->groupBy('stack')
+                    ->orderByDesc('count')
+                    ->limit(5)
+                    ->get()
+                    ->toArray(),
+            ];
+        });
 
-        $this->recentMemories = Memory::orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(fn ($m) => [
-                'id' => $m->id,
-                'title' => $m->title,
-                'type' => $m->type->label(),
-                'type_color' => $m->type->value,
-                'created_at' => $m->created_at->format('d/m/Y'),
-            ])
-            ->toArray();
-
-        $this->topStacks = Memory::selectRaw('stack, COUNT(*) as count')
-            ->whereNotNull('stack')
-            ->groupBy('stack')
-            ->orderByDesc('count')
-            ->limit(5)
-            ->get()
-            ->toArray();
+        $this->totalMemories      = $stats['totalMemories'];
+        $this->totalErrors        = $stats['totalErrors'];
+        $this->totalLessons       = $stats['totalLessons'];
+        $this->totalBestPractices = $stats['totalBestPractices'];
+        $this->totalValidated     = $stats['totalValidated'];
+        $this->totalPending       = $stats['totalPending'];
+        $this->totalGlobal        = $stats['totalGlobal'];
+        $this->totalProject       = $stats['totalProject'];
+        $this->recentMemories     = $stats['recentMemories'];
+        $this->topStacks          = $stats['topStacks'];
     }
 
     public function render()

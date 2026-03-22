@@ -68,21 +68,28 @@ class MemoryList extends Component
     public function render()
     {
         $memories = Memory::query()
-            ->when($this->search, fn ($q) => $q->where(fn ($q) => $q->where('title', 'ILIKE', "%{$this->search}%")
-                ->orWhere('description', 'ILIKE', "%{$this->search}%")
-            ))
+            ->when($this->search, function ($q) {
+                $term = strtolower($this->search);
+                $q->where(fn ($q) => $q
+                    ->whereRaw('LOWER(title) LIKE ?', ["%{$term}%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%{$term}%"])
+                );
+            })
             ->when($this->typeFilter, fn ($q, $type) => $q->where('type', $type))
             ->when($this->scopeFilter, fn ($q, $scope) => $q->where('scope', $scope))
-            ->when($this->stackFilter, fn ($q, $stack) => $q->where('stack', 'ILIKE', "%{$stack}%"))
+            ->when($this->stackFilter, function ($q, $stack) {
+                $q->whereRaw('LOWER(stack) LIKE ?', ['%' . strtolower($stack) . '%']);
+            })
             ->when($this->statusFilter, fn ($q, $status) => $q->where('validation_status', $status))
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
-        $stacks = Memory::selectRaw('DISTINCT stack')
+        $stacks = Memory::select('stack')
+            ->distinct()
             ->whereNotNull('stack')
+            ->orderBy('stack')
             ->pluck('stack')
             ->filter()
-            ->sort()
             ->values();
 
         return view('livewire.memory-list', [

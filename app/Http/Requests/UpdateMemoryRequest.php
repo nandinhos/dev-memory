@@ -14,7 +14,7 @@ class UpdateMemoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'string', 'max:255'],
+            'title' => ['sometimes', 'string', 'max:500'],
             'description' => ['sometimes', 'string'],
             'type' => ['sometimes', 'string', 'in:error,lesson,best_practice'],
             'stack' => ['nullable', 'string', 'max:100'],
@@ -28,7 +28,7 @@ class UpdateMemoryRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.max' => 'O título não pode ter mais de 255 caracteres.',
+            'title.max' => 'O título não pode ter mais de 500 caracteres.',
             'type.in' => 'O tipo deve ser: error, lesson ou best_practice.',
             'scope.in' => 'O escopo deve ser: project ou global.',
             'validation_status.in' => 'O status deve ser: pending, validated ou rejected.',

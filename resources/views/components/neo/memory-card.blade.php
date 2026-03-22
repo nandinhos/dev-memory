@@ -25,57 +25,62 @@ $scopeBg = $scopeColors[$memoria->scope->value] ?? 'bg-neo-teal';
 $statusBg = $statusColors[$memoria->validation_status->value] ?? 'bg-gray-400';
 @endphp
 
-<a href="{{ route('memories.show', $memoria) }}" 
-   class="block card-neo bg-neo-white neo-border shadow-neo p-5 hover:shadow-neo-lg transition-all duration-150 group relative overflow-hidden">
-    
-    <div class="flex items-start justify-between gap-4 mb-3">
-        <h3 class="font-heading text-lg leading-tight group-hover:text-neo-magenta transition-colors flex-1">
-            {{ $memoria->title }}
-        </h3>
-        
-        <div class="flex flex-col items-end gap-1 shrink-0">
-            <span class="inline-block {{ $statusBg }} border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">
-                {{ $memoria->validation_status->label() }}
-            </span>
-        </div>
-    </div>
-    
-    <p class="font-mono text-sm text-gray-700 mb-4 line-clamp-2">
-        {{ Str::limit(strip_tags($memoria->description), 180) }}
-    </p>
-    
-    <div class="relative">
-        <div class="absolute -top-8 -right-2 flex flex-col items-center gap-1">
-            @if($memoria->stack)
-                <span class="bg-black text-white px-2 py-1 text-[10px] font-bold font-heading rotate-3 shadow-neo-sm">
-                    {{ Str::limit($memoria->stack, 12) }}
+<a href="{{ route('memories.show', $memoria) }}"
+   class="block card-neo bg-neo-white neo-border shadow-neo hover:shadow-neo-lg transition-all duration-150 group relative overflow-hidden">
+
+    {{-- Barra de acento colorida por tipo --}}
+    <div class="h-2.5 {{ $typeBg }}"></div>
+
+    <div class="p-5">
+        <div class="flex items-start justify-between gap-4 mb-3">
+            <h3 class="font-heading text-lg leading-tight group-hover:text-neo-magenta transition-colors flex-1">
+                {{ $memoria->title }}
+            </h3>
+
+            <div class="flex flex-col items-end gap-1 shrink-0">
+                <span class="inline-block {{ $statusBg }} border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">
+                    {{ $memoria->validation_status->label() }}
                 </span>
-            @endif
-            <span class="bg-neo-magenta border-2 border-black px-2 py-1 text-[10px] font-bold font-heading -rotate-2 shadow-neo-sm">
-                {{ $memoria->recurrence_count }}x
-            </span>
+            </div>
         </div>
-        
-        <div class="flex flex-wrap gap-1">
-            <span class="inline-block {{ $typeBg }} border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">
-                {{ $memoria->type->label() }}
-            </span>
-            <span class="inline-block {{ $scopeBg }} border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">
-                {{ $memoria->scope->label() }}
-            </span>
+
+        <p class="font-mono text-sm text-gray-700 mb-4 line-clamp-2">
+            {{ Str::limit(strip_tags($memoria->description), 180) }}
+        </p>
+
+        <div class="relative">
+            <div class="absolute -top-8 -right-2 flex flex-col items-center gap-1">
+                @if($memoria->stack)
+                    <span class="bg-black text-white px-2 py-1 text-[10px] font-bold font-heading rotate-3 shadow-neo-sm">
+                        {{ Str::limit($memoria->stack, 12) }}
+                    </span>
+                @endif
+                <span class="{{ $typeBg }} border-2 border-black px-2 py-1 text-[10px] font-bold font-heading -rotate-2 shadow-neo-sm">
+                    {{ $memoria->recurrence_count }}x
+                </span>
+            </div>
+
+            <div class="flex flex-wrap gap-1">
+                <span class="inline-block {{ $typeBg }} border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">
+                    {{ $memoria->type->label() }}
+                </span>
+                <span class="inline-block {{ $scopeBg }} border-2 border-black px-2 py-0.5 text-[10px] font-bold font-heading">
+                    {{ $memoria->scope->label() }}
+                </span>
+            </div>
         </div>
     </div>
-    
+
     @if($memoria->validation_status->value === 'validated')
-        <div class="sep-validated mt-3"></div>
+        <div class="sep-validated"></div>
     @else
-        <div class="mt-3 border-t-2 border-black/20"></div>
+        <div class="mx-5 border-t-2 border-black/15"></div>
     @endif
-    <div class="pt-3 flex items-center justify-between">
+    <div class="px-5 py-3 flex items-center justify-between">
         <span class="text-[10px] font-mono text-gray-500">
             {{ $memoria->created_at->format('d/m/Y') }}
         </span>
-        <span class="text-[10px] font-mono text-gray-400 group-hover:text-neo-magenta transition-colors">
+        <span class="text-[10px] font-mono text-gray-400 group-hover:text-neo-magenta transition-colors font-bold">
             Ver →
         </span>
     </div>
