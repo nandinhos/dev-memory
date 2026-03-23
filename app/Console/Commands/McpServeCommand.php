@@ -13,9 +13,9 @@ class McpServeCommand extends Command
 
     public function handle(): int
     {
-        $server = new MemoryMcpServer();
+        $server = new MemoryMcpServer;
 
-        $stdin  = fopen('php://stdin', 'r');
+        $stdin = fopen('php://stdin', 'r');
         $stdout = fopen('php://stdout', 'w');
 
         stream_set_blocking($stdin, true);
@@ -32,14 +32,14 @@ class McpServeCommand extends Command
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $response = [
                     'jsonrpc' => '2.0',
-                    'id'      => null,
-                    'error'   => ['code' => -32700, 'message' => 'Parse error'],
+                    'id' => null,
+                    'error' => ['code' => -32700, 'message' => 'Parse error'],
                 ];
             } else {
                 $response = $server->handle($request);
             }
 
-            fwrite($stdout, json_encode($response) . "\n");
+            fwrite($stdout, json_encode($response)."\n");
             fflush($stdout);
         }
 

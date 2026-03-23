@@ -2,9 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Enums\MemoryScope;
-use App\Enums\MemoryType;
-use App\Enums\ValidationStatus;
 use App\Models\Memory;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -13,13 +10,19 @@ use Livewire\Component;
 class MemoryForm extends Component
 {
     public ?string $memoryId = null;
-    
+
     public string $title = '';
+
     public string $description = '';
+
     public string $type = 'error';
+
     public ?string $stack = null;
+
     public string $scope = 'project';
+
     public string $validation_status = 'pending';
+
     public ?string $official_reference = null;
 
     protected $listeners = ['saved' => 'onSaved'];
@@ -42,6 +45,7 @@ class MemoryForm extends Component
     public function onSaved()
     {
         session()->flash('success', 'Memória salva com sucesso!');
+
         return $this->redirect('/memories', navigate: true);
     }
 

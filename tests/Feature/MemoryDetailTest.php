@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\MemoryType;
 use App\Enums\MemoryScope;
+use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
 use App\Livewire\MemoryDetail;
 use App\Models\Memory;
@@ -18,8 +18,8 @@ class MemoryDetailTest extends TestCase
     private function makeMemory(array $attrs = []): Memory
     {
         return Memory::factory()->create(array_merge([
-            'type'              => MemoryType::ERROR,
-            'scope'             => MemoryScope::PROJECT,
+            'type' => MemoryType::ERROR,
+            'scope' => MemoryScope::PROJECT,
             'validation_status' => ValidationStatus::PENDING,
         ], $attrs));
     }

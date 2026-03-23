@@ -78,7 +78,7 @@ class MemoryList extends Component
             ->when($this->typeFilter, fn ($q, $type) => $q->where('type', $type))
             ->when($this->scopeFilter, fn ($q, $scope) => $q->where('scope', $scope))
             ->when($this->stackFilter, function ($q, $stack) {
-                $q->whereRaw('LOWER(stack) LIKE ?', ['%' . strtolower($stack) . '%']);
+                $q->whereRaw('LOWER(stack) LIKE ?', ['%'.strtolower($stack).'%']);
             })
             ->when($this->statusFilter, fn ($q, $status) => $q->where('validation_status', $status))
             ->orderBy('created_at', 'desc')
