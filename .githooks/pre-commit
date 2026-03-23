@@ -1,0 +1,27 @@
+#!/bin/bash
+# Git Hook pre-commit do Architect
+# Analisa arquivos staged antes do commit
+
+ARCHITECT_BIN="/home/nandodev/.architectai/bin/architect"
+
+echo "Executando analise Architect..."
+
+# Verificar se o binario existe
+if [ ! -f "$ARCHITECT_BIN" ]; then
+    echo "Architect nao encontrado. Pulando analise."
+    exit 0
+fi
+
+# Executar analise nos arquivos staged
+$ARCHITECT_BIN staged
+
+# Capturar resultado
+RESULT=$?
+
+if [ $RESULT -eq 0 ]; then
+    echo "Architect: Analise passou!"
+    exit 0
+else
+    echo "Architect: Problemas detectados. Corrija antes de commitar."
+    exit 1
+fi
