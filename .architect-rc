@@ -1,0 +1,35 @@
+#!/bin/bash
+# Shell alias and functions for Architect
+# Adicione ao seu ~/.bashrc ou ~/.zshrc: source /caminho/para/este/arquivo
+
+ARCHITECT_BIN="/home/nandodev/.architectai/bin/architect"
+
+# Alias curto
+alias arch="$ARCHITECT_BIN"
+
+# Funcoes convenientes
+arch-run() {
+    $ARCHITECT_BIN run "$@"
+}
+
+arch-staged() {
+    $ARCHITECT_BIN staged
+}
+
+arch-rules() {
+    $ARCHITECT_BIN rules
+}
+
+# Completions (bash)
+_arch_completions() {
+    local word=${COMP_WORDS[COMP_CWORD]}
+    local commands="run staged rules"
+
+    COMPREPLY=($(compgen -W "$commands" -- "$word"))
+}
+
+# Registro de completions
+complete -F _arch_completions arch
+
+# Mensagem
+echo "Architect alias loaded. Use: arch <run|staged|rules>"
