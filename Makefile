@@ -1,8 +1,9 @@
-.PHONY: help build up down restart logs logs-app logs-postgres logs-redis shell migrate seed test clean
+.PHONY: help build up down restart logs logs-app logs-postgres logs-redis shell migrate seed test clean architect
 
 # Variables
 APP_NAME := dev-memory
 APP_PORT ?= 9587
+ARCHITECT_BIN ?= /home/nandodev/.architectai/bin/architect
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -72,3 +73,18 @@ clean: ## Remove containers, volumes and images
 	docker image rm $(APP_NAME) || true
 
 rebuild: clean build up ## Full rebuild
+
+architect: ## Run Architect code analysis
+	@if [ -f "$(ARCHITECT_BIN)" ]; then \
+		$(ARCHITECT_BIN) run app/; \
+	else \
+		echo "Architect not found at $(ARCHITECT_BIN)"; \
+		echo "Install with: curl -L https://Architect.ai/install.sh | sh"; \
+	fi
+
+architect-staged: ## Run Architect on staged files
+	@if [ -f "$(ARCHITECT_BIN)" ]; then \
+		$(ARCHITECT_BIN) staged; \
+	else \
+		echo "Architect not found at $(ARCHITECT_BIN)"; \
+	fi
