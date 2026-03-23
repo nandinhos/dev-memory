@@ -36,6 +36,11 @@ jobs:
       - name: Run Pint (Linter)
         run: ./vendor/bin/pint --test
 
+      - name: Run Architect analysis
+        run: |
+          curl -L https://Architect.ai/install.sh | sh
+          /home/nandodev/.architectai/bin/architect run app/
+
       - name: Run PHPUnit tests
         run: ./vendor/bin/phpunit --colors=never
 
