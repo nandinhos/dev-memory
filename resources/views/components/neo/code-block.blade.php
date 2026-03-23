@@ -41,53 +41,58 @@ $numbered = implode("\n", array_map(
                 .join('');
             navigator.clipboard.writeText(code).then(() => {
                 this.copied = true;
+                this.\$dispatch('show-toast', { message: 'CÓDIGO COPIADO!', type: 'sucesso' });
                 setTimeout(() => { this.copied = false; }, 2000);
             }).catch(() => {});
         }
     }"
-    class="code-block border-2 border-black shadow-neo my-4 overflow-hidden"
+    class="code-block border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] my-6 overflow-hidden relative"
 >
     {{-- Titlebar macOS --}}
-    <div class="flex items-center justify-between px-3 py-2 border-b-2 border-black"
+    <div class="flex items-center justify-between px-4 py-2 border-b-4 border-black"
          style="background-color: #2a2a3e;">
 
         {{-- Dots --}}
-        <div class="flex items-center gap-1.5">
-            <span class="w-[11px] h-[11px] rounded-full border border-black/20 flex-shrink-0"
+        <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full border-2 border-black/30 flex-shrink-0"
                   style="background:#ff5f57;"></span>
-            <span class="w-[11px] h-[11px] rounded-full border border-black/20 flex-shrink-0"
+            <span class="w-3 h-3 rounded-full border-2 border-black/30 flex-shrink-0"
                   style="background:#febc2e;"></span>
-            <span class="w-[11px] h-[11px] rounded-full border border-black/20 flex-shrink-0"
+            <span class="w-3 h-3 rounded-full border-2 border-black/30 flex-shrink-0"
                   style="background:#28c840;"></span>
             @if($filename)
-                <span class="ml-2 font-mono text-[11px]" style="color:#888;">{{ $filename }}</span>
+                <span class="ml-2 font-mono text-[10px] uppercase font-bold" style="color:#64748B;">{{ $filename }}</span>
             @endif
         </div>
 
-        {{-- Botão copiar --}}
+        {{-- Botão copiar: Neon Green Ghost --}}
         <button
             @click="copyCode()"
-            class="flex items-center gap-1 border border-black/40 px-2 py-0.5 font-mono text-[10px] transition-colors duration-100"
+            class="group relative flex items-center gap-2 border-2 border-black px-3 py-1 font-mono text-[11px] font-bold uppercase transition-all duration-100"
             :class="copied
-                ? 'bg-neo-teal text-black border-neo-teal'
-                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'"
-            style="font-family: var(--font-mono);"
+                ? 'bg-[#39FF14] text-black border-[#39FF14] animate-flash'
+                : 'bg-transparent text-[#39FF14] border-[#39FF14] hover:bg-[#39FF14]/10'"
             aria-label="Copiar código"
         >
-            <span x-show="!copied" aria-hidden="true">
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <span x-show="!copied" class="flex items-center gap-2">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                 </svg>
+                COPIAR
             </span>
-            <span x-show="copied" aria-hidden="true">✓</span>
-            <span x-text="copied ? 'Copiado' : 'Copiar'"></span>
+            <span x-show="copied">COPIADO!</span>
         </button>
     </div>
 
-    {{-- Corpo do código --}}
-    <div class="overflow-x-auto" style="background-color: #1e1e2e;">
-        <pre class="{{ $langClass }} !m-0 !rounded-none !border-0"
-             style="background:transparent !important; padding: 1rem 1.25rem;"><code class="{{ $langClass }}">{!! $numbered !!}</code></pre>
+    {{-- Corpo do código: Catppuccin Mocha --}}
+    <div class="relative overflow-hidden" style="background-color: #1e1e2e;">
+        {{-- CRT Overlay integrada com opacidade 0.05 --}}
+        <div class="crt-overlay opacity-5"></div>
+
+        <div class="overflow-x-auto relative z-20">
+            <pre class="{{ $langClass }} !m-0 !rounded-none !border-0"
+                 style="background:transparent !important; padding: 1.5rem 1.25rem;"><code class="{{ $langClass }}">{!! $numbered !!}</code></pre>
+        </div>
     </div>
 </div>

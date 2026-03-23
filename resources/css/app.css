@@ -21,6 +21,10 @@
     --color-neo-salmon: #FDA4AF;
     --color-neo-green: #00FF7F;
     --color-neo-purple: #9370DB;
+    
+    --color-neon-green: #39FF14;
+    --color-sidebar-bege: #F5F5DC;
+    --color-vibrant-yellow: #FDE047;
 
     --shadow-neo-sm: 2px 2px 0px 0px #000000;
     --shadow-neo: 4px 4px 0px 0px #000000;
@@ -37,6 +41,8 @@
         font-family: var(--font-mono);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        margin: 0;
+        padding: 0;
     }
 
     h1, h2, h3, h4, h5, h6, .font-heading {
@@ -52,6 +58,9 @@
 }
 
 @layer components {
+    .h-80px { height: 80px; }
+    .min-h-80px { min-height: 80px; }
+
     .neo-border { border: 4px solid #000; }
     .neo-border-sm { border: 2px solid #000; }
 
@@ -70,13 +79,140 @@
         box-shadow: 0px 0px 0px 0px #000 !important;
     }
 
-    .input-neo:focus {
-        border-color: var(--color-neo-magenta) !important;
-        outline: none;
+    .sidebar-bege {
+        background-color: var(--color-sidebar-bege);
+        border-right: 4px solid #000;
     }
 
-    .input-neo:hover {
-        border-color: var(--color-neo-magenta) !important;
+    .sidebar-link-active {
+        background-color: var(--color-vibrant-yellow) !important;
+        box-shadow: 4px 4px 0px 0px #000 !important;
+        transform: translate(-2px, -2px);
+    }
+
+    .logo-block {
+        height: 80px;
+        background-color: #000;
+        display: flex;
+        align-items: center;
+        padding-left: 1.5rem;
+        border-bottom: 4px solid #000;
+    }
+
+    /* CRT Scanlines Overlay */
+    .crt-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            rgba(18, 16, 16, 0) 50%,
+            rgba(0, 0, 0, 0.1) 50%
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255, 0, 0, 0.03),
+            rgba(0, 255, 0, 0.01),
+            rgba(0, 0, 255, 0.03)
+        );
+        background-size: 100% 3px, 3px 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .animate-glitch-in {
+        animation: glitch-in 0.4s ease-out forwards;
+    }
+
+    .animate-flash {
+        animation: flash-white 0.15s ease-out forwards;
+    }
+
+    .logo-text {
+        font-family: var(--font-heading);
+        font-weight: 900;
+        font-size: 26px;
+        text-transform: uppercase;
+    }
+
+    .logo-dev {
+        color: var(--color-neon-green);
+        text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+    }
+
+    .logo-memory {
+        color: #FFFFFF;
+    }
+
+    /* Caution Scroll */
+    .caution-scroll-container {
+        background-color: var(--color-vibrant-yellow);
+        border-top: 3px solid #000;
+        border-bottom: 3px solid #000;
+        overflow: hidden;
+        white-space: nowrap;
+        height: 24px;
+        display: flex;
+        align-items: center;
+    }
+
+    .caution-scroll-text {
+        display: inline-block;
+        font-weight: 900;
+        font-size: 12px;
+        text-transform: uppercase;
+        animation: scroll-caution 15s linear infinite;
+        padding-left: 100%;
+    }
+
+    /* Profile Area */
+    .profile-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--color-neon-green);
+        border: 3px solid #000;
+        box-shadow: 4px 4px 0px 0px #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.25rem;
+    }
+
+    .badge-system-root {
+        background-color: #000;
+        color: var(--color-neon-green);
+        font-weight: 900;
+        font-size: 10px;
+        padding: 2px 6px;
+        border: 1px solid var(--color-neon-green);
+    }
+
+    /* Scanlines */
+    .scanlines-crt {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .scanlines-crt::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 2;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+        opacity: 0.05;
+    }
+
+    .scan-v-anim {
+        animation: scan-v 8s linear infinite;
     }
 
     /* Separador de validação — bandeira quadriculada com shine sweep */
@@ -168,6 +304,29 @@
     .animation-delay-400 { animation-delay: 400ms; }
 }
 
+@keyframes scroll-caution {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+@keyframes glitch-in {
+    0% { transform: translate(10px, 0) skew(5deg); opacity: 0; }
+    20% { transform: translate(-10px, 0) skew(-5deg); opacity: 1; }
+    40% { transform: translate(5px, 0) skew(2deg); }
+    60% { transform: translate(-5px, 0) skew(-2deg); }
+    100% { transform: translate(0) skew(0); opacity: 1; }
+}
+
+@keyframes scan-v {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+@keyframes flash-white {
+    0% { background-color: #FFFFFF; }
+    100% { background-color: var(--color-neon-green); }
+}
+
 @keyframes wiggle {
     0%, 100% { transform: rotate(-1deg); }
     50% { transform: rotate(1deg); }
@@ -215,16 +374,19 @@
     .bg-neo-salmon { background-color: var(--color-neo-salmon); }
     .bg-neo-purple { background-color: var(--color-neo-purple); }
     .bg-neo-white { background-color: var(--color-neo-white); }
+    .bg-neon-green { background-color: var(--color-neon-green); }
 
     .text-neo-teal { color: var(--color-neo-teal); }
     .text-neo-magenta { color: var(--color-neo-magenta); }
     .text-neo-yellow { color: var(--color-neo-yellow); }
     .text-neo-green { color: var(--color-neo-green); }
+    .text-neon-green { color: var(--color-neon-green); }
 
     .border-neo-teal { border-color: var(--color-neo-teal); }
     .border-neo-magenta { border-color: var(--color-neo-magenta); }
     .border-neo-yellow { border-color: var(--color-neo-yellow); }
     .border-neo-green { border-color: var(--color-neo-green); }
+    .border-neon-green { border-color: var(--color-neon-green); }
 
     .font-body { font-family: var(--font-mono); }
 }
@@ -293,21 +455,22 @@
     }
 }
 
+/* Neo-Brutalist Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #18181b;
+    background: var(--color-sidebar-bege);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #3f3f46;
-    border-radius: 0;
+    background: #000000;
+    border: 1px solid #000000;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #52525b;
+    background: #333333;
 }
 

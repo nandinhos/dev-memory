@@ -1,7 +1,7 @@
 {{--
     Uso: não instanciar diretamente — o toast é controlado pelo listener Alpine
     no layout. Disparar via Livewire: $this->dispatch('show-toast', message: '...', type: 'sucesso')
-    Tipos aceitos: sucesso | erro | aviso | info
+    Disparar via JS: window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: '...' } }))
 --}}
 <div
     x-data="{
@@ -16,62 +16,36 @@
         }
     }"
     @show-toast.window="addToast($event.detail.message, $event.detail.type ?? 'sucesso')"
-    class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end"
+    class="fixed top-8 right-8 z-[100] flex flex-col gap-4 items-end"
     aria-live="assertive"
     aria-atomic="true"
 >
     <template x-for="toast in toasts" :key="toast.id">
         <div
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-x-full"
-            x-transition:enter-end="opacity-100 translate-x-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 translate-x-0"
-            x-transition:leave-end="opacity-0 translate-x-full"
-            class="bg-white neo-border shadow-neo-xl w-80 max-w-[calc(100vw-3rem)] flex overflow-hidden"
+            x-transition:enter="animate-glitch-in"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95 translate-x-10"
+            class="relative bg-[#39FF14] text-black font-bold px-6 py-4 border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden min-w-[300px]"
             role="alert"
         >
-            {{-- Faixa lateral colorida --}}
-            <div
-                class="w-2 flex-shrink-0"
-                :class="{
-                    'bg-neo-green':   toast.type === 'sucesso',
-                    'bg-neo-magenta': toast.type === 'erro',
-                    'bg-neo-yellow':  toast.type === 'aviso',
-                    'bg-neo-teal':    toast.type === 'info'
-                }"
-            ></div>
+            {{-- CRT Overlay integrada com opacidade 0.05 --}}
+            <div class="crt-overlay opacity-5"></div>
 
-            {{-- Ícone --}}
-            <div class="flex items-start pt-4 pl-3 flex-shrink-0">
-                <span
-                    class="w-6 h-6 flex items-center justify-center border-2 border-black font-heading font-bold text-xs"
-                    :class="{
-                        'bg-neo-green':   toast.type === 'sucesso',
-                        'bg-neo-magenta': toast.type === 'erro',
-                        'bg-neo-yellow':  toast.type === 'aviso',
-                        'bg-neo-teal':    toast.type === 'info'
-                    }"
-                    x-text="{ sucesso: '✓', erro: '✕', aviso: '!', info: 'i' }[toast.type] ?? 'i'"
-                ></span>
-            </div>
-
-            {{-- Texto --}}
-            <div class="flex-1 p-4 pr-3 min-w-0">
-                <p
-                    class="font-heading font-bold uppercase text-xs mb-1"
-                    x-text="{ sucesso: 'Sucesso', erro: 'Erro', aviso: 'Aviso', info: 'Info' }[toast.type] ?? 'Info'"
-                ></p>
-                <p class="font-body text-sm leading-snug" x-text="toast.message"></p>
-            </div>
-
-            {{-- Fechar --}}
-            <div class="p-2 flex-shrink-0">
+            <div class="relative z-20 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl" x-text="{ sucesso: '✓', erro: '✕', aviso: '!', info: 'i' }[toast.type] ?? '✓'"></span>
+                    <span class="uppercase tracking-tight" x-text="toast.message"></span>
+                </div>
                 <button
                     @click="removeToast(toast.id)"
-                    class="w-6 h-6 flex items-center justify-center border-2 border-black bg-white font-heading font-bold text-sm hover:bg-neo-yellow transition-colors duration-100"
-                    aria-label="Fechar notificação"
-                >×</button>
+                    class="text-black hover:opacity-50 transition-opacity"
+                    aria-label="Fechar"
+                >
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
         </div>
     </template>

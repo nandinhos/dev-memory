@@ -44,6 +44,16 @@ class MemoryDetail extends Component
         );
     }
 
+    public function promoteToGlobal(): void
+    {
+        $this->memory->update(['scope' => \App\Enums\MemoryScope::GLOBAL]);
+        $this->memory->refresh();
+        $this->dispatch('show-toast',
+            message: 'Memória promovida a Global!',
+            type: 'sucesso'
+        );
+    }
+
     public function render()
     {
         return view('livewire.memory-detail');
