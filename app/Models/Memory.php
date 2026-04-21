@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\MemoryScope;
+use App\Enums\MemorySource;
 use App\Enums\MemoryType;
+use App\Enums\Severity;
 use App\Enums\ValidationStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,13 +26,25 @@ class Memory extends Model
         'validation_status',
         'official_reference',
         'recurrence_count',
+        // Extended fields
+        'source_system',
+        'source_project',
+        'source_file',
+        'original_id',
+        'severity',
+        'external_reference',
+        'validated_at',
+        'validated_by',
     ];
 
     protected $casts = [
         'type' => MemoryType::class,
         'scope' => MemoryScope::class,
         'validation_status' => ValidationStatus::class,
+        'source_system' => MemorySource::class,
+        'severity' => Severity::class,
         'recurrence_count' => 'integer',
+        'validated_at' => 'datetime',
     ];
 
     public function scopeFilter($query, array $filters)
