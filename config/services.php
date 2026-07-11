@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'minimax' => [
+        'base_url' => env('MINIMAX_BASE_URL', 'https://api.minimax.io/anthropic'),
+        'api_key' => env('MINIMAX_API_KEY'),
+        'model' => env('MINIMAX_MODEL', 'MiniMax-M2.5'),
+    ],
+
 ];
