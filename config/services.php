@@ -46,4 +46,8 @@ return [
         'api_key' => env('CONTEXT7_API_KEY'),
     ],
 
+    'skills_repo' => [
+        'path' => env('SKILLS_REPO_PATH', storage_path('app/private/skills-repo')),
+    ],
+
 ];

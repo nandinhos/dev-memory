@@ -19,7 +19,10 @@ class SkillCompiler
 {
     public function __construct(
         private AnthropicCurationEngine $engine,
-    ) {}
+        private ?SkillMarkdownRenderer $renderer = null,
+    ) {
+        $this->renderer ??= new SkillMarkdownRenderer;
+    }
 
     public function compile(SkillGroup $group): Skill
     {
@@ -48,7 +51,7 @@ class SkillCompiler
 
         Storage::disk('local')->put(
             "skills/{$candidate->slug}.md",
-            $this->renderMarkdown($candidate),
+            $this->renderer->render($candidate->toArray()),
         );
 
         return $skill;
@@ -128,64 +131,5 @@ PROMPT;
             ."MEMÓRIAS DO GRUPO ({$memories->count()}):\n\n{$listing}\n\n"
             ."FONTES OFICIAIS DISPONÍVEIS:\n{$sources}\n\n"
             .'TAREFA: compile a skill conforme o contrato.';
-    }
-
-    private function renderMarkdown(SkillCandidate $candidate): string
-    {
-        $lines = [
-            "# {$candidate->name}",
-            '',
-            "**Slug:** `{$candidate->slug}` · **Schema:** {$candidate->schemaVersion}",
-            '',
-            "## Propósito\n{$candidate->purpose}",
-            '',
-            '## Ativação',
-            '- **Tecnologias:** '.implode(', ', $candidate->activation['technologies']),
-            '- **Gatilhos:** '.implode(' · ', $candidate->activation['triggers']),
-            '',
-        ];
-
-        if ($candidate->preconditions !== []) {
-            $lines[] = "## Pré-condições\n- ".implode("\n- ", $candidate->preconditions)."\n";
-        }
-
-        $lines[] = '## Workflow';
-
-        foreach ($candidate->workflow as $step) {
-            $lines[] = "{$step['order']}. {$step['action']}";
-
-            if (! empty($step['validation'])) {
-                $lines[] = "   - *Validação:* {$step['validation']}";
-            }
-        }
-
-        $lines[] = '';
-
-        if ($candidate->guardrails !== []) {
-            $lines[] = "## Guardrails\n- ".implode("\n- ", $candidate->guardrails)."\n";
-        }
-
-        if ($candidate->antiPatterns !== []) {
-            $lines[] = "## Antipadrões\n- ".implode("\n- ", $candidate->antiPatterns)."\n";
-        }
-
-        if ($candidate->testCases !== []) {
-            $lines[] = '## Casos de teste';
-
-            foreach ($candidate->testCases as $case) {
-                $lines[] = "- **{$case['name']}** → {$case['expected']}";
-            }
-
-            $lines[] = '';
-        }
-
-        $lines[] = '## Evidências';
-        $lines[] = '- **Memórias de origem:** '.implode(', ', $candidate->evidence['lesson_ids']);
-
-        if ($candidate->evidence['official_sources'] !== []) {
-            $lines[] = "- **Fontes oficiais:**\n  - ".implode("\n  - ", $candidate->evidence['official_sources']);
-        }
-
-        return implode("\n", $lines)."\n";
     }
 }
