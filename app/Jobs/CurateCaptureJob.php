@@ -12,6 +12,7 @@ use App\Services\Curation\CurationFailedException;
 use App\Services\Curation\KnowledgePreparationEngine;
 use App\Services\Curation\LessonDraft;
 use App\Services\Curation\PromotionPolicy;
+use App\Services\Curation\RecurrenceScorer;
 use App\Services\MemoryService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -36,6 +37,7 @@ class CurateCaptureJob implements ShouldQueue
         KnowledgePreparationEngine $engine,
         PromotionPolicy $policy,
         MemoryService $memories,
+        RecurrenceScorer $scorer,
     ): void {
         $input = $this->capture->sanitized_content ?? '';
         $startedAt = microtime(true);
@@ -64,14 +66,20 @@ class CurateCaptureJob implements ShouldQueue
             return;
         }
 
-        $existing = $memories->findSimilarByTitle($draft->title);
+        $match = $scorer->findMatch($draft, $this->capture);
 
-        if ($existing !== null) {
-            $memories->incrementRecurrence($existing);
+        if ($match !== null) {
+            if ($match->independent) {
+                $memories->incrementRecurrence($match->memory);
+            }
+
             $this->recordExecution($engine, $input, $startedAt, 'completed', 'deduplicated', draft: $draft);
             $this->capture->update([
                 'status' => CaptureStatus::CURATED,
-                'memory_id' => $existing->id,
+                'memory_id' => $match->memory->id,
+                'metadata' => array_merge($this->capture->metadata ?? [], [
+                    'dedup' => $match->score->toArray() + ['independent' => $match->independent],
+                ]),
             ]);
 
             return;

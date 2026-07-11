@@ -90,8 +90,9 @@ class CurateCaptureJobTest extends TestCase
 
         $existing = Memory::create([
             'title' => 'Migration idempotente com guardas hasColumn',
-            'description' => 'já registrado',
+            'description' => 'Guardas Schema::hasColumn por coluna evitam duplicate column ao rodar migrations em bancos com drift.',
             'type' => MemoryType::ERROR,
+            'stack' => 'Laravel',
             'recurrence_count' => 2,
         ]);
 
@@ -102,6 +103,39 @@ class CurateCaptureJobTest extends TestCase
         $this->assertSame(1, Memory::count());
         $this->assertSame($existing->id, $capture->fresh()->memory_id);
         $this->assertSame('deduplicated', CurationExecution::first()->outcome);
+        $this->assertTrue($capture->fresh()->metadata['dedup']['independent']);
+    }
+
+    public function test_same_incident_links_capture_without_incrementing_recurrence(): void
+    {
+        Http::fake(['*' => Http::response($this->fakeDraftResponse())]);
+
+        $existing = Memory::create([
+            'title' => 'Migration idempotente com guardas hasColumn',
+            'description' => 'Guardas Schema::hasColumn por coluna evitam duplicate column ao rodar migrations em bancos com drift.',
+            'type' => MemoryType::ERROR,
+            'stack' => 'Laravel',
+            'recurrence_count' => 2,
+        ]);
+
+        $service = new CaptureService(new CaptureSanitizer);
+
+        $previous = $service->ingest(
+            'Primeira captura do incidente de migration',
+            'claude-code', 'bug_resolved', 'dev-memory-laravel', ['commit' => 'abc123'],
+        );
+        $previous->update(['memory_id' => $existing->id]);
+
+        $capture = $service->ingest(
+            'Outro relato do mesmo bug de migration com duplicate column no drift',
+            'claude-code', 'bug_resolved', 'dev-memory-laravel', ['commit' => 'abc123'],
+        );
+        CurateCaptureJob::dispatchSync($capture);
+
+        $capture->refresh();
+        $this->assertSame($existing->id, $capture->memory_id);
+        $this->assertSame(2, $existing->fresh()->recurrence_count);
+        $this->assertFalse($capture->metadata['dedup']['independent']);
     }
 
     public function test_discards_low_confidence_draft(): void
