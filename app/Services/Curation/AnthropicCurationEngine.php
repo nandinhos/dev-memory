@@ -68,7 +68,7 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
                 ])
                 ->post('/v1/messages', [
                     'model' => $this->model,
-                    'max_tokens' => 2500,
+                    'max_tokens' => 6000,
                     'temperature' => self::TEMPERATURE,
                     'system' => $systemPrompt,
                     'messages' => $messages,
