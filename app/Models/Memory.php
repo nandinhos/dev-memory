@@ -97,4 +97,14 @@ class Memory extends Model
     {
         return $query->where('validation_status', ValidationStatus::VALIDATED);
     }
+
+    public function scopeSkillCandidates($query, int $minRecurrence = 3)
+    {
+        return $query->validated()->where('recurrence_count', '>=', $minRecurrence);
+    }
+
+    public function skillGroups()
+    {
+        return $this->belongsToMany(SkillGroup::class);
+    }
 }
