@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentationValidationStatus;
 use App\Enums\MemoryScope;
 use App\Enums\MemorySource;
 use App\Enums\MemoryType;
@@ -24,6 +25,7 @@ class Memory extends Model
         'stack',
         'scope',
         'validation_status',
+        'doc_validation_status',
         'official_reference',
         'recurrence_count',
         // Extended fields
@@ -41,6 +43,7 @@ class Memory extends Model
         'type' => MemoryType::class,
         'scope' => MemoryScope::class,
         'validation_status' => ValidationStatus::class,
+        'doc_validation_status' => DocumentationValidationStatus::class,
         'source_system' => MemorySource::class,
         'severity' => Severity::class,
         'recurrence_count' => 'integer',

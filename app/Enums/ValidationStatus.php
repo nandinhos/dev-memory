@@ -7,6 +7,7 @@ enum ValidationStatus: string
     case PENDING = 'pending';
     case VALIDATED = 'validated';
     case REJECTED = 'rejected';
+    case SUPERSEDED = 'superseded';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum ValidationStatus: string
             self::PENDING => 'Pendente',
             self::VALIDATED => 'Validado',
             self::REJECTED => 'Rejeitado',
+            self::SUPERSEDED => 'Substituído',
         };
     }
 
@@ -23,6 +25,7 @@ enum ValidationStatus: string
             self::PENDING => 'bg-neo-salmon',
             self::VALIDATED => 'bg-neo-green',
             self::REJECTED => 'bg-gray-400',
+            self::SUPERSEDED => 'bg-neo-purple',
         };
     }
 }
