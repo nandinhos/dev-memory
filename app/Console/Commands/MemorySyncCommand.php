@@ -19,18 +19,19 @@ class MemorySyncCommand extends Command
         $action = $this->argument('action');
         $status = $this->option('status');
 
-        $this->info("=== Memory Sync ===");
+        $this->info('=== Memory Sync ===');
 
         $sync = new VpsHubSyncService;
 
         // Check connection
         if (! $sync->isConnected()) {
-            $this->error("Cannot connect to VPS HUB (root@187.108.197.199:6985)");
-            $this->line("Make sure SSH socket is available at /tmp/devorq-hub.sock");
+            $this->error('Cannot connect to VPS HUB (root@187.108.197.199:6985)');
+            $this->line('Make sure SSH socket is available at /tmp/devorq-hub.sock');
+
             return self::FAILURE;
         }
 
-        $this->info("Connected to VPS HUB ✓");
+        $this->info('Connected to VPS HUB ✓');
 
         return match ($action) {
             'pull' => $this->pull($sync, $status),
@@ -52,7 +53,8 @@ class MemorySyncCommand extends Command
         $this->info("Found {$count} memories in VPS HUB ({$status})");
 
         if ($count === 0) {
-            $this->line("Nothing to pull.");
+            $this->line('Nothing to pull.');
+
             return self::SUCCESS;
         }
 
@@ -63,10 +65,10 @@ class MemorySyncCommand extends Command
         }
 
         if ($count > 10) {
-            $this->line("  ... and " . ($count - 10) . " more");
+            $this->line('  ... and '.($count - 10).' more');
         }
 
-        $this->warn("Pull imports memories FROM VPS HUB to local DB — not yet implemented.");
+        $this->warn('Pull imports memories FROM VPS HUB to local DB — not yet implemented.');
         $this->line("Use 'memory:sync push' to push local memories to VPS HUB.");
 
         return self::SUCCESS;
@@ -85,7 +87,7 @@ class MemorySyncCommand extends Command
 
     private function syncAll(VpsHubSyncService $sync): int
     {
-        $this->info("Syncing ALL local memories to VPS HUB...");
+        $this->info('Syncing ALL local memories to VPS HUB...');
 
         $results = $sync->syncAll();
 
@@ -101,8 +103,8 @@ class MemorySyncCommand extends Command
 
     private function status(VpsHubSyncService $sync): int
     {
-        $this->info("VPS HUB Memory Status");
-        $this->line("");
+        $this->info('VPS HUB Memory Status');
+        $this->line('');
 
         $statuses = ['pending', 'validated', 'rejected', 'superseded'];
         $hubPath = '/var/devorq/hub/memories';
@@ -116,7 +118,7 @@ class MemorySyncCommand extends Command
             $this->line("  {$label} {$bar} ({$count})");
         }
 
-        $this->line("");
+        $this->line('');
         $metricsPath = '/var/devorq/hub/metrics';
         $cmd = "ssh -p 6985 -o ControlPath=/tmp/devorq-hub.sock root@187.108.197.199 \"ls {$metricsPath}/ 2>/dev/null\"";
         $metrics = trim(shell_exec($cmd) ?? '');
@@ -130,12 +132,12 @@ class MemorySyncCommand extends Command
 
     private function metrics(VpsHubSyncService $sync): int
     {
-        $this->info("Syncing metrics to VPS HUB...");
+        $this->info('Syncing metrics to VPS HUB...');
 
         $metricsService = new MemoryMetricsService;
         $sync->syncMetrics($metricsService);
 
-        $this->info("Metrics synced to /var/devorq/hub/metrics/");
+        $this->info('Metrics synced to /var/devorq/hub/metrics/');
 
         return self::SUCCESS;
     }
@@ -143,7 +145,8 @@ class MemorySyncCommand extends Command
     private function unknownAction(string $action): int
     {
         $this->error("Unknown action: {$action}");
-        $this->line("Valid actions: pull, push, sync-all, status, metrics");
+        $this->line('Valid actions: pull, push, sync-all, status, metrics');
+
         return self::FAILURE;
     }
 }

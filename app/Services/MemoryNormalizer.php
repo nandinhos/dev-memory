@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\MemorySource;
 use App\Enums\MemoryType;
 use App\Enums\Severity;
 use App\Enums\ValidationStatus;
@@ -138,7 +137,7 @@ class MemoryNormalizer
 
         // Truncate if too long (4000 chars max for DB text)
         if (strlen($description) > 4000) {
-            $description = substr($description, 0, 3997) . '...';
+            $description = substr($description, 0, 3997).'...';
         }
 
         return $description;
@@ -161,8 +160,8 @@ class MemoryNormalizer
         }
 
         $knownStacks = ['Laravel', 'PHP', 'Docker', 'Filament', 'Livewire', 'TypeScript',
-                        'Node', 'MySQL', 'PostgreSQL', 'Redis', 'Vite', 'Tailwind',
-                        'Coreops', 'MCP', 'Context7', 'devorq', 'SQLite'];
+            'Node', 'MySQL', 'PostgreSQL', 'Redis', 'Vite', 'Tailwind',
+            'Coreops', 'MCP', 'Context7', 'devorq', 'SQLite'];
 
         foreach ($knownStacks as $stack) {
             if (in_array($stack, $tags, true)) {

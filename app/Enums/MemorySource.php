@@ -16,6 +16,7 @@ enum MemorySource: string
     case HANDOVER = 'handover';
     case E2E_AUDIT = 'e2e_audit';
     case SKILL_DOCS = 'skill_docs';
+    case CAPTURE = 'capture';
 
     public function label(): string
     {
@@ -32,6 +33,7 @@ enum MemorySource: string
             self::HANDOVER => 'Handover',
             self::E2E_AUDIT => 'E2E Audit',
             self::SKILL_DOCS => 'Skill Docs',
+            self::CAPTURE => 'Pipeline de Captura',
         };
     }
 }

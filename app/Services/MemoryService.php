@@ -58,6 +58,31 @@ class MemoryService
         return $memory->fresh();
     }
 
+    /**
+     * Find an existing memory with the same (or nearly the same) title.
+     * Deterministic dedup for the capture pipeline: normalized equality
+     * or Levenshtein distance <= 3. Semantic dedup arrives in P5.
+     */
+    public function findSimilarByTitle(string $title): ?Memory
+    {
+        $normalized = $this->normalizeTitle($title);
+
+        return Memory::query()
+            ->get(['id', 'title'])
+            ->first(function (Memory $memory) use ($normalized) {
+                $candidate = $this->normalizeTitle($memory->title);
+
+                return $candidate === $normalized
+                    || (mb_strlen($candidate) < 200 && levenshtein($candidate, $normalized) <= 3);
+            })
+            ?->fresh();
+    }
+
+    private function normalizeTitle(string $title): string
+    {
+        return mb_strtolower(trim(preg_replace('/\s+/', ' ', $title)));
+    }
+
     public function validate(Memory $memory): Memory
     {
         $memory->update(['validation_status' => ValidationStatus::VALIDATED]);

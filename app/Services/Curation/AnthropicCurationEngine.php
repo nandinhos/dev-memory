@@ -13,6 +13,10 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 {
     private const MAX_ATTEMPTS = 3;
 
+    private const TEMPERATURE = 0.1;
+
+    public const PROMPT_VERSION = 'lesson-preparation@1.1.0';
+
     public ?array $lastUsage = null;
 
     public int $lastAttempts = 0;
@@ -51,7 +55,7 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
                 ->post('/v1/messages', [
                     'model' => $this->model,
                     'max_tokens' => 2500,
-                    'temperature' => 0.1,
+                    'temperature' => self::TEMPERATURE,
                     'system' => $this->systemPrompt(),
                     'messages' => $messages,
                 ]);
@@ -86,6 +90,18 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
             'processing_failed após '.self::MAX_ATTEMPTS.' tentativas: '.$lastError?->getMessage(),
             previous: $lastError,
         );
+    }
+
+    public function lastMeta(): array
+    {
+        return [
+            'provider' => 'minimax',
+            'model' => $this->model,
+            'prompt_version' => self::PROMPT_VERSION,
+            'temperature' => self::TEMPERATURE,
+            'attempts' => $this->lastAttempts,
+            'usage' => $this->lastUsage,
+        ];
     }
 
     /**

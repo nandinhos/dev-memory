@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Memory;
-use Illuminate\Support\Facades\DB;
 
 class MemoryMetricsService
 {
@@ -98,7 +97,7 @@ class MemoryMetricsService
                     continue;
                 }
 
-                $key = min($memory->id, $other->id) . '-' . max($memory->id, $other->id);
+                $key = min($memory->id, $other->id).'-'.max($memory->id, $other->id);
                 if (in_array($key, $checked)) {
                     continue;
                 }

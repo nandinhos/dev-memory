@@ -8,8 +8,11 @@ use Illuminate\Support\Facades\Log;
 class VpsHubSyncService
 {
     private string $sshHost = 'root@187.108.197.199';
+
     private string $sshPort = '6985';
+
     private string $sshSocket = '/tmp/devorq-hub.sock';
+
     private string $hubPath = '/var/devorq/hub/memories';
 
     private string $sshCmd;
@@ -25,6 +28,7 @@ class VpsHubSyncService
     public function isConnected(): bool
     {
         $output = shell_exec("{$this->sshCmd} 'echo ok' 2>/dev/null");
+
         return trim($output ?? '') === 'ok';
     }
 
@@ -150,10 +154,10 @@ class VpsHubSyncService
             }
             // Ensure it's a valid JSON object
             if (! str_starts_with($jsonString, '{')) {
-                $jsonString = '{' . $jsonString;
+                $jsonString = '{'.$jsonString;
             }
             if (! str_ends_with($jsonString, '}')) {
-                $jsonString = $jsonString . '}';
+                $jsonString = $jsonString.'}';
             }
 
             $decoded = json_decode($jsonString, true);
@@ -172,6 +176,7 @@ class VpsHubSyncService
     {
         // Simple approach: split by }\n{
         $parts = preg_split('/\}\s*\{/', $output);
+
         return $parts;
     }
 
