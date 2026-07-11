@@ -43,7 +43,24 @@ class DocumentationValidator
             fn (array $json) => DocumentationVerdict::fromArray($json),
         );
 
-        return DocValidationOutcome::fromVerdict($verdict, $libraryId, $this->engine->lastMeta());
+        return DocValidationOutcome::fromVerdict(
+            $verdict,
+            $libraryId,
+            $this->engine->lastMeta(),
+            $this->extractSources($docText),
+        );
+    }
+
+    /**
+     * Deterministic source traceability: Context7 excerpts carry
+     * "Source: https://..." lines pointing to the official page each
+     * snippet came from. These URLs anchor the memory's evidence.
+     */
+    private function extractSources(string $docText): array
+    {
+        preg_match_all('/^Source:\s*(https?:\/\/\S+)/mi', $docText, $matches);
+
+        return array_values(array_unique($matches[1]));
     }
 
     private function primaryTechnology(Memory $memory): ?string
@@ -100,6 +117,7 @@ class DocValidationOutcome
         public ?string $libraryId,
         public ?string $note,
         public ?array $engineMeta,
+        public array $sources = [],
     ) {}
 
     public static function inconclusive(string $note): self
@@ -113,14 +131,19 @@ class DocValidationOutcome
         );
     }
 
-    public static function fromVerdict(DocumentationVerdict $verdict, string $libraryId, array $engineMeta): self
-    {
+    public static function fromVerdict(
+        DocumentationVerdict $verdict,
+        string $libraryId,
+        array $engineMeta,
+        array $sources = [],
+    ): self {
         return new self(
             status: $verdict->status,
             verdict: $verdict,
             libraryId: $libraryId,
             note: null,
             engineMeta: $engineMeta,
+            sources: $sources,
         );
     }
 
@@ -129,6 +152,7 @@ class DocValidationOutcome
         return array_filter([
             'verdict' => $this->verdict?->toArray(),
             'library' => $this->libraryId,
+            'sources' => $this->sources !== [] ? $this->sources : null,
             'note' => $this->note,
             'engine' => $this->engineMeta,
         ], fn ($value) => $value !== null);
