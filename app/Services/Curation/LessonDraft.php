@@ -2,11 +2,19 @@
 
 namespace App\Services\Curation;
 
+use App\Enums\MemoryType;
 use InvalidArgumentException;
 
 class LessonDraft
 {
-    public const CATEGORIES = ['error', 'lesson', 'best_practice'];
+    /**
+     * Valid categories mirror MemoryType so the engine contract and the
+     * domain enum can never drift apart.
+     */
+    public static function categories(): array
+    {
+        return array_column(MemoryType::cases(), 'value');
+    }
 
     public function __construct(
         public string $title,
@@ -43,8 +51,8 @@ class LessonDraft
             }
         }
 
-        if (isset($data['category']) && ! in_array($data['category'], self::CATEGORIES, true)) {
-            $errors[] = "campo 'category' deve ser um de: ".implode('|', self::CATEGORIES);
+        if (isset($data['category']) && ! in_array($data['category'], self::categories(), true)) {
+            $errors[] = "campo 'category' deve ser um de: ".implode('|', self::categories());
         }
 
         if (array_key_exists('root_cause', $data) && $data['root_cause'] !== null && ! is_string($data['root_cause'])) {

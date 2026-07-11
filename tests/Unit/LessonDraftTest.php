@@ -64,6 +64,14 @@ class LessonDraftTest extends TestCase
         LessonDraft::fromArray($this->validPayload(['category' => 'jailbreak']));
     }
 
+    public function test_accepts_expanded_categories(): void
+    {
+        foreach (['workaround', 'architecture_decision', 'anti_pattern'] as $category) {
+            $draft = LessonDraft::fromArray($this->validPayload(['category' => $category]));
+            $this->assertSame($category, $draft->category);
+        }
+    }
+
     public function test_rejects_confidence_out_of_range(): void
     {
         $this->expectException(InvalidArgumentException::class);
