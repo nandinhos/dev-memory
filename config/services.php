@@ -41,4 +41,9 @@ return [
         'model' => env('MINIMAX_MODEL', 'MiniMax-M2.5'),
     ],
 
+    'context7' => [
+        'base_url' => env('CONTEXT7_BASE_URL', 'https://context7.com/api/v1'),
+        'api_key' => env('CONTEXT7_API_KEY'),
+    ],
+
 ];

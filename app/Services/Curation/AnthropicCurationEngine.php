@@ -36,8 +36,22 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 
     public function prepare(string $capture): LessonDraft
     {
+        return $this->completeJson(
+            $this->systemPrompt(),
+            "CAPTURA:\n".$capture,
+            fn (array $json) => LessonDraft::fromArray($json),
+        );
+    }
+
+    /**
+     * Generic grounded JSON completion with schema repair: the validator
+     * callback throws on contract violations and its message drives up to
+     * two repair attempts. Shared by draft preparation and doc validation.
+     */
+    public function completeJson(string $systemPrompt, string $userContent, callable $validator): mixed
+    {
         $messages = [
-            ['role' => 'user', 'content' => "CAPTURA:\n".$capture],
+            ['role' => 'user', 'content' => $userContent],
         ];
 
         $lastError = null;
@@ -56,7 +70,7 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
                     'model' => $this->model,
                     'max_tokens' => 2500,
                     'temperature' => self::TEMPERATURE,
-                    'system' => $this->systemPrompt(),
+                    'system' => $systemPrompt,
                     'messages' => $messages,
                 ]);
 
@@ -74,7 +88,7 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
                 ->implode('');
 
             try {
-                return LessonDraft::fromArray($this->extractJson($text));
+                return $validator($this->extractJson($text));
             } catch (Throwable $e) {
                 $lastError = $e;
                 $messages[] = ['role' => 'assistant', 'content' => $text];

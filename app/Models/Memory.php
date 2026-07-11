@@ -26,6 +26,8 @@ class Memory extends Model
         'scope',
         'validation_status',
         'doc_validation_status',
+        'doc_validation_report',
+        'doc_validated_at',
         'official_reference',
         'recurrence_count',
         // Extended fields
@@ -44,6 +46,8 @@ class Memory extends Model
         'scope' => MemoryScope::class,
         'validation_status' => ValidationStatus::class,
         'doc_validation_status' => DocumentationValidationStatus::class,
+        'doc_validation_report' => 'array',
+        'doc_validated_at' => 'datetime',
         'source_system' => MemorySource::class,
         'severity' => Severity::class,
         'recurrence_count' => 'integer',

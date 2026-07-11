@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Services\Curation\DocumentationVerdict;
 use App\Services\Curation\LessonDraft;
 use App\Services\Curation\PromotionPolicy;
 use PHPUnit\Framework\TestCase;
@@ -40,5 +41,22 @@ class PromotionPolicyTest extends TestCase
         $this->assertFalse($decision->persist);
         $this->assertNotEmpty($decision->reasons);
         $this->assertStringContainsString('confidence', $decision->reasons[0]);
+    }
+
+    public function test_auto_validates_only_confirmed_with_high_confidence(): void
+    {
+        $policy = new PromotionPolicy;
+
+        $verdict = fn (string $status, float $confidence) => DocumentationVerdict::fromArray([
+            'status' => $status,
+            'claims' => [['claim' => 'afirmação', 'verdict' => 'supported']],
+            'version_constraints' => [],
+            'confidence' => $confidence,
+        ]);
+
+        $this->assertTrue($policy->shouldAutoValidate($verdict('confirmed', 0.8)));
+        $this->assertFalse($policy->shouldAutoValidate($verdict('confirmed', 0.79)));
+        $this->assertFalse($policy->shouldAutoValidate($verdict('partially_confirmed', 0.95)));
+        $this->assertFalse($policy->shouldAutoValidate($verdict('contradicted', 0.95)));
     }
 }
