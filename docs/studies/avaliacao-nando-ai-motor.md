@@ -1,7 +1,7 @@
 # Avaliação — `nando/ai-motor` como motor do dev-memory
 
 **Data:** 2026-07-15
-**Status:** backlog (não adotar como dependência agora; reavaliar se surgir necessidade de pluggability de provider)
+**Status:** DESCARTADO para o dev-memory (decisão de 2026-07-15). O `nando/ai-motor` é um projeto beta para explorar possibilidades em OUTROS projetos; não casa com o dev-memory, cuja inteligência de curadoria já é mais capaz. Sem Filament e sem ai-motor no dev-memory. A UI administrativa evolui a partir da UI Livewire/neo existente + autenticação.
 **Pacote:** `/home/nandodev/projects/teste/nando-ai-laravel` (`nando/ai-motor`) — 20 commits, ~4 dias (11/07/2026), tags v1.0.0→v1.2.0
 
 ---
