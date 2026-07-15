@@ -106,3 +106,9 @@ Fonte primária: `storage/app/private/curation/pilot-memories-20260711-012148.js
 **Gates:** Schema ≥ 95% **PASS** · Segredo = 0 **FAIL** (⇒ sanitização determinística da fase P2 é pré-requisito obrigatório antes de qualquer automação) · Classificação ≥ 85% **FAIL** no agregado (a fronteira lesson/best_practice precisa de definição operacional no prompt — ou aceitar as duas como equivalentes no gate).
 
 Relatórios primários: `storage/app/private/curation/pilot-eval-20260711-011834.json` e `pilot-memories-20260711-012148.json`.
+
+---
+
+## 7. Execução da Limpeza
+
+Autorizada pelo Nando e executada em **2026-07-10**: os 14 registros espúrios foram **soft-deletados** (recuperáveis via `deleted_at`). Verificação pós-limpeza: **32 memórias ativas** · **22 candidatas a skill** (validadas, recurrence ≥ 3) · topo do ranking de recorrência: **"Validação: sempre Form Requests, nunca inline" (10)**.
