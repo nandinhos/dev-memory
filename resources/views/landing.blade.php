@@ -57,26 +57,32 @@
                 </div>
             </div>
 
-            {{-- Terminal visual --}}
+            {{-- Terminal macOS adaptado ao neo (mesmo padrão do componente code-block) --}}
             <div class="reveal">
-                <div class="bg-neo-white neo-border shadow-neo-xl scanlines-crt overflow-hidden">
-                    <div class="h-10 bg-black flex items-center px-4 gap-2">
-                        <span class="w-3 h-3 rounded-full bg-red-500 border border-black/40"></span>
-                        <span class="w-3 h-3 rounded-full bg-yellow-500 border border-black/40"></span>
-                        <span class="w-3 h-3 rounded-full bg-green-500 border border-black/40"></span>
-                        <span class="ml-2 text-[10px] font-mono text-gray-400 uppercase tracking-widest">dev-memory — mcp</span>
+                <div class="code-block neo-border shadow-neo-xl overflow-hidden relative">
+                    {{-- Titlebar macOS --}}
+                    <div class="flex items-center gap-2 px-4 py-2.5 border-b-4 border-black" style="background-color:#2a2a3e;">
+                        <span class="w-3 h-3 rounded-full border-2 border-black/30 flex-shrink-0" style="background:#ff5f57;"></span>
+                        <span class="w-3 h-3 rounded-full border-2 border-black/30 flex-shrink-0" style="background:#febc2e;"></span>
+                        <span class="w-3 h-3 rounded-full border-2 border-black/30 flex-shrink-0" style="background:#28c840;"></span>
+                        <span class="mx-auto font-mono text-[10px] uppercase font-bold tracking-widest" style="color:#7f849c;">dev-memory — mcp</span>
+                        <span class="w-3 h-3 flex-shrink-0"></span>
                     </div>
-                    <pre class="text-xs md:text-sm font-mono p-5 leading-relaxed overflow-x-auto m-0"><span class="text-gray-400"># antes de implementar:</span>
+                    {{-- Corpo Catppuccin Mocha + CRT --}}
+                    <div class="relative overflow-hidden" style="background-color:#1e1e2e;">
+                        <div class="crt-overlay opacity-5"></div>
+                        <pre class="relative z-20 text-xs md:text-sm font-mono leading-relaxed overflow-x-auto m-0" style="color:#cdd6f4; padding:1.5rem 1.25rem;"><span class="text-gray-500"># antes de implementar:</span>
 &gt; <span class="text-neo-magenta">hub_briefing</span>(stack: <span class="text-neo-teal">"Laravel"</span>)
   <span class="text-gray-500">↳ 8 riscos conhecidos, 6 padrões aprovados</span>
 
-<span class="text-gray-400"># máquina limpa, seu setup de volta:</span>
+<span class="text-gray-500"># máquina limpa, seu setup de volta:</span>
 &gt; <span class="text-neo-magenta">harness_provision</span>(<span class="text-neo-teal">"claude-code"</span>)
   <span class="text-gray-500">↳ plano de instalação pronto</span>
 
-<span class="text-gray-400"># bug resolvido → vira conhecimento:</span>
+<span class="text-gray-500"># bug resolvido → vira conhecimento:</span>
 &gt; <span class="text-neo-magenta">memory_ingest</span>(...)
   <span class="text-neo-green">↳ curado, validado, reutilizável ✓</span></pre>
+                    </div>
                 </div>
             </div>
         </div>
