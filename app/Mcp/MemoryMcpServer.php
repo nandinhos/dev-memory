@@ -6,8 +6,10 @@ use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Jobs\CurateCaptureJob;
 use App\Models\Memory;
+use App\Services\ConfirmationGuard;
 use App\Services\Curation\CaptureService;
 use App\Services\HubBriefingService;
+use App\Services\MemoryService;
 
 class MemoryMcpServer
 {
@@ -81,6 +83,56 @@ class MemoryMcpServer
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [],
+                ],
+            ],
+            'memory_update' => [
+                'name' => 'memory_update',
+                'description' => 'Atualiza campos de uma memória existente (título, descrição, tipo, stack, escopo)',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'string', 'description' => 'UUID da memória'],
+                        'title' => ['type' => 'string'],
+                        'description' => ['type' => 'string'],
+                        'type' => ['type' => 'string', 'enum' => ['error', 'lesson', 'best_practice', 'workaround', 'architecture_decision', 'anti_pattern']],
+                        'stack' => ['type' => 'string'],
+                        'scope' => ['type' => 'string', 'enum' => ['project', 'global']],
+                    ],
+                    'required' => ['id'],
+                ],
+            ],
+            'memory_validate' => [
+                'name' => 'memory_validate',
+                'description' => 'Marca uma memória como validada',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'string', 'description' => 'UUID da memória'],
+                    ],
+                    'required' => ['id'],
+                ],
+            ],
+            'memory_promote' => [
+                'name' => 'memory_promote',
+                'description' => 'Promove uma memória validada para escopo global (exige que já esteja validada)',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'string', 'description' => 'UUID da memória'],
+                    ],
+                    'required' => ['id'],
+                ],
+            ],
+            'memory_delete' => [
+                'name' => 'memory_delete',
+                'description' => 'Remove (soft-delete) uma memória. AÇÃO DESTRUTIVA: a primeira chamada retorna um preview + confirmation_token; chame novamente com o token para confirmar.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'string', 'description' => 'UUID da memória'],
+                        'confirmation_token' => ['type' => 'string', 'description' => 'Token retornado na primeira chamada, para confirmar a exclusão'],
+                    ],
+                    'required' => ['id'],
                 ],
             ],
             'hub_briefing' => [
@@ -171,6 +223,10 @@ class MemoryMcpServer
             'memory_get' => $this->toolMemoryGet($args),
             'memory_create' => $this->toolMemoryCreate($args),
             'memory_stats' => $this->toolMemoryStats(),
+            'memory_update' => $this->toolMemoryUpdate($args),
+            'memory_validate' => $this->toolMemoryValidate($args),
+            'memory_promote' => $this->toolMemoryPromote($args),
+            'memory_delete' => $this->toolMemoryDelete($args),
             'hub_briefing' => $this->toolHubBriefing($args),
             'memory_ingest' => $this->toolMemoryIngest($args),
             default => null,
@@ -337,6 +393,105 @@ class MemoryMcpServer
                 ->get()
                 ->toArray(),
         ];
+    }
+
+    private function toolMemoryUpdate(array $args): array
+    {
+        $memory = Memory::find($args['id'] ?? '');
+
+        if (! $memory) {
+            return ['error' => 'Memória não encontrada'];
+        }
+
+        $data = [];
+
+        foreach (['title', 'description', 'stack'] as $field) {
+            if (array_key_exists($field, $args)) {
+                $data[$field] = $args[$field];
+            }
+        }
+
+        if (isset($args['type'])) {
+            if (! in_array($args['type'], array_column(MemoryType::cases(), 'value'), true)) {
+                return ['error' => 'Tipo inválido'];
+            }
+            $data['type'] = $args['type'];
+        }
+
+        if (isset($args['scope'])) {
+            if (! in_array($args['scope'], array_column(MemoryScope::cases(), 'value'), true)) {
+                return ['error' => 'Escopo inválido'];
+            }
+            $data['scope'] = $args['scope'];
+        }
+
+        if ($data === []) {
+            return ['error' => 'Nenhum campo para atualizar'];
+        }
+
+        app(MemoryService::class)->update($memory, $data);
+
+        return ['success' => true, 'id' => $memory->id, 'message' => 'Memória atualizada'];
+    }
+
+    private function toolMemoryValidate(array $args): array
+    {
+        $memory = Memory::find($args['id'] ?? '');
+
+        if (! $memory) {
+            return ['error' => 'Memória não encontrada'];
+        }
+
+        app(MemoryService::class)->validate($memory);
+
+        return ['success' => true, 'id' => $memory->id, 'validation_status' => 'validated'];
+    }
+
+    private function toolMemoryPromote(array $args): array
+    {
+        $memory = Memory::find($args['id'] ?? '');
+
+        if (! $memory) {
+            return ['error' => 'Memória não encontrada'];
+        }
+
+        try {
+            app(MemoryService::class)->promoteToGlobal($memory);
+        } catch (\InvalidArgumentException $e) {
+            return ['error' => 'A memória precisa estar validada antes de promover a global'];
+        }
+
+        return ['success' => true, 'id' => $memory->id, 'scope' => 'global'];
+    }
+
+    private function toolMemoryDelete(array $args): array
+    {
+        $memory = Memory::find($args['id'] ?? '');
+
+        if (! $memory) {
+            return ['error' => 'Memória não encontrada'];
+        }
+
+        $guard = app(ConfirmationGuard::class);
+        $token = $args['confirmation_token'] ?? null;
+
+        if ($token !== null) {
+            if (! $guard->consume('memory_delete', $memory->id, $token)) {
+                return ['error' => 'Token de confirmação inválido ou expirado. Repita a operação sem token para obter um novo.'];
+            }
+
+            app(MemoryService::class)->delete($memory);
+
+            return ['success' => true, 'id' => $memory->id, 'message' => 'Memória removida (soft-delete, recuperável).'];
+        }
+
+        return $guard->challenge('memory_delete', $memory->id, [
+            'title' => $memory->title,
+            'type' => $memory->type->value,
+            'stack' => $memory->stack,
+            'recurrence_count' => $memory->recurrence_count,
+            'validation_status' => $memory->validation_status->value,
+        ]);
     }
 
     private function toolHubBriefing(array $args): array
