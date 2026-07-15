@@ -31,6 +31,7 @@ class Login extends Component
 
         if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
+            $this->dispatch('auth-failed');
 
             throw ValidationException::withMessages([
                 'email' => 'Credenciais inválidas.',
