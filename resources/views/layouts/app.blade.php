@@ -37,15 +37,24 @@
         </nav>
 
         <!-- Profile Area -->
+        @auth
         <div class="p-6 border-t-4 border-black bg-black/5 flex items-center gap-4">
-             <div class="profile-avatar">ND</div>
-             <div class="flex flex-col">
-                 <span class="font-heading font-black text-base uppercase leading-none">NANDO DEV</span>
+             <div class="profile-avatar">{{ Str::upper(Str::substr(auth()->user()->name, 0, 2)) }}</div>
+             <div class="flex flex-col flex-1 min-w-0">
+                 <span class="font-heading font-black text-base uppercase leading-none truncate">{{ auth()->user()->name }}</span>
                  <div class="mt-1">
                      <span class="badge-system-root">SYSTEM_ROOT</span>
                  </div>
              </div>
+             <form method="POST" action="{{ route('logout') }}">
+                 @csrf
+                 <button type="submit" title="Sair" aria-label="Sair"
+                         class="btn-neo bg-neo-magenta neo-border-sm shadow-neo px-3 py-2 font-heading text-xs hover:bg-neo-yellow transition-colors">
+                     &#x23Fb;
+                 </button>
+             </form>
         </div>
+        @endauth
     </aside>
 
     <!-- Main Content -->
