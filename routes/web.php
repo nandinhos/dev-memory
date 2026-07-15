@@ -2,6 +2,7 @@
 
 use App\Livewire\Admin\ApiTokens;
 use App\Livewire\Admin\CapturesInbox;
+use App\Livewire\Admin\HarnessProfiles;
 use App\Livewire\Admin\SkillGroupsReview;
 use App\Livewire\Admin\SkillsAdmin;
 use App\Livewire\Auth\Login;
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
     Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');
     Route::get('/admin/tokens', ApiTokens::class)->name('admin.tokens');
+    Route::get('/admin/harness', HarnessProfiles::class)->name('admin.harness');
 
     Route::post('/logout', function () {
         Auth::logout();

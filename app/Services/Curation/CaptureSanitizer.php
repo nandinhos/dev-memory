@@ -40,7 +40,11 @@ class CaptureSanitizer
         ],
     ];
 
-    public function sanitize(string $raw): SanitizationResult
+    /**
+     * @param  int|null  $maxLength  truncation cap; null disables truncation
+     *                               (used for config files that must stay intact)
+     */
+    public function sanitize(string $raw, ?int $maxLength = self::MAX_LENGTH): SanitizationResult
     {
         // Strip control characters (keeps \n, \r, \t)
         $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $raw);
@@ -55,8 +59,8 @@ class CaptureSanitizer
             }
         }
 
-        if (mb_strlen($text) > self::MAX_LENGTH) {
-            $text = mb_substr($text, 0, self::MAX_LENGTH).self::TRUNCATION_MARKER;
+        if ($maxLength !== null && mb_strlen($text) > $maxLength) {
+            $text = mb_substr($text, 0, $maxLength).self::TRUNCATION_MARKER;
             $redactions['truncated'] = 1;
         }
 

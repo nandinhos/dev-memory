@@ -2,12 +2,15 @@
 
 namespace App\Mcp;
 
+use App\Enums\HarnessType;
 use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Jobs\CurateCaptureJob;
+use App\Models\HarnessProfile;
 use App\Models\Memory;
 use App\Services\ConfirmationGuard;
 use App\Services\Curation\CaptureService;
+use App\Services\HarnessProfileService;
 use App\Services\HubBriefingService;
 use App\Services\MemoryService;
 
@@ -160,6 +163,58 @@ class MemoryMcpServer
                     'required' => ['content'],
                 ],
             ],
+            'harness_paths' => [
+                'name' => 'harness_paths',
+                'description' => 'Retorna os caminhos de configuração recomendados para capturar de um harness (ex: claude-code). Leia esses arquivos na máquina de origem e envie via harness_capture.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'harness' => ['type' => 'string', 'enum' => ['claude-code'], 'description' => 'Harness alvo'],
+                    ],
+                    'required' => ['harness'],
+                ],
+            ],
+            'harness_capture' => [
+                'name' => 'harness_capture',
+                'description' => 'Sobe (salva no hub) a configuração de um harness. Segredos são redigidos automaticamente. Envie os arquivos como lista de {path, content}.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'harness' => ['type' => 'string', 'enum' => ['claude-code']],
+                        'name' => ['type' => 'string', 'description' => 'Nome do perfil (ex: default, trabalho)', 'default' => 'default'],
+                        'description' => ['type' => 'string'],
+                        'files' => [
+                            'type' => 'array',
+                            'description' => 'Arquivos de config: [{path, content}]',
+                            'items' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'path' => ['type' => 'string'],
+                                    'content' => ['type' => 'string'],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'required' => ['harness', 'files'],
+                ],
+            ],
+            'harness_list' => [
+                'name' => 'harness_list',
+                'description' => 'Lista os perfis de harness salvos no hub',
+                'inputSchema' => ['type' => 'object', 'properties' => []],
+            ],
+            'harness_provision' => [
+                'name' => 'harness_provision',
+                'description' => 'Retorna o plano de instalação para replicar um perfil de harness numa máquina limpa (passos write_file + notas). Aplique os passos localmente.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'harness' => ['type' => 'string', 'enum' => ['claude-code']],
+                        'name' => ['type' => 'string', 'default' => 'default'],
+                    ],
+                    'required' => ['harness'],
+                ],
+            ],
         ];
     }
 
@@ -229,6 +284,10 @@ class MemoryMcpServer
             'memory_delete' => $this->toolMemoryDelete($args),
             'hub_briefing' => $this->toolHubBriefing($args),
             'memory_ingest' => $this->toolMemoryIngest($args),
+            'harness_paths' => $this->toolHarnessPaths($args),
+            'harness_capture' => $this->toolHarnessCapture($args),
+            'harness_list' => $this->toolHarnessList(),
+            'harness_provision' => $this->toolHarnessProvision($args),
             default => null,
         };
 
@@ -500,6 +559,98 @@ class MemoryMcpServer
             $args['stack'] ?? null,
             $args['description'] ?? null,
         );
+    }
+
+    private function resolveHarness(mixed $value): ?HarnessType
+    {
+        return HarnessType::tryFrom(is_string($value) ? $value : '');
+    }
+
+    private function toolHarnessPaths(array $args): array
+    {
+        $harness = $this->resolveHarness($args['harness'] ?? null);
+
+        if ($harness === null) {
+            return ['error' => 'Harness inválido'];
+        }
+
+        return [
+            'harness' => $harness->value,
+            'recommended_paths' => $harness->recommendedPaths(),
+            'note' => 'Leia os arquivos que existirem e envie via harness_capture como [{path, content}].',
+        ];
+    }
+
+    private function toolHarnessCapture(array $args): array
+    {
+        $harness = $this->resolveHarness($args['harness'] ?? null);
+
+        if ($harness === null) {
+            return ['error' => 'Harness inválido'];
+        }
+
+        $files = $args['files'] ?? null;
+
+        if (! is_array($files) || $files === []) {
+            return ['error' => 'files é obrigatório (lista de {path, content})'];
+        }
+
+        $profile = app(HarnessProfileService::class)->capture(
+            harness: $harness,
+            files: $files,
+            name: $args['name'] ?? 'default',
+            description: $args['description'] ?? null,
+        );
+
+        $redacted = collect($profile->files)
+            ->filter(fn ($f) => ! empty($f['redactions']))
+            ->pluck('path')
+            ->values()
+            ->all();
+
+        return [
+            'success' => true,
+            'harness' => $profile->harness->value,
+            'name' => $profile->name,
+            'version' => $profile->version,
+            'files_stored' => count($profile->files),
+            'files_with_redactions' => $redacted,
+            'message' => 'Configuração salva. Segredos foram redigidos automaticamente.',
+        ];
+    }
+
+    private function toolHarnessList(): array
+    {
+        return [
+            'profiles' => HarnessProfile::orderBy('harness')->orderBy('name')
+                ->get()
+                ->map(fn ($p) => [
+                    'harness' => $p->harness->value,
+                    'name' => $p->name,
+                    'version' => $p->version,
+                    'files' => count($p->files),
+                    'updated_at' => $p->updated_at->toIso8601String(),
+                ])->all(),
+        ];
+    }
+
+    private function toolHarnessProvision(array $args): array
+    {
+        $harness = $this->resolveHarness($args['harness'] ?? null);
+
+        if ($harness === null) {
+            return ['error' => 'Harness inválido'];
+        }
+
+        $profile = HarnessProfile::where('harness', $harness->value)
+            ->where('name', $args['name'] ?? 'default')
+            ->first();
+
+        if ($profile === null) {
+            return ['error' => 'Perfil não encontrado. Capture a configuração primeiro com harness_capture.'];
+        }
+
+        return app(HarnessProfileService::class)->provisionPlan($profile);
     }
 
     private function toolMemoryIngest(array $args): array
