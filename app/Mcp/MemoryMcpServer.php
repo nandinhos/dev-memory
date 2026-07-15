@@ -4,7 +4,10 @@ namespace App\Mcp;
 
 use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
+use App\Jobs\CurateCaptureJob;
 use App\Models\Memory;
+use App\Services\Curation\CaptureService;
+use App\Services\HubBriefingService;
 
 class MemoryMcpServer
 {
@@ -80,6 +83,31 @@ class MemoryMcpServer
                     'properties' => [],
                 ],
             ],
+            'hub_briefing' => [
+                'name' => 'hub_briefing',
+                'description' => 'Consulta preventiva ANTES de implementar: retorna riscos conhecidos, padrões aprovados, lições relevantes, problemas recorrentes e skills para o contexto (stack + descrição da tarefa)',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'stack' => ['type' => 'string', 'description' => 'Stack/tecnologia do contexto (ex: Laravel, Docker)'],
+                        'description' => ['type' => 'string', 'description' => 'Descrição da tarefa/feature a ser planejada'],
+                    ],
+                ],
+            ],
+            'memory_ingest' => [
+                'name' => 'memory_ingest',
+                'description' => 'Ingere um evento bruto (bug resolvido, decisão, lição) no pipeline de curadoria. O conteúdo é sanitizado, deduplicado e curado automaticamente numa memória.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'content' => ['type' => 'string', 'description' => 'Conteúdo bruto do evento'],
+                        'source' => ['type' => 'string', 'description' => 'Origem (ex: claude-code, codex)', 'default' => 'mcp'],
+                        'trigger' => ['type' => 'string', 'description' => 'Gatilho (ex: bug_resolved, decision)'],
+                        'project' => ['type' => 'string', 'description' => 'Projeto de origem'],
+                    ],
+                    'required' => ['content'],
+                ],
+            ],
         ];
     }
 
@@ -143,6 +171,8 @@ class MemoryMcpServer
             'memory_get' => $this->toolMemoryGet($args),
             'memory_create' => $this->toolMemoryCreate($args),
             'memory_stats' => $this->toolMemoryStats(),
+            'hub_briefing' => $this->toolHubBriefing($args),
+            'memory_ingest' => $this->toolMemoryIngest($args),
             default => null,
         };
 
@@ -306,6 +336,43 @@ class MemoryMcpServer
                 ->limit(5)
                 ->get()
                 ->toArray(),
+        ];
+    }
+
+    private function toolHubBriefing(array $args): array
+    {
+        return app(HubBriefingService::class)->briefing(
+            $args['stack'] ?? null,
+            $args['description'] ?? null,
+        );
+    }
+
+    private function toolMemoryIngest(array $args): array
+    {
+        $content = $args['content'] ?? '';
+
+        if (trim($content) === '') {
+            return ['error' => 'content é obrigatório'];
+        }
+
+        $capture = app(CaptureService::class)->ingest(
+            rawContent: $content,
+            sourceSystem: $args['source'] ?? 'mcp',
+            triggerEvent: $args['trigger'] ?? null,
+            sourceProject: $args['project'] ?? null,
+        );
+
+        if ($capture->wasRecentlyCreated) {
+            CurateCaptureJob::dispatch($capture);
+        }
+
+        return [
+            'capture_id' => $capture->id,
+            'status' => $capture->status->value,
+            'deduplicated' => ! $capture->wasRecentlyCreated,
+            'message' => $capture->wasRecentlyCreated
+                ? 'Captura recebida e enfileirada para curadoria.'
+                : 'Captura idêntica já existente — ignorada (idempotência).',
         ];
     }
 

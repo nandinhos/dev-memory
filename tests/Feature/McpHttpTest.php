@@ -48,7 +48,7 @@ class McpHttpTest extends TestCase
             ->assertJsonPath('result.serverInfo.name', 'dev-memory-mcp');
     }
 
-    public function test_tools_list_returns_the_five_tools(): void
+    public function test_tools_list_exposes_the_expected_tools(): void
     {
         $token = $this->tokenFor(User::factory()->create());
 
@@ -56,8 +56,10 @@ class McpHttpTest extends TestCase
             ->assertOk();
 
         $tools = collect($response->json('result.tools'))->pluck('name');
-        $this->assertCount(5, $tools);
-        $this->assertContains('memory_search', $tools);
+
+        foreach (['memory_list', 'memory_search', 'memory_get', 'memory_create', 'memory_stats', 'hub_briefing', 'memory_ingest'] as $expected) {
+            $this->assertContains($expected, $tools);
+        }
     }
 
     public function test_tools_call_stats_executes(): void
