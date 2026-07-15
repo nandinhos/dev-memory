@@ -15,22 +15,34 @@ Sistema de memória técnica para capturar, organizar e reutilizar aprendizados 
 
 ```
 app/
-├── Enums/
-│   ├── MemoryScope.php       # Escopo: project | global
-│   ├── MemoryType.php       # Tipo: error | lesson | best_practice
-│   └── ValidationStatus.php # Status: pending | validated | rejected
+├── Enums/                    # MemoryType (6 tipos), MemoryScope, ValidationStatus,
+│                             # DocumentationValidationStatus, MemorySource, Severity,
+│                             # CaptureStatus, SkillGroupStatus, SkillStatus
 ├── Livewire/
-│   ├── Dashboard.php         # Página inicial com estatísticas
-│   ├── MemoryForm.php        # Formulário criar/editar memória
-│   ├── MemoryList.php        # Listagem com filtros
-│   └── MemoryDetail.php      # Visualização detalhada
-├── Models/
-│   └── Memory.php            # Modelo principal com scopes
+│   ├── Auth/Login.php        # Login (design neo)
+│   ├── Dashboard/List/Form/Detail.php   # Gestão de memórias
+│   └── Admin/                # Painel do pipeline: CapturesInbox, SkillGroupsReview,
+│                             # SkillsAdmin, ApiTokens
+├── Models/                   # Memory, Capture, CurationExecution, SkillGroup, Skill, ApiToken
 ├── Services/
-│   └── MemoryService.php     # Lógica de negócio
-└── Mcp/
-    └── MemoryMcpServer.php    # Servidor MCP para IAs
+│   ├── MemoryService.php     # CRUD e regras de negócio
+│   ├── HubBriefingService.php # Consulta preventiva (briefing)
+│   ├── ConfirmationGuard.php # Confirmação de ações destrutivas
+│   └── Curation/             # Pipeline: CaptureService, CaptureSanitizer,
+│                             # AnthropicCurationEngine (MiniMax), DocumentationValidator
+│                             # (Context7), RecurrenceScorer, PromotionPolicy,
+│                             # SkillGroupProposer, SkillCompiler, SkillPublisher
+├── Jobs/                     # CurateCaptureJob, ValidateMemoryDocumentationJob
+├── Http/
+│   ├── Controllers/McpController.php     # Endpoint MCP remoto (HTTP)
+│   └── Middleware/AuthenticateMcpToken.php
+└── Mcp/MemoryMcpServer.php   # Servidor MCP (11 tools, stdio + HTTP)
 ```
+
+Pipeline de curadoria (P1–P6): captura imutável → sanitização determinística →
+curadoria com structured output (MiniMax) → política de promoção → recorrência composta →
+validação documental (Context7) → agrupamento e compilação de skills com rastreabilidade de fonte →
+publicação em repositório git. Detalhes em `docs/plans/essencia-inicial.md`.
 
 ## Modelo de Dados
 
@@ -47,50 +59,53 @@ app/
 | `official_reference` | text | Link/documento oficial |
 | `recurrence_count` | int | Contagem de reutilizações |
 
+## Autenticação
+
+Todo o app web exige login (`/login`, design neo). Crie o admin com:
+
+```bash
+php artisan memory:make-admin
+```
+
+As rotas web ficam sob middleware `auth`; guests são redirecionados para `/login`.
+
 ## Rotas
 
-| Método | URI | Componente | Descrição |
-|--------|-----|------------|-----------|
-| GET | `/` | Dashboard | Visão geral com estatísticas |
-| GET | `/memories` | MemoryList | Listar memórias com filtros |
-| GET | `/memories/create` | MemoryForm | Criar nova memória |
-| GET | `/memories/{id}` | MemoryDetail | Ver detalhes |
-| GET | `/memories/{id}/edit` | MemoryForm | Editar memória |
-
-## Filtros Disponíveis
-
-- **type**: error, lesson, best_practice
-- **stack**: busca parcial (ILIKE)
-- **scope**: project, global
-- **search**: busca em título e descrição
+| Método | URI | Descrição |
+|--------|-----|-----------|
+| GET | `/login` | Login (guest) |
+| POST | `/logout` | Logout |
+| GET | `/` | Dashboard |
+| GET | `/memories`, `/memories/create`, `/memories/{id}`, `/memories/{id}/edit` | Gestão de memórias |
+| GET | `/admin/captures` | Inbox de captures do pipeline |
+| GET | `/admin/skill-groups` | Revisão de agrupamentos de skills |
+| GET | `/admin/skills` | Gestão de skills (draft → aprovada → publicada) |
+| GET | `/admin/tokens` | Emissão/revogação de tokens MCP |
+| POST | `/api/mcp` | Endpoint MCP remoto (token de API) |
 
 ## MCP Tools
 
-O servidor MCP permite que IAs interajam com o sistema:
+O MCP é o **único caminho programático oficial** — tokenizado, com transportes stdio (local)
+e HTTP (remoto). São **11 tools**: leitura (`memory_list/search/get/stats`), escrita
+(`memory_create/update/validate/promote/delete`) e inteligência (`hub_briefing`, `memory_ingest`).
 
-```json
-{
-  "memory_list": "Lista memórias com filtros",
-  "memory_search": "Busca por texto em título/descrição",
-  "memory_get": "Retorna detalhes de uma memória",
-  "memory_create": "Cria nova memória",
-  "memory_stats": "Estatísticas gerais"
-}
-```
+`memory_delete` é destrutiva e exige confirmação em duas fases (preview + token single-use).
+
+📖 **Catálogo completo, argumentos e fluxo de confirmação: [`docs/mcp-tools.md`](docs/mcp-tools.md).**
 
 ### Configuração MCP
 
-Adicione ao `.mcp.json` do seu projeto:
-
+Local (stdio):
 ```json
-{
-  "mcpServers": {
-    "dev-memory": {
-      "command": "php",
-      "args": ["artisan", "mcp:serve"]
-    }
-  }
-}
+{ "mcpServers": { "dev-memory": { "command": "php", "args": ["artisan", "mcp:serve"] } } }
+```
+
+Remoto (HTTP, outro projeto) — gere o token na UI (**MCP_TOKENS**):
+```json
+{ "mcpServers": { "dev-memory": {
+  "type": "http", "url": "https://SEU-HUB/api/mcp",
+  "headers": { "Authorization": "Bearer <SEU_TOKEN>" }
+} } }
 ```
 
 ## Componentes UI (Neo Design System)
@@ -181,6 +196,22 @@ php artisan migrate:fresh --seed
 # Servidor MCP standalone
 php artisan mcp:serve
 ```
+
+### Comandos do Hub (pipeline de curadoria)
+
+```bash
+php artisan memory:make-admin          # Cria/redefine o admin do hub
+php artisan memory:import <fonte>      # Importa memórias de fontes locais
+php artisan memory:process-captures    # Despacha curadoria das captures pendentes
+php artisan memory:validate-docs       # Validação documental via Context7
+php artisan memory:group-skills        # Propõe agrupamentos de candidatas a skill
+php artisan memory:compile-skills      # Compila grupos aprovados em skills (draft)
+php artisan memory:publish-skills      # Publica skills aprovadas no repo git
+php artisan memory:curate --source=eval # Piloto de curadoria (medição de qualidade)
+```
+
+> O motor de curadoria usa MiniMax (API compatível com Anthropic) — configure `MINIMAX_API_KEY` no `.env`.
+> A validação documental usa Context7 (free tier funciona sem chave; `CONTEXT7_API_KEY` sobe limites).
 
 ## Environment
 

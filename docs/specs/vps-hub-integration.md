@@ -1,9 +1,15 @@
 # SPEC: dev-memory-laravel ↔ VPS HUB Integration
 
+> ⚠️ **SUPERADA (2026-07-15).** O modelo de ponte SSH descrito aqui foi **descartado** — o
+> `VpsHubSyncService` e os comandos SSH foram removidos por command injection e credenciais root
+> hardcoded. A arquitetura-alvo é o hub rodando NA VPS, acessível via **MCP remoto tokenizado**
+> (`POST /api/mcp`), não SSH. Ver `docs/plans/essencia-inicial.md`, `docs/mcp-tools.md` e
+> `docs/studies/estudo-hub-conhecimento-mcp.md`. Documento mantido apenas como histórico.
+
 **Versão:** 0.1.0  
 **Projeto:** dev-memory-laravel  
 **Data:** 2026-04-21  
-**Status:** brainstorming  
+**Status:** superada (era: brainstorming)  
 **Autor:** Nando / DEVORQ  
 
 ---

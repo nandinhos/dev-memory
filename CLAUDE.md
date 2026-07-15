@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This App Does
 
-**Dev Memory** is a knowledge base for capturing and reusing development learnings (errors, lessons, best practices) with MCP (Model Context Protocol) integration for AI assistants. Memories have type, scope (project/global), stack tag, and validation status (pending → validated/rejected).
+**Dev Memory** is a knowledge hub for capturing, curating and reusing development learnings (errors, lessons, best practices, workarounds, architecture decisions, anti-patterns). It is an **authenticated web app** (neo design system) plus a **remote MCP server** so any project connects over the network with a token. Memories flow through an async curation pipeline: external capture → sanitize → curate (MiniMax structured output) → documentation validation (Context7) → recurrence dedup → group & compile into versioned Skills (git-backed). The web UI administers the whole pipeline; programmatic access is MCP-only.
 
 ## Commands
 
@@ -48,38 +48,47 @@ php artisan test tests/Unit/MemoryServiceTest.php
 
 ### Data Flow
 ```
-HTTP Request → Livewire Component → MemoryService → Memory Model (Eloquent) → DB
-                                         ↑
-MCP Request → McpServeCommand → MemoryMcpServer → MemoryService
+Web (auth) → Livewire Component → MemoryService → Memory Model → DB
+MCP local (stdio)  → McpServeCommand ┐
+MCP remote (HTTP)  → McpController   ┴→ MemoryMcpServer → MemoryService / Curation
+External capture → memory_ingest → CaptureService → CurateCaptureJob (fila) → Memory
 ```
+Programmatic access is **MCP only** (the legacy `/api/memories` REST API was removed). Both MCP transports are authenticated; HTTP uses API tokens (`ApiToken`, `/admin/tokens`).
 
 ### Key Layers
 
-- **`app/Enums/`** — `MemoryType` (error/lesson/best_practice), `MemoryScope` (project/global), `ValidationStatus` (pending/validated/rejected)
-- **`app/Models/Memory.php`** — UUID PK, Eloquent scopes (filter, byType, byScope, validated, etc.)
-- **`app/Services/MemoryService.php`** — All business logic: CRUD, search, stats, scope promotion
-- **`app/Livewire/`** — Four full-page components: `Dashboard`, `MemoryList`, `MemoryForm`, `MemoryDetail`
-- **`app/Mcp/MemoryMcpServer.php`** — MCP protocol with 5 tools: `memory_list`, `memory_search`, `memory_get`, `memory_create`, `memory_stats`
-- **`resources/views/components/neo/`** — 12 reusable Blade UI components (neo brutalist design system)
+- **`app/Enums/`** — `MemoryType` (error/lesson/best_practice/workaround/architecture_decision/anti_pattern), `MemoryScope`, `ValidationStatus`, `DocumentationValidationStatus`, `MemorySource`, `Severity`, `CaptureStatus`, `SkillGroupStatus`, `SkillStatus`
+- **`app/Models/`** — `Memory` (UUID PK, scopes incl. `skillCandidates`), `Capture`, `CurationExecution`, `SkillGroup`, `Skill`, `ApiToken`
+- **`app/Services/MemoryService.php`** — CRUD, search, stats, promotion, dedup (`findSimilarByTitle`)
+- **`app/Services/HubBriefingService.php`** — preventive briefing aggregation; **`ConfirmationGuard`** — two-phase confirmation for destructive MCP actions
+- **`app/Services/Curation/`** — the pipeline: `CaptureService`+`CaptureSanitizer` (ingest/scrub), `AnthropicCurationEngine` (MiniMax structured output + repair), `DocumentationValidator`+`Context7Client` (grounded validation), `RecurrenceScorer`, `PromotionPolicy`, `SkillGroupProposer`, `SkillCompiler`, `SkillPublisher` (git)
+- **`app/Jobs/`** — `CurateCaptureJob`, `ValidateMemoryDocumentationJob` (async pipeline)
+- **`app/Livewire/`** — `Auth/Login`; memory pages (`Dashboard`, `MemoryList`, `MemoryForm`, `MemoryDetail`); `Admin/` (`CapturesInbox`, `SkillGroupsReview`, `SkillsAdmin`, `ApiTokens`)
+- **`app/Mcp/MemoryMcpServer.php`** — MCP with **11 tools** (stdio + HTTP). See `docs/mcp-tools.md` for the full catalog. `memory_delete` is destructive (two-phase confirmation)
+- **`app/Http/`** — `McpController` (remote MCP over HTTP), `AuthenticateMcpToken` middleware (`mcp.token`)
+- **`resources/views/components/neo/`** — reusable Blade UI components (neo brutalist design system). **Rebuild assets after CSS/Blade changes** (`npm run build` or `npm run dev`) — serving stale build breaks layout/scroll.
 
 ### Routes
-All routes (`routes/web.php`) use Livewire full-page components:
-- `GET /` → Dashboard
-- `GET /memories` → MemoryList (reactive search/filter)
-- `GET /memories/create` → MemoryForm
-- `GET /memories/{memory}` → MemoryDetail
-- `GET /memories/{memory}/edit` → MemoryForm
+Web (`routes/web.php`) — `GET /login` (guest); everything else under `auth` middleware:
+- `GET /` → Dashboard; `/memories/*` → memory pages
+- `/admin/captures`, `/admin/skill-groups`, `/admin/skills`, `/admin/tokens` → pipeline admin
+- `POST /logout`
+
+API (`routes/api.php`) — `POST /api/mcp` (remote MCP, `mcp.token` middleware).
 
 ### MCP Integration
-`.mcp.json` configures `php artisan mcp:serve` as MCP server. See global CLAUDE.md for Docker MCP config patterns if running in containers.
+`.mcp.json` configures `php artisan mcp:serve` (stdio, local). For remote access, other projects hit `POST /api/mcp` with a Bearer API token issued at `/admin/tokens`. Full tool catalog + connection config in `docs/mcp-tools.md`. See global CLAUDE.md for Docker MCP config patterns if running in containers.
+
+### Hub commands
+`memory:make-admin`, `memory:import`, `memory:process-captures`, `memory:validate-docs`, `memory:group-skills`, `memory:compile-skills`, `memory:publish-skills`, `memory:curate`. Curation engine uses MiniMax (`MINIMAX_API_KEY`); doc validation uses Context7 (`CONTEXT7_API_KEY`, optional).
 
 ## Testing
 
-PHPUnit with SQLite in-memory. Tests live in:
-- `tests/Unit/` — Model scopes (`MemoryModelTest`), service logic (`MemoryServiceTest`)
-- `tests/Feature/` — API endpoints (`MemoryApiTest`)
+PHPUnit with SQLite in-memory (~146 tests). Tests live in:
+- `tests/Unit/` — model scopes/service logic, and Curation contracts (`LessonDraft`, `DocumentationVerdict`, `SkillCandidate`, `SkillGroupProposal`), `CaptureSanitizer` (zero secret leak), `PromotionPolicy`, `Context7Client`
+- `tests/Feature/` — pipeline (`CaptureServiceTest`, `CurateCaptureJobTest`, `ValidateMemoryDocumentationJobTest`, `SkillCompilerTest`, `RecurrenceScorerTest`), MCP (`McpHttpTest`, `McpWriteToolsTest`, `HubBriefingTest`), auth (`AuthTest`), admin (`AdminPipelineTest`)
 
-Environment for tests is set in `phpunit.xml` (array cache, sync queue, SQLite in-memory).
+Engine/HTTP tests fake the MiniMax/Context7 calls (`Http::fake`). Environment set in `phpunit.xml` (array cache, sync queue, SQLite in-memory).
 
 ## Environment Files
 
