@@ -5,13 +5,28 @@ namespace Tests\Feature;
 use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
+use App\Models\ApiToken;
 use App\Models\Memory;
+use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class MemoryApiTest extends TestCase
 {
     use LazilyRefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        [, $plain] = ApiToken::issue(User::factory()->create(), 'test-suite');
+        $this->withToken($plain);
+    }
+
+    public function test_api_rejects_request_without_token(): void
+    {
+        $this->withToken('token-invalido')->getJson('/api/memories')->assertUnauthorized();
+    }
 
     public function test_can_list_memories(): void
     {
