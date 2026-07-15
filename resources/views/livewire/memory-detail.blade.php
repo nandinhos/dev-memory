@@ -35,9 +35,25 @@
                     <span class="text-xs font-mono text-gray-500 font-bold uppercase tracking-widest">
                         MEM_ID: {{ str_pad($memory->id, 5, '0', STR_PAD_LEFT) }}
                     </span>
-                    <span class="bg-[#6366F1] text-white border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-tighter">
-                        {{ $memory->validation_status->label() }}
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-[#6366F1] text-white border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-tighter">
+                            {{ $memory->validation_status->label() }}
+                        </span>
+                        @if ($memory->doc_validation_status)
+                            @php
+                                $docVariant = match ($memory->doc_validation_status->value) {
+                                    'confirmed' => 'bg-neo-green',
+                                    'partially_confirmed' => 'bg-neo-yellow',
+                                    'contradicted' => 'bg-neo-magenta text-white',
+                                    default => 'bg-gray-300',
+                                };
+                            @endphp
+                            <span class="{{ $docVariant }} border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-tighter"
+                                  title="Validação documental (Context7)">
+                                DOC: {{ $memory->doc_validation_status->label() }}
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="absolute top-16 -right-3 flex flex-col items-center gap-1 z-10">

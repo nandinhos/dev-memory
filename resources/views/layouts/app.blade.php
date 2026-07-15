@@ -34,6 +34,25 @@
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('memories.create') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
                 <span>+ NEW_ENTRY</span>
             </a>
+
+            <div class="pt-4 mt-2 border-t-4 border-black/10">
+                <span class="px-4 text-[10px] font-mono font-bold text-gray-500 uppercase tracking-[0.2em]">// pipeline</span>
+            </div>
+
+            <a href="{{ route('admin.captures') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.captures') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>CAPTURES</span>
+            </a>
+
+            <a href="{{ route('admin.skill-groups') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.skill-groups') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>SKILL_GROUPS</span>
+            </a>
+
+            <a href="{{ route('admin.skills') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.skills') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>SKILLS</span>
+            </a>
         </nav>
 
         <!-- Profile Area -->

@@ -1,5 +1,8 @@
 <?php
 
+use App\Livewire\Admin\CapturesInbox;
+use App\Livewire\Admin\SkillGroupsReview;
+use App\Livewire\Admin\SkillsAdmin;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\MemoryDetail;
@@ -18,6 +21,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/memories/create', MemoryForm::class)->name('memories.create');
     Route::get('/memories/{memory}', MemoryDetail::class)->name('memories.show');
     Route::get('/memories/{memory}/edit', MemoryForm::class)->name('memories.edit');
+
+    Route::get('/admin/captures', CapturesInbox::class)->name('admin.captures');
+    Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
+    Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');
 
     Route::post('/logout', function () {
         Auth::logout();
