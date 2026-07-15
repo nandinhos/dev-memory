@@ -73,14 +73,16 @@ As rotas web ficam sob middleware `auth`; guests são redirecionados para `/logi
 
 | Método | URI | Descrição |
 |--------|-----|-----------|
+| GET | `/` | Landing page (pública) |
 | GET | `/login` | Login (guest) |
 | POST | `/logout` | Logout |
-| GET | `/` | Dashboard |
+| GET | `/dashboard` | Dashboard |
 | GET | `/memories`, `/memories/create`, `/memories/{id}`, `/memories/{id}/edit` | Gestão de memórias |
 | GET | `/admin/captures` | Inbox de captures do pipeline |
 | GET | `/admin/skill-groups` | Revisão de agrupamentos de skills |
 | GET | `/admin/skills` | Gestão de skills (draft → aprovada → publicada) |
 | GET | `/admin/tokens` | Emissão/revogação de tokens MCP |
+| GET | `/admin/harness` | Perfis de config de harness (provisionamento) |
 | POST | `/api/mcp` | Endpoint MCP remoto (token de API) |
 
 ## MCP Tools

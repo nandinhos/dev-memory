@@ -13,12 +13,14 @@ use App\Livewire\MemoryList;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+Route::view('/', 'landing')->name('home');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', Dashboard::class)->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::get('/memories', MemoryList::class)->name('memories.index');
     Route::get('/memories/create', MemoryForm::class)->name('memories.create');
     Route::get('/memories/{memory}', MemoryDetail::class)->name('memories.show');

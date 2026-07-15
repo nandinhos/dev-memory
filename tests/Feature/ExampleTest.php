@@ -2,18 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    use RefreshDatabase;
-
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_landing_page_is_public(): void
     {
-        $response = $this->actingAs(User::factory()->create())->get('/');
-
-        $response->assertStatus(200);
+        $this->get('/')
+            ->assertStatus(200)
+            ->assertSee('DEV')
+            ->assertSee('ENTRAR NO HUB');
     }
 }
