@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\McpController;
 use App\Http\Controllers\MemoryController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/mcp', [McpController::class, 'handle'])->middleware('mcp.token')->name('mcp');
 
 Route::get('/memories', [MemoryController::class, 'index']);
 Route::post('/memories', [MemoryController::class, 'store']);

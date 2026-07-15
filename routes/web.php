@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Admin\ApiTokens;
 use App\Livewire\Admin\CapturesInbox;
 use App\Livewire\Admin\SkillGroupsReview;
 use App\Livewire\Admin\SkillsAdmin;
@@ -25,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/captures', CapturesInbox::class)->name('admin.captures');
     Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
     Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');
+    Route::get('/admin/tokens', ApiTokens::class)->name('admin.tokens');
 
     Route::post('/logout', function () {
         Auth::logout();

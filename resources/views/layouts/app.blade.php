@@ -53,6 +53,11 @@
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.skills') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
                 <span>SKILLS</span>
             </a>
+
+            <a href="{{ route('admin.tokens') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.tokens') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>MCP_TOKENS</span>
+            </a>
         </nav>
 
         <!-- Profile Area -->
