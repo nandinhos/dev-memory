@@ -3,6 +3,12 @@
 **Data:** 2026-07-15
 **Objetivo:** tornar o dev-memory um hub de conhecimento vivo, logável, administrável e conectável via MCP — sua essência inicial completa. Sem Filament, sem `nando/ai-motor`; evolui a UI Livewire + design system "neo" existente.
 
+**Status: CONCLUÍDO (2026-07-15).** Os 4 blocos foram implementados, testados e verificados end-to-end. Suíte: 152 testes, 360 asserções.
+- **Bloco A** ✅ — login neo, proteção de rotas, logout, `memory:make-admin`.
+- **Bloco B** ✅ — painel admin (skill groups, skills, captures, badge de validação documental).
+- **Bloco C** ✅ — MCP remoto via `POST /api/mcp` + tokens de API (gestão na UI). *Ajuste vs. plano: os tokens ficaram no Bloco C (junto do consumidor) em vez do A. Migração para o pacote `laravel/mcp` com SSE segue como refinamento futuro — o endpoint atual reusa o MemoryMcpServer e atende clientes de tool-call.*
+- **Bloco D** ✅ — tools `hub_briefing` (consulta preventiva) e `memory_ingest` (ingestão externa).
+
 ---
 
 ## 1. Estado atual (verificado)
