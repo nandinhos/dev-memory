@@ -5,21 +5,24 @@ namespace App\Console\Commands;
 use App\Models\Memory;
 use App\Services\MemoryNormalizer;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class MemoryImportCommand extends Command
 {
     protected $signature = 'memory:import
-                            {source : Source to import (all, devorq, troubleshooting, bug_report, handover, e2e_audit, skills)}
+                            {source : Source to import (all, devorq, troubleshooting, bug_report, handover, e2e_audit)}
                             {--dry-run : Show what would be imported without saving}
                             {--force : Overwrite existing memories with same original_id}';
 
     protected $description = 'Import memories from various sources into dev-memory-laravel';
 
     private MemoryNormalizer $normalizer;
+
     private array $imported = [];
+
     private array $skipped = [];
+
     private array $errors = [];
 
     public function __construct()
@@ -34,10 +37,10 @@ class MemoryImportCommand extends Command
         $dryRun = $this->option('dry-run');
         $force = $this->option('force');
 
-        $this->info("=== Memory Import ===");
+        $this->info('=== Memory Import ===');
         $this->info("Source: {$source}");
-        $this->info("Dry run: " . ($dryRun ? 'YES' : 'NO'));
-        $this->line("");
+        $this->info('Dry run: '.($dryRun ? 'YES' : 'NO'));
+        $this->line('');
 
         $memories = match ($source) {
             'all' => $this->importAll(),
@@ -46,7 +49,6 @@ class MemoryImportCommand extends Command
             'bug_report' => $this->importBugReports(),
             'handover' => $this->importHandover(),
             'e2e_audit' => $this->importE2EAudit(),
-            'skills' => $this->importSkillDocs(),
             default => [],
         };
 
@@ -56,11 +58,11 @@ class MemoryImportCommand extends Command
             $this->processEntry($raw, $dryRun, $force);
         }
 
-        $this->line("");
-        $this->info("=== Summary ===");
-        $this->info("Imported: " . count($this->imported));
-        $this->info("Skipped: " . count($this->skipped));
-        $this->info("Errors: " . count($this->errors));
+        $this->line('');
+        $this->info('=== Summary ===');
+        $this->info('Imported: '.count($this->imported));
+        $this->info('Skipped: '.count($this->skipped));
+        $this->info('Errors: '.count($this->errors));
 
         if (! empty($this->errors)) {
             $this->warn("\nErrors:");
@@ -85,8 +87,9 @@ class MemoryImportCommand extends Command
             $data = $this->normalizer->normalize($raw, $raw['_source']);
 
             if (empty($data->title) || $data->title === 'Untitled Memory') {
-                $this->warn("Skipping entry with empty title");
+                $this->warn('Skipping entry with empty title');
                 $this->skipped[] = 'Empty title';
+
                 return;
             }
 
@@ -98,12 +101,14 @@ class MemoryImportCommand extends Command
 
                 if ($exists) {
                     $this->skipped[] = "Duplicate: {$data->title}";
+
                     return;
                 }
             }
 
             if ($dryRun) {
                 $this->line("[DRY RUN] Would import: {$data->title}");
+
                 return;
             }
 
@@ -112,22 +117,22 @@ class MemoryImportCommand extends Command
             $this->info("Imported: {$memory->title}");
 
         } catch (\Throwable $e) {
-            $this->errors[] = "{$raw['title'] ?? 'Unknown'}: {$e->getMessage()}";
+            $title = $raw['title'] ?? 'Unknown';
+            $this->errors[] = "{$title}: {$e->getMessage()}";
         }
     }
 
-    private function importAll(): \Illuminate\Support\Collection
+    private function importAll(): Collection
     {
         return collect()
             ->merge($this->importDevorqLessons())
             ->merge($this->importTroubleshooting())
             ->merge($this->importBugReports())
             ->merge($this->importHandover())
-            ->merge($this->importE2EAudit())
-            ->merge($this->importSkillDocs());
+            ->merge($this->importE2EAudit());
     }
 
-    private function importDevorqLessons(): \Illuminate\Support\Collection
+    private function importDevorqLessons(): Collection
     {
         $this->info("\n--- DEVORQ Lessons ---");
         $entries = collect();
@@ -142,7 +147,7 @@ class MemoryImportCommand extends Command
                     $content['_source_file'] = $file;
                     $content['_source_project'] = 'devorq_v3';
                     $entries->push($content);
-                    $this->line("Found: " . basename($file));
+                    $this->line('Found: '.basename($file));
                 }
             }
         }
@@ -150,7 +155,7 @@ class MemoryImportCommand extends Command
         return $entries;
     }
 
-    private function importTroubleshooting(): \Illuminate\Support\Collection
+    private function importTroubleshooting(): Collection
     {
         $this->info("\n--- Troubleshooting Docs ---");
         $entries = collect();
@@ -171,6 +176,7 @@ class MemoryImportCommand extends Command
         foreach ($files as $path => $meta) {
             if (! file_exists($path)) {
                 $this->warn("File not found: {$path}");
+
                 continue;
             }
 
@@ -178,7 +184,7 @@ class MemoryImportCommand extends Command
             $parsed = $this->parseTroubleshootingMarkdown($content, $meta);
             foreach ($parsed as $entry) {
                 $entries->push($entry);
-                $this->line("Found: " . $entry['title']);
+                $this->line('Found: '.$entry['title']);
             }
         }
 
@@ -213,7 +219,7 @@ class MemoryImportCommand extends Command
             } elseif ($inProblem && (str_starts_with(trim($line), '```') || preg_match('/^(Solução|Solution|Fix):/i', $line))) {
                 $currentSolution = trim($line);
             } elseif ($inProblem && $currentSolution) {
-                $currentSolution .= "\n" . $line;
+                $currentSolution .= "\n".$line;
             }
         }
 
@@ -233,7 +239,7 @@ class MemoryImportCommand extends Command
         return $entries;
     }
 
-    private function importBugReports(): \Illuminate\Support\Collection
+    private function importBugReports(): Collection
     {
         $this->info("\n--- Bug Reports ---");
         $entries = collect();
@@ -254,6 +260,7 @@ class MemoryImportCommand extends Command
         foreach ($files as $path => $meta) {
             if (! file_exists($path)) {
                 $this->warn("File not found: {$path}");
+
                 continue;
             }
 
@@ -261,7 +268,7 @@ class MemoryImportCommand extends Command
             $parsed = $this->parseBugReportMarkdown($content, $meta);
             foreach ($parsed as $entry) {
                 $entries->push($entry);
-                $this->line("Found: " . $entry['title']);
+                $this->line('Found: '.$entry['title']);
             }
         }
 
@@ -312,7 +319,7 @@ class MemoryImportCommand extends Command
         return $entries;
     }
 
-    private function importHandover(): \Illuminate\Support\Collection
+    private function importHandover(): Collection
     {
         $this->info("\n--- Handover Docs ---");
         $entries = collect();
@@ -333,6 +340,7 @@ class MemoryImportCommand extends Command
         foreach ($files as $path => $meta) {
             if (! file_exists($path)) {
                 $this->warn("File not found: {$path}");
+
                 continue;
             }
 
@@ -340,7 +348,7 @@ class MemoryImportCommand extends Command
             $parsed = $this->parseHandoverMarkdown($content, $meta);
             foreach ($parsed as $entry) {
                 $entries->push($entry);
-                $this->line("Found: " . $entry['title']);
+                $this->line('Found: '.$entry['title']);
             }
         }
 
@@ -380,7 +388,7 @@ class MemoryImportCommand extends Command
         return $entries;
     }
 
-    private function importE2EAudit(): \Illuminate\Support\Collection
+    private function importE2EAudit(): Collection
     {
         $this->info("\n--- E2E Audit Reports ---");
         $entries = collect();
@@ -388,6 +396,7 @@ class MemoryImportCommand extends Command
         $auditPath = '/projects/guest-list-pro/docs/report_e2e';
         if (! is_dir($auditPath)) {
             $this->warn("Audit path not found: {$auditPath}");
+
             return $entries;
         }
 
@@ -402,7 +411,7 @@ class MemoryImportCommand extends Command
             $parsed = $this->parseAuditReport($content, array_merge($meta, ['file' => $file]));
             foreach ($parsed as $entry) {
                 $entries->push($entry);
-                $this->line("Found: " . $entry['title']);
+                $this->line('Found: '.$entry['title']);
             }
         }
 
@@ -418,7 +427,7 @@ class MemoryImportCommand extends Command
             foreach ($matches[1] as $path) {
                 $entries[] = [
                     'title' => "404 Error: {$path}",
-                    'description' => "Rota retornou 404 ou erro durante teste E2E",
+                    'description' => 'Rota retornou 404 ou erro durante teste E2E',
                     'type' => 'error',
                     'stack' => $meta['stack'],
                     '_source' => $meta['source'],
@@ -430,83 +439,5 @@ class MemoryImportCommand extends Command
         }
 
         return $entries;
-    }
-
-    private function importSkillDocs(): \Illuminate\Support\Collection
-    {
-        $this->info("\n--- Skill Docs (VPS HUB) ---");
-        $entries = collect();
-
-        // Import from VPS HUB via SSH
-        $sshCmd = 'ssh -p 6985 -o ControlPath=/tmp/devorq-hub.sock root@187.108.197.199 "find /var/devorq/hub/lessons -name SKILL.md" 2>/dev/null';
-
-        $output = shell_exec($sshCmd);
-        if (! $output) {
-            $this->warn("Could not connect to VPS HUB");
-            return $entries;
-        }
-
-        $files = array_filter(array_map('trim', explode("\n", $output)));
-
-        foreach ($files as $file) {
-            $content = shell_exec("ssh -p 6985 -o ControlPath=/tmp/devorq-hub.sock root@187.108.197.199 'cat {$file}' 2>/dev/null");
-            if (! $content) {
-                continue;
-            }
-
-            $parsed = $this->parseSkillMarkdown($content, $file);
-            foreach ($parsed as $entry) {
-                $entries->push($entry);
-                $this->line("Found: " . $entry['title']);
-            }
-        }
-
-        return $entries;
-    }
-
-    private function parseSkillMarkdown(string $content, string $sourceFile): array
-    {
-        $entries = [];
-
-        // Extract pitfalls and common errors from skills
-        $patterns = [
-            '/[Pp]itfall[s]?[:]\s*\n((?:-[^\n]+\n?)+)/',
-            '/[Cc]ommon\s+[eE]rror[s]?[:]\s*\n((?:-[^\n]+\n?)+)/',
-            '/[Ll]essons?[s]?\s+[Ll]earned[:]\s*\n((?:-[^\n]+\n?)+)/',
-            '/[Ee]rror[:]\s*\n((?:-[^\n]+\n?)+)/',
-        ];
-
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $content, $matches)) {
-                $lines = array_filter(array_map('trim', explode("\n", $matches[1])));
-                foreach ($lines as $line) {
-                    $line = preg_replace('/^[-*]\s*/, '', $line);
-                    if (strlen($line) > 10) {
-                        $entries[] = [
-                            'title' => Str::limit($line, 80),
-                            'description' => $line,
-                            'type' => 'lesson',
-                            'stack' => $this->inferStackFromSkill($content),
-                            '_source' => 'skill_docs',
-                            '_source_file' => $sourceFile,
-                            '_source_project' => 'vps_hub',
-                        ];
-                    }
-                }
-            }
-        }
-
-        return $entries;
-    }
-
-    private function inferStackFromSkill(string $content): ?string
-    {
-        $stacks = ['Laravel', 'PHP', 'Filament', 'TypeScript', 'Python', 'Docker', 'Coreops', 'Shell'];
-        foreach ($stacks as $stack) {
-            if (stripos($content, $stack) !== false) {
-                return $stack;
-            }
-        }
-        return 'General';
     }
 }
