@@ -18,7 +18,11 @@ Visão de evolução. Estado atual em [`STATUS.md`](STATUS.md).
 
 ---
 
-## Provisionamento agnóstico de harness (visão)
+## Provisionamento agnóstico de harness
+
+> **Fase 1 (Claude Code): ENTREGUE em 2026-07-15.** Modelo `HarnessProfile`, `HarnessProfileService`
+> (captura sanitizada + plano de provisão), 4 tools MCP (`harness_paths/capture/list/provision`),
+> comando `harness:capture-local` e a página admin **HARNESS**. Fases 2–5 abaixo seguem pendentes.
 
 > O salto de "hub de **conhecimento**" para "hub de **ambiente**": o dev-memory carrega não só o que você sabe, mas *como você trabalha* — e reconstrói seu setup em qualquer máquina limpa.
 
@@ -69,13 +73,13 @@ máquina limpa ──MCP──> hub: setup_provision("claude-code")
 - **Heterogeneidade** — formatos/locais variam por harness; isolar em adapters, começar por 1 (Claude Code) e expandir.
 - **Agnóstico de verdade** — o núcleo (perfis, tools) é harness-neutro; só os adapters conhecem cada CLI.
 
-### Fases sugeridas
+### Fases
 
-1. **Perfil Claude Code** — modelar, guardar e provisionar 1 harness ponta a ponta (prova de conceito).
-2. **Tools MCP + confirmação** — `setup_provision` com plano acionável e confirmação de destrutivos.
-3. **Instalador script** — `curl|bash` idempotente por harness.
-4. **Expandir adapters** — Codex, Hermes, Antigravity.
-5. **Captura de config** — comando/tool para *salvar* o setup atual da máquina no hub (o inverso do provision).
+1. ✅ **Perfil Claude Code** — modelar, guardar e provisionar 1 harness ponta a ponta.
+2. ✅ **Tools MCP + captura** — `harness_capture/provision` com plano acionável; captura sanitizada.
+3. **Instalador script** — `curl|bash` idempotente por harness (o provision hoje retorna o plano; falta o gerador de bash).
+4. **Expandir adapters** — Codex, Hermes, Antigravity (adicionar casos em `HarnessType` + `recommendedPaths`).
+5. **Confirmação de sobrescrita** — no lado do provision/instalador, confirmar antes de clobberar config local (reusar padrão do `ConfirmationGuard`).
 
 ---
 

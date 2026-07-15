@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-07-15 · **Saúde:** 146 testes verdes · **Estado:** essência inicial completa
+**Atualizado:** 2026-07-15 · **Saúde:** 153 testes verdes · **Estado:** essência inicial completa + provisionamento de harness (Claude Code)
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -47,7 +47,8 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 - ✅ **Skills** — agrupamento por IA, compilação com rastreabilidade de fonte, publicação git versionada
 - ✅ **MCP remoto** — 11 tools, HTTP + stdio, tokens de API (emitir/revogar na UI)
 - ✅ **Consulta preventiva** — `hub_briefing` antes de implementar
-- ✅ **Segurança** — sem credenciais hardcoded, confirmação de ações destrutivas, sem API aberta
+- ✅ **Provisionamento de harness (Claude Code)** — sobe a config do ambiente (sanitizada) e replica em máquina limpa via MCP (`harness_capture/provision`, página **HARNESS**, `harness:capture-local`)
+- ✅ **Segurança** — sem credenciais hardcoded, confirmação de ações destrutivas, sem API aberta, segredos redigidos na captura de config
 
 ## Dados atuais
 

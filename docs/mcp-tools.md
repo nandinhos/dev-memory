@@ -67,6 +67,19 @@ Gere um token na UI (**MCP_TOKENS**) e configure o `.mcp.json` do projeto consum
 | `hub_briefing` | `stack?`, `description?` | consulta preventiva: riscos conhecidos, padrões aprovados, lições relevantes e skills para o contexto — **use ANTES de implementar** |
 | `memory_ingest` | `content` (obrig.), `source?=mcp`, `trigger?`, `project?` | ingere evento bruto no pipeline (sanitiza, deduplica, enfileira curadoria) |
 
+### Provisionamento de harness
+
+Sobe a configuração do seu ambiente para o hub e a replica em máquinas limpas. Segredos são redigidos na captura; o hub nunca armazena chaves.
+
+| Tool | Argumentos | Retorno |
+|------|-----------|---------|
+| `harness_paths` | `harness` (obrig., ex: `claude-code`) | caminhos de config recomendados para ler e capturar |
+| `harness_capture` | `harness`, `files` (obrig.), `name?=default`, `description?` | salva o perfil; `files` = `[{path, content}]` |
+| `harness_list` | — | perfis salvos |
+| `harness_provision` | `harness` (obrig.), `name?=default` | plano de instalação (`steps` write_file + notas) para replicar numa máquina limpa |
+
+**Fluxo (Claude Code):** na máquina de origem, `harness_paths` → o agente lê os arquivos → `harness_capture`. Na máquina limpa, `harness_provision` → o agente aplica os `steps` (escreve os arquivos), reinserindo segredos redigidos. Também há o comando local `php artisan harness:capture-local claude-code`.
+
 ---
 
 ## Ação destrutiva: fluxo de confirmação (`memory_delete`)
