@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\MemoryScope;
 use App\Enums\ValidationStatus;
 use App\Models\Memory;
 use Livewire\Attributes\Title;
@@ -46,7 +47,7 @@ class MemoryDetail extends Component
 
     public function promoteToGlobal(): void
     {
-        $this->memory->update(['scope' => \App\Enums\MemoryScope::GLOBAL]);
+        $this->memory->update(['scope' => MemoryScope::GLOBAL]);
         $this->memory->refresh();
         $this->dispatch('show-toast',
             message: 'Memória promovida a Global!',
