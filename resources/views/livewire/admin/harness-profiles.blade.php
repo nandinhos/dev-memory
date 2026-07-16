@@ -1,5 +1,5 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="HARNESS" subtitulo="configurações do seu ambiente, replicáveis em qualquer máquina" />
+    <p class="text-sm text-gray-600 font-mono mb-6">Configurações do seu ambiente, replicáveis em qualquer máquina.</p>
 
     <div class="bg-neo-white neo-border shadow-neo p-6 mb-6">
         <h2 class="font-heading text-lg m-0 mb-2">Como funciona</h2>

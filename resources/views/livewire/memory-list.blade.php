@@ -1,14 +1,13 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="MEMÓRIAS" subtitulo="Repositório de lições aprendidas">
-        <x-slot:actions>
-            <a href="{{ route('memories.create') }}" class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Nova Memória
-            </a>
-        </x-slot:actions>
-    </x-neo.page-header>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <p class="text-sm text-gray-600 font-mono m-0">Repositório de lições aprendidas.</p>
+        <a href="{{ route('memories.create') }}" class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Nova Memória
+        </a>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside class="lg:col-span-1">

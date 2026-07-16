@@ -1,21 +1,21 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="DETALHES DA MEMÓRIA">
-        <x-slot:breadcrumb>
-            <nav class="flex items-center gap-2 text-sm font-mono">
-                <a href="{{ route('memories.index') }}" class="hover:text-neo-magenta transition-colors">Lista</a>
-                <span class="text-gray-400">/</span>
-                <span class="font-bold truncate max-w-xs">{{ $memory->title }}</span>
-            </nav>
-        </x-slot:breadcrumb>
-        <x-slot:actions>
-            <a href="{{ route('memories.edit', $memory) }}" 
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <a href="{{ route('memories.index') }}" wire:navigate
+           class="flex items-center gap-1.5 font-mono text-sm no-underline text-black hover:text-neo-magenta transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar para a lista
+        </a>
+        <div class="flex gap-2">
+            <a href="{{ route('memories.edit', $memory) }}"
                class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 Editar
             </a>
-            <button wire:click="delete" 
+            <button wire:click="delete"
                     wire:confirm="Tem certeza que deseja excluir esta memória?"
                     class="btn-neo bg-neo-magenta neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -23,8 +23,8 @@
                 </svg>
                 Excluir
             </button>
-        </x-slot:actions>
-    </x-neo.page-header>
+        </div>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <main class="lg:col-span-2">

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Dashboard')]
+#[Title('Painel')]
 class Dashboard extends Component
 {
     public int $totalMemories = 0;

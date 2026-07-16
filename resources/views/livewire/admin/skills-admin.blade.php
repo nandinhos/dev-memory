@@ -1,5 +1,5 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="SKILLS" subtitulo="ciclo draft → aprovada → publicada (git)" />
+    <p class="text-sm text-gray-600 font-mono mb-6">Ciclo draft → aprovada → publicada (git).</p>
 
     @forelse($skills as $skill)
         @php

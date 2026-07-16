@@ -1,5 +1,5 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="CAPTURES" subtitulo="entradas do pipeline de curadoria" />
+    <p class="text-sm text-gray-600 font-mono mb-6">Entradas do pipeline de curadoria.</p>
 
     @forelse($captures as $capture)
         @php

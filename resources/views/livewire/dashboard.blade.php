@@ -1,15 +1,4 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="DASHBOARD" subtitulo="Visão geral do sistema">
-        <x-slot:actions>
-            <a href="{{ route('memories.create') }}" class="btn-neo bg-neo-green neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors flex items-center gap-2 font-bold">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Nova Memória
-            </a>
-        </x-slot:actions>
-    </x-neo.page-header>
-
     {{-- Stat Cards Coloridos --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="card-neo bg-neo-teal neo-border shadow-neo p-5 text-center hover:shadow-neo-lg transition-all">

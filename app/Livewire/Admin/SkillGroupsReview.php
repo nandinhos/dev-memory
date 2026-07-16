@@ -7,7 +7,7 @@ use App\Models\SkillGroup;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Skill Groups')]
+#[Title('Grupos de Skills')]
 class SkillGroupsReview extends Component
 {
     public function approve(string $id): void

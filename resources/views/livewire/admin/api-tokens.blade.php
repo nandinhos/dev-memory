@@ -1,5 +1,5 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="TOKENS_MCP" subtitulo="acesso remoto de outros projetos via MCP" />
+    <p class="text-sm text-gray-600 font-mono mb-6">Acesso remoto de outros projetos via MCP.</p>
 
     <div class="bg-neo-white neo-border shadow-neo p-6 mb-6">
         <h2 class="font-heading text-lg m-0 mb-3">Novo token</h2>

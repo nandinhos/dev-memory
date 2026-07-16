@@ -1,5 +1,5 @@
 <div class="animate-fade-in-up">
-    <x-neo.page-header titulo="SKILL_GROUPS" subtitulo="revisão de agrupamentos propostos pela IA" />
+    <p class="text-sm text-gray-600 font-mono mb-6">Revisão de agrupamentos propostos pela IA.</p>
 
     @forelse($groups as $group)
         @php
