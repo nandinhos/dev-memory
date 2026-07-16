@@ -22,17 +22,17 @@
         <nav class="flex-1 overflow-y-auto p-6 space-y-4">
             <a href="{{ route('dashboard') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('dashboard') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
-                <span>DASHBOARD</span>
+                <span>PAINEL</span>
             </a>
 
             <a href="{{ route('memories.index') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('memories.index') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
-                <span>MEMORIES_LIST</span>
+                <span>MEMÓRIAS</span>
             </a>
 
             <a href="{{ route('memories.create') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('memories.create') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
-                <span>+ NEW_ENTRY</span>
+                <span>+ NOVA</span>
             </a>
 
             <div class="pt-4 mt-2 border-t-4 border-black/10">
@@ -41,12 +41,12 @@
 
             <a href="{{ route('admin.captures') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.captures') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
-                <span>CAPTURES</span>
+                <span>CAPTURAS</span>
             </a>
 
             <a href="{{ route('admin.skill-groups') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.skill-groups') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
-                <span>SKILL_GROUPS</span>
+                <span>GRUPOS DE SKILLS</span>
             </a>
 
             <a href="{{ route('admin.skills') }}"
@@ -56,7 +56,7 @@
 
             <a href="{{ route('admin.tokens') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.tokens') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
-                <span>MCP_TOKENS</span>
+                <span>TOKENS MCP</span>
             </a>
 
             <a href="{{ route('admin.harness') }}"
