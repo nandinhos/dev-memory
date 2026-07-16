@@ -13,7 +13,7 @@ Visão de evolução. Estado atual em [`STATUS.md`](STATUS.md).
 
 ## Médio prazo
 
-- **Landing page espetacular (neo brutalist)** — *parado para depois.* Vitrine do hub usando o melhor do tema neo; também porta de entrada/onboarding.
+- ✅ **Landing page (neo brutalist)** — ENTREGUE em 2026-07-16 (`/`, terminal macOS-neo, seções semânticas, links oficiais).
 - **Captura contínua** — hooks dos harnesses (PostToolUse/Stop) alimentando `memory_ingest` automaticamente.
 
 ---
