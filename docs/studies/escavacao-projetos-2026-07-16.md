@@ -31,9 +31,27 @@ Coluna **"já no hub?"** = `não verificado` em todo o inventário (MCP `memory_
 
 ---
 
+## Validação local do pipeline (2026-07-17)
+
+O Tier 1 foi ingerido **valendo** no hub local (SQLite), via `CaptureService::ingest` +
+`CurateCaptureJob` (curadoria real MiniMax `MiniMax-M2.5`, ~12s/peça). Resultado:
+
+- **10 memórias novas criadas** (net-new, `validation_status=pending`): #2 HasUuids v7, #6 download,
+  #7 wire:confirm, #8 Blade &quot;, #10 Tailwind v4 rebuild, #12 x-cloak, #13 sidebar @persist,
+  #15 whereDate/Carbon, #16 wizard 419, #17 Chart.js.
+- **7 deduplicadas** (JÁ estavam no hub — dedup/recorrência funcionou): #1 Alpine/Livewire, #3
+  ConvertEmptyStringsToNull, #4 DomPDF PHP 8.4, #5 x-data/morph, #9 getMorphClass, #11 min-w-full,
+  #14 Postgres cast, #18 PHP 8.4 warnings. (⇒ ~40% do Tier 1 já existia.)
+- Qualidade da curadoria: **alta** (título/tipo/stack corretos, descrição estruturada Problema/
+  Solução/Riscos/Aplicabilidade). Memórias 32 → 42 no DB local.
+
+> ⚠️ Isto foi **validação LOCAL** (SQLite de dev). A ingestão de produção acontece contra o hub da
+> VPS **depois do deploy**. O DB local não é o de produção.
+
 ## TIER 1 — Alto sinal, alto reuso, no stack exato do hub (Laravel 13 · Livewire 4 · PHP 8.4 · Tailwind 4)
 
 Candidatos mais fortes à promoção. Muitos aparecem em 2–3 fontes independentes (marcado em "fontes").
+**Coluna "já no hub?" agora resolvida para o Tier 1 pela validação acima** (net-new vs deduplicado).
 
 | # | tipo | afirmação (núcleo) | fontes | c7 |
 |---|------|--------------------|--------|-----|
