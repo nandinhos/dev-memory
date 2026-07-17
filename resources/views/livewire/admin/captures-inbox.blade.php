@@ -28,23 +28,34 @@
                 <x-neo.badge variante="{{ $statusVariant }}">{{ $capture->status->label() }}</x-neo.badge>
             </div>
 
+            @php $hasRedactions = ! empty($capture->metadata['redactions']); @endphp
             <x-neo.button variante="texto" tamanho="sm" wire:click="toggle('{{ $capture->id }}')">
-                {{ $expandedId === $capture->id ? 'ocultar' : 'bruto vs sanitizado' }}
+                {{ $expandedId === $capture->id ? 'ocultar' : ($hasRedactions ? 'bruto vs sanitizado' : 'ver conteúdo') }}
             </x-neo.button>
 
             @if ($expandedId === $capture->id)
-                <div class="grid md:grid-cols-2 gap-3 mt-3 border-t-2 border-black/10 pt-3">
-                    <div>
-                        <span class="text-xs font-mono font-bold uppercase">Bruto</span>
-                        <pre class="text-xs font-mono bg-neo-bg neo-border-sm p-2 overflow-x-auto mt-1 whitespace-pre-wrap">{{ $capture->raw_content }}</pre>
-                    </div>
-                    <div>
-                        <span class="text-xs font-mono font-bold uppercase">Sanitizado</span>
-                        <pre class="text-xs font-mono bg-neo-bg neo-border-sm p-2 overflow-x-auto mt-1 whitespace-pre-wrap">{{ $capture->sanitized_content }}</pre>
-                        @if (! empty($capture->metadata['redactions']))
-                            <div class="text-xs font-mono text-gray-500 mt-1">Redações: {{ json_encode($capture->metadata['redactions']) }}</div>
-                        @endif
-                    </div>
+                <div class="mt-3 border-t-2 border-black/10 pt-3">
+                    @if ($hasRedactions)
+                        {{-- Houve redação de segredos: comparação lado a lado faz sentido --}}
+                        <div class="grid md:grid-cols-2 gap-3">
+                            <div>
+                                <span class="text-xs font-mono font-bold uppercase text-gray-500">Bruto</span>
+                                <pre class="text-xs font-mono bg-neo-bg neo-border-sm p-2 overflow-x-auto mt-1 whitespace-pre-wrap">{{ $capture->raw_content }}</pre>
+                            </div>
+                            <div>
+                                <span class="text-xs font-mono font-bold uppercase text-neo-magenta">Sanitizado</span>
+                                <pre class="text-xs font-mono bg-neo-bg neo-border-sm p-2 overflow-x-auto mt-1 whitespace-pre-wrap">{{ $capture->sanitized_content }}</pre>
+                                <div class="text-xs font-mono text-gray-500 mt-1">Redações: {{ json_encode($capture->metadata['redactions']) }}</div>
+                            </div>
+                        </div>
+                    @else
+                        {{-- Sem segredos: bruto == sanitizado, mostra um único bloco --}}
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-mono font-bold uppercase">Conteúdo</span>
+                            <span class="text-[10px] font-mono uppercase bg-neo-green border border-black px-1.5 py-0.5">sem segredos · nada redigido</span>
+                        </div>
+                        <pre class="text-xs font-mono bg-neo-bg neo-border-sm p-2 overflow-x-auto mt-1 whitespace-pre-wrap">{{ $capture->sanitized_content ?? $capture->raw_content }}</pre>
+                    @endif
                 </div>
             @endif
         </div>

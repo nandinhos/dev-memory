@@ -91,6 +91,82 @@
 
                     <x-neo.content-block :text="$memory->description" />
 
+                    @if($memory->doc_validation_report)
+                        @php
+                            $report = $memory->doc_validation_report;
+                            $verdict = $report['verdict'] ?? [];
+                            $docBadge = match ($memory->doc_validation_status?->value) {
+                                'confirmed' => 'bg-neo-green',
+                                'partially_confirmed' => 'bg-neo-yellow',
+                                'contradicted' => 'bg-neo-magenta text-white',
+                                default => 'bg-gray-300',
+                            };
+                        @endphp
+                        <div class="neo-border-sm shadow-neo-sm p-4 mt-6 bg-neo-white">
+                            <div class="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b-2 border-black">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span class="text-xs font-bold font-mono uppercase tracking-wide">Verificado no Context7</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    @if($memory->doc_validation_status)
+                                        <span class="{{ $docBadge }} border-2 border-black px-2 py-0.5 text-xs font-black uppercase">
+                                            {{ $memory->doc_validation_status->label() }}
+                                        </span>
+                                    @endif
+                                    @if(isset($verdict['confidence']))
+                                        <span class="font-mono text-xs font-bold">{{ round($verdict['confidence'] * 100) }}% confiança</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if(!empty($report['library']))
+                                <div class="text-xs font-mono text-gray-600 mb-3">
+                                    Biblioteca checada: <span class="font-bold text-black">{{ $report['library'] }}</span>
+                                </div>
+                            @endif
+
+                            @if(!empty($verdict['claims']))
+                                <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1">Afirmações verificadas</span>
+                                <ul class="space-y-1.5 mb-3">
+                                    @foreach($verdict['claims'] as $claim)
+                                        @php
+                                            $cv = $claim['verdict'] ?? '';
+                                            $mark = ['supported' => '&#10003;', 'contradicted' => '&#10007;', 'unsupported' => '&#8212;'][$cv] ?? '?';
+                                            $markColor = ['supported' => 'text-neo-green', 'contradicted' => 'text-neo-magenta', 'unsupported' => 'text-gray-400'][$cv] ?? 'text-gray-400';
+                                        @endphp
+                                        <li class="flex gap-2 items-start text-xs">
+                                            <span class="{{ $markColor }} font-black leading-snug" aria-hidden="true">{!! $mark !!}</span>
+                                            <span class="flex-1 font-mono">{{ $claim['claim'] ?? '' }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            @if(!empty($report['sources']))
+                                <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1">Fontes (prova)</span>
+                                <ul class="space-y-1 mb-1">
+                                    @foreach($report['sources'] as $src)
+                                        @php $srcUrl = is_string($src) ? $src : ($src['url'] ?? $src['source'] ?? null); @endphp
+                                        <li class="text-xs font-mono break-all">
+                                            @if($srcUrl && str_starts_with($srcUrl, 'http'))
+                                                <a href="{{ $srcUrl }}" target="_blank" rel="noopener noreferrer" class="text-neo-magenta underline underline-offset-2 hover:text-black">{{ $srcUrl }}</a>
+                                            @else
+                                                <span class="text-gray-600">{{ is_array($src) ? json_encode($src, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $src }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            @if($memory->doc_validated_at)
+                                <div class="text-[10px] font-mono text-gray-400 mt-2">Verificado em {{ $memory->doc_validated_at->format('d/m/Y \à\s H:i') }}</div>
+                            @endif
+                        </div>
+                    @endif
+
                     @if($memory->official_reference)
                         <div class="neo-border-sm shadow-neo-sm p-4 bg-neo-teal/20 mt-6">
                             <div class="flex items-center gap-2 mb-2">
