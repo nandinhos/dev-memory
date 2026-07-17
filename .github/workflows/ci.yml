@@ -45,8 +45,8 @@ jobs:
             echo "Architect binary not available on this runner — skipping analysis"
           fi
 
-      - name: Run PHPUnit tests
-        run: ./vendor/bin/phpunit --colors=never
-
       - name: Build assets
         run: npm run build
+
+      - name: Run PHPUnit tests
+        run: ./vendor/bin/phpunit --colors=never
