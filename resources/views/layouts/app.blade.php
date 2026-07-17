@@ -8,11 +8,19 @@
     @vite(['resources/css/app.css'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/catppuccin-mocha.min.css">
     @livewireStyles
+    <style>[x-cloak]{display:none!important}</style>
 </head>
-<body class="bg-neo-bg min-h-screen flex overflow-hidden">
+<body class="bg-neo-bg min-h-screen flex overflow-hidden" x-data="{ sidebarOpen: false }">
 
-    <!-- Sidebar -->
-    <aside class="sidebar-bege w-72 flex-shrink-0 flex flex-col h-screen relative z-20">
+    <!-- Backdrop (apenas mobile/tablet, quando o drawer está aberto) -->
+    <div x-show="sidebarOpen" x-cloak x-transition.opacity
+         @click="sidebarOpen = false"
+         class="fixed inset-0 bg-black/50 z-30 lg:hidden"></div>
+
+    <!-- Sidebar (drawer em <lg, estática em lg+) -->
+    <aside @click="sidebarOpen = false"
+           class="sidebar-bege w-72 flex-shrink-0 flex flex-col h-screen fixed lg:relative inset-y-0 left-0 -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 lg:z-20"
+           :class="{ 'translate-x-0': sidebarOpen }">
         <div class="logo-block">
             <a href="{{ route('dashboard') }}" class="no-underline">
                 <span class="logo-text"><span class="logo-dev">DEV</span><span class="logo-memory">-MEMORY</span></span>
@@ -88,12 +96,20 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
-        <header class="h-80px bg-neo-white border-b-4 border-black flex items-center px-8 justify-between flex-shrink-0">
-            <div>
-                <h2 class="font-heading font-black text-3xl m-0 leading-tight tracking-tight">{{ $title ?? 'TERMINAL' }}</h2>
-                <p class="text-xs text-gray-500 italic m-0 font-mono">root@nando-dev:~/memories/{{ strtolower($title ?? 'dashboard') }}</p>
+        <header class="h-80px bg-neo-white border-b-4 border-black flex items-center px-4 sm:px-6 lg:px-8 justify-between flex-shrink-0 gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <button type="button" @click="sidebarOpen = true" aria-label="Abrir menu"
+                        class="lg:hidden flex-shrink-0 btn-neo bg-neo-yellow neo-border-sm shadow-neo-sm p-2 hover:bg-neo-magenta transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div class="min-w-0">
+                    <h2 class="font-heading font-black text-xl sm:text-2xl lg:text-3xl m-0 leading-tight tracking-tight truncate">{{ $title ?? 'TERMINAL' }}</h2>
+                    <p class="text-xs text-gray-500 italic m-0 font-mono truncate hidden sm:block">root@nando-dev:~/memories/{{ strtolower($title ?? 'dashboard') }}</p>
+                </div>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 flex-shrink-0">
                 <div class="flex gap-2">
                     <div class="w-3 h-3 bg-red-500 border-2 border-black rounded-full"></div>
                     <div class="w-3 h-3 bg-yellow-500 border-2 border-black rounded-full"></div>
@@ -108,7 +124,7 @@
             </div>
         </div>
 
-        <main class="flex-1 overflow-y-auto p-8 bg-neo-bg relative">
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-neo-bg relative">
             {{ $slot }}
         </main>
 
