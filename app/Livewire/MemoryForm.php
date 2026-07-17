@@ -3,10 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\Memory;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Nova Memória')]
 class MemoryForm extends Component
 {
     public ?string $memoryId = null;
@@ -27,11 +25,10 @@ class MemoryForm extends Component
 
     protected $listeners = ['saved' => 'onSaved'];
 
-    public function mount(?string $id = null)
+    public function mount(?Memory $memory = null)
     {
-        if ($id) {
-            $this->memoryId = $id;
-            $memory = Memory::findOrFail($id);
+        if ($memory && $memory->exists) {
+            $this->memoryId = $memory->id;
             $this->title = $memory->title;
             $this->description = $memory->description;
             $this->type = $memory->type->value;
@@ -82,6 +79,7 @@ class MemoryForm extends Component
 
     public function render()
     {
-        return view('livewire.memory-form');
+        return view('livewire.memory-form')
+            ->title($this->memoryId ? 'Editar Memória' : 'Nova Memória');
     }
 }
