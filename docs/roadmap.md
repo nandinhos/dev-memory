@@ -6,8 +6,8 @@ Visão de evolução. Estado atual em [`STATUS.md`](STATUS.md).
 
 ## Curto prazo (essência+)
 
-- Aprovar/publicar as 5 skills draft.
-- **Deploy na VPS** (F1 físico) — o hub roda 24/7 na VPS; qualquer máquina conecta via MCP.
+- ✅ **Deploy na VPS** (F1 físico) — ENTREGUE em 2026-07-17 (`https://devmemory.fssdev.com.br`, VPS srv084270, PostgreSQL + SSL, workers de fila, deploy via Jarvis Forge). Ver [`deploy.md`](deploy.md).
+- Ingerir Tier 2–4 da escavação + rodar o pipeline de skills em produção.
 - **Embeddings/pgvector** — recorrência e busca semântica reais (hoje TF-cosseno).
 - **Campo `maturity`** — workaround → provisório → recomendado → canônico → consolidado.
 

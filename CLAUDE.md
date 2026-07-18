@@ -64,7 +64,7 @@ Programmatic access is **MCP only** (the legacy `/api/memories` REST API was rem
 - **`app/Services/Curation/`** — the pipeline: `CaptureService`+`CaptureSanitizer` (ingest/scrub), `AnthropicCurationEngine` (MiniMax structured output + repair), `DocumentationValidator`+`Context7Client` (grounded validation), `RecurrenceScorer`, `PromotionPolicy`, `SkillGroupProposer`, `SkillCompiler`, `SkillPublisher` (git)
 - **`app/Jobs/`** — `CurateCaptureJob`, `ValidateMemoryDocumentationJob` (async pipeline)
 - **`app/Livewire/`** — `Auth/Login`; memory pages (`Dashboard`, `MemoryList`, `MemoryForm`, `MemoryDetail`); `Admin/` (`CapturesInbox`, `SkillGroupsReview`, `SkillsAdmin`, `ApiTokens`)
-- **`app/Mcp/MemoryMcpServer.php`** — MCP with **11 tools** (stdio + HTTP). See `docs/mcp-tools.md` for the full catalog. `memory_delete` is destructive (two-phase confirmation)
+- **`app/Mcp/MemoryMcpServer.php`** — MCP with **15 tools** (stdio + HTTP). See `docs/mcp-tools.md` for the full catalog. `memory_delete` is destructive (two-phase confirmation)
 - **`app/Http/`** — `McpController` (remote MCP over HTTP), `AuthenticateMcpToken` middleware (`mcp.token`)
 - **`resources/views/components/neo/`** — reusable Blade UI components (neo brutalist design system). **Rebuild assets after CSS/Blade changes** (`npm run build` or `npm run dev`) — serving stale build breaks layout/scroll.
 

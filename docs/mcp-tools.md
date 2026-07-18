@@ -9,7 +9,7 @@ O MCP é o **único caminho programático oficial** para o hub. Todo acesso é t
 | **stdio** | Local, mesmo host (`php artisan mcp:serve`) | processo local |
 | **HTTP** | Remoto, outros projetos (`POST /api/mcp`) | token de API (Bearer) |
 
-Ambos expõem o mesmo `MemoryMcpServer` e as mesmas 11 tools.
+Ambos expõem o mesmo `MemoryMcpServer` e as mesmas 15 tools.
 
 ### Conectar via HTTP (outro projeto)
 
