@@ -1,4 +1,14 @@
 <div class="animate-fade-in-up">
+    @php
+        // Cor semântica por status: pendente = LARANJA (pede ação); validado = verde.
+        $statusStyles = [
+            'pending'    => ['badge' => 'bg-neo-orange text-black', 'header' => 'bg-[#FDBA74]', 'headerText' => 'text-black'],
+            'validated'  => ['badge' => 'bg-neo-green text-black',  'header' => 'bg-[#E0E7FF]', 'headerText' => 'text-gray-500'],
+            'rejected'   => ['badge' => 'bg-gray-400 text-black',   'header' => 'bg-[#E5E7EB]', 'headerText' => 'text-gray-500'],
+            'superseded' => ['badge' => 'bg-gray-400 text-black',   'header' => 'bg-[#E5E7EB]', 'headerText' => 'text-gray-500'],
+        ];
+        $ss = $statusStyles[$memory->validation_status->value] ?? $statusStyles['rejected'];
+    @endphp
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <a href="{{ route('memories.index') }}" wire:navigate
            class="flex items-center gap-1.5 font-mono text-sm no-underline text-black hover:text-neo-magenta transition-colors">
@@ -30,13 +40,13 @@
         <main class="lg:col-span-2">
             <div class="card-neo bg-neo-white neo-border shadow-neo overflow-hidden relative">
                 
-                {{-- Header Refinement: Fundo Azul Pastel (#E0E7FF) com badge Roxo (#6366F1) --}}
-                <div class="h-12 bg-[#E0E7FF] border-b-2 border-black flex items-center px-6 justify-between">
-                    <span class="text-xs font-mono text-gray-500 font-bold uppercase tracking-widest">
+                {{-- Header: fundo semântico (laranja p/ pendente = pede atenção) --}}
+                <div class="h-12 {{ $ss['header'] }} border-b-2 border-black flex items-center px-6 justify-between">
+                    <span class="text-xs font-mono {{ $ss['headerText'] }} font-bold uppercase tracking-widest">
                         MEM_ID: {{ str_pad($memory->id, 5, '0', STR_PAD_LEFT) }}
                     </span>
                     <div class="flex items-center gap-2">
-                        <span class="bg-[#6366F1] text-white border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-tighter">
+                        <span class="{{ $ss['badge'] }} border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-tighter">
                             {{ $memory->validation_status->label() }}
                         </span>
                         @if ($memory->doc_validation_status)
@@ -95,23 +105,31 @@
                         @php
                             $report = $memory->doc_validation_report;
                             $verdict = $report['verdict'] ?? [];
-                            $docBadge = match ($memory->doc_validation_status?->value) {
+                            $docStatus = $memory->doc_validation_status?->value;
+                            $docBadge = match ($docStatus) {
                                 'confirmed' => 'bg-neo-green',
                                 'partially_confirmed' => 'bg-neo-yellow',
                                 'contradicted' => 'bg-neo-magenta text-white',
                                 default => 'bg-gray-300',
                             };
+                            $library = $report['library'] ?? null;
+                            $libraryUrl = $library ? 'https://context7.com'.$library : null;
+                            $sources = collect($report['sources'] ?? [])
+                                ->map(fn ($s) => is_string($s) ? $s : ($s['url'] ?? $s['source'] ?? null))
+                                ->filter(fn ($u) => is_string($u) && str_starts_with($u, 'http'))
+                                ->unique()->values();
+                            $constraints = $verdict['version_constraints'] ?? [];
                         @endphp
-                        <div class="neo-border-sm shadow-neo-sm p-4 mt-6 bg-neo-white">
+                        <div id="prova-context7" class="neo-border shadow-neo p-4 mt-8 bg-neo-white">
                             <div class="flex items-center justify-between flex-wrap gap-2 mb-3 pb-2 border-b-2 border-black">
                                 <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span class="text-xs font-bold font-mono uppercase tracking-wide">Verificado no Context7</span>
+                                    <span class="text-xs font-bold font-mono uppercase tracking-wide">Comprovação em documentação oficial</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    @if($memory->doc_validation_status)
+                                    @if($docStatus)
                                         <span class="{{ $docBadge }} border-2 border-black px-2 py-0.5 text-xs font-black uppercase">
                                             {{ $memory->doc_validation_status->label() }}
                                         </span>
@@ -122,9 +140,10 @@
                                 </div>
                             </div>
 
-                            @if(!empty($report['library']))
+                            @if($library)
                                 <div class="text-xs font-mono text-gray-600 mb-3">
-                                    Biblioteca checada: <span class="font-bold text-black">{{ $report['library'] }}</span>
+                                    Biblioteca checada no Context7:
+                                    <a href="{{ $libraryUrl }}" target="_blank" rel="noopener noreferrer" class="font-bold text-neo-magenta underline underline-offset-2 hover:text-black break-all">{{ $library }}</a>
                                 </div>
                             @endif
 
@@ -145,20 +164,36 @@
                                 </ul>
                             @endif
 
-                            @if(!empty($report['sources']))
-                                <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1">Fontes (prova)</span>
-                                <ul class="space-y-1 mb-1">
-                                    @foreach($report['sources'] as $src)
-                                        @php $srcUrl = is_string($src) ? $src : ($src['url'] ?? $src['source'] ?? null); @endphp
-                                        <li class="text-xs font-mono break-all">
-                                            @if($srcUrl && str_starts_with($srcUrl, 'http'))
+                            @if(!empty($constraints))
+                                <div class="mb-3">
+                                    <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1">Restrições de versão</span>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($constraints as $vc)
+                                            <span class="bg-black text-white px-2 py-0.5 text-[10px] font-mono">{{ $vc }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($sources->isNotEmpty())
+                                {{-- O coração da prova: links diretos p/ a doc oficial de onde o veredito saiu. --}}
+                                <div class="neo-border-sm bg-[#F0FDFA] p-3 mt-3">
+                                    <span class="text-[10px] font-mono uppercase text-black font-black block mb-2">Documentação oficial — clique para comprovar</span>
+                                    <ul class="space-y-1">
+                                        @foreach($sources as $srcUrl)
+                                            <li class="text-xs font-mono break-all flex gap-1.5 items-start">
+                                                <span class="text-neo-magenta font-black shrink-0" aria-hidden="true">&rarr;</span>
                                                 <a href="{{ $srcUrl }}" target="_blank" rel="noopener noreferrer" class="text-neo-magenta underline underline-offset-2 hover:text-black">{{ $srcUrl }}</a>
-                                            @else
-                                                <span class="text-gray-600">{{ is_array($src) ? json_encode($src, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $src }}</span>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if(!empty($report['note']))
+                                <div class="text-xs font-mono text-gray-600 mt-3 bg-gray-50 neo-border-sm p-2">
+                                    <span class="font-bold uppercase text-[10px] text-gray-500">Observação:</span> {{ $report['note'] }}
+                                </div>
                             @endif
 
                             @if($memory->doc_validated_at)

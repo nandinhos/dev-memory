@@ -14,26 +14,29 @@ $scopeColors = [
     'global' => 'bg-neo-purple',
 ];
 
-$statusColors = [
-    'pending' => 'bg-neo-salmon',
-    'validated' => 'bg-neo-green',
-    'rejected' => 'bg-gray-400',
+// Cor semântica por status de validação. Pendente = LARANJA em evidência
+// (precisa de ação humana); validado = verde; demais = neutro.
+$statusStyles = [
+    'pending'    => ['badge' => 'bg-neo-orange text-black', 'header' => 'bg-[#FDBA74]', 'headerText' => 'text-black', 'label' => 'text-neo-orange'],
+    'validated'  => ['badge' => 'bg-neo-green text-black',  'header' => 'bg-[#E0E7FF]', 'headerText' => 'text-gray-500', 'label' => 'text-neo-green'],
+    'rejected'   => ['badge' => 'bg-gray-400 text-black',   'header' => 'bg-[#E5E7EB]', 'headerText' => 'text-gray-500', 'label' => 'text-gray-500'],
+    'superseded' => ['badge' => 'bg-gray-400 text-black',   'header' => 'bg-[#E5E7EB]', 'headerText' => 'text-gray-500', 'label' => 'text-gray-500'],
 ];
 
 $typeBg = $typeColors[$memoria->type->value] ?? 'bg-neo-teal';
 $scopeBg = $scopeColors[$memoria->scope->value] ?? 'bg-neo-teal';
-$statusBg = $statusColors[$memoria->validation_status->value] ?? 'bg-gray-400';
+$ss = $statusStyles[$memoria->validation_status->value] ?? $statusStyles['rejected'];
 @endphp
 
 <div class="block card-neo bg-neo-white neo-border shadow-neo hover:shadow-neo-lg transition-all duration-150 group relative overflow-hidden">
-    
-    {{-- Header com fundo Azul Pastel (#E0E7FF) --}}
-    <div class="h-10 bg-[#E0E7FF] border-b-2 border-black flex items-center px-4 justify-between">
-        <span class="text-[10px] font-mono text-gray-500 font-bold tracking-wider">
+
+    {{-- Header: fundo semântico (laranja p/ pendente = pede atenção) --}}
+    <div class="h-10 {{ $ss['header'] }} border-b-2 border-black flex items-center px-4 justify-between">
+        <span class="text-[10px] font-mono {{ $ss['headerText'] }} font-bold tracking-wider">
             MEM_ID: {{ str_pad($memoria->id, 4, '0', STR_PAD_LEFT) }}
         </span>
-        {{-- Badge Roxo (#6366F1) com texto branco e borda preta --}}
-        <span class="bg-[#6366F1] text-white border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter">
+        {{-- Badge de status em cor semântica (laranja/verde/cinza) --}}
+        <span class="{{ $ss['badge'] }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter">
             {{ $memoria->validation_status->label() }}
         </span>
     </div>
@@ -104,7 +107,7 @@ $statusBg = $statusColors[$memoria->validation_status->value] ?? 'bg-gray-400';
         <div class="flex gap-4">
             <div class="flex flex-col">
                 <span class="text-[8px] uppercase font-bold text-gray-400 leading-none">Validação</span>
-                <span class="text-[10px] font-black text-neo-green uppercase">
+                <span class="text-[10px] font-black {{ $ss['label'] }} uppercase">
                     {{ $memoria->validation_status->label() }}
                 </span>
             </div>

@@ -21,6 +21,7 @@
     --color-neo-salmon: #FDA4AF;
     --color-neo-green: #00FF7F;
     --color-neo-purple: #9370DB;
+    --color-neo-orange: #F97316;
     
     --color-neon-green: #39FF14;
     --color-sidebar-bege: #F5F5DC;
@@ -373,6 +374,7 @@
     .bg-neo-green { background-color: var(--color-neo-green); }
     .bg-neo-salmon { background-color: var(--color-neo-salmon); }
     .bg-neo-purple { background-color: var(--color-neo-purple); }
+    .bg-neo-orange { background-color: var(--color-neo-orange); }
     .bg-neo-white { background-color: var(--color-neo-white); }
     .bg-neon-green { background-color: var(--color-neon-green); }
 
@@ -380,12 +382,14 @@
     .text-neo-magenta { color: var(--color-neo-magenta); }
     .text-neo-yellow { color: var(--color-neo-yellow); }
     .text-neo-green { color: var(--color-neo-green); }
+    .text-neo-orange { color: var(--color-neo-orange); }
     .text-neon-green { color: var(--color-neon-green); }
 
     .border-neo-teal { border-color: var(--color-neo-teal); }
     .border-neo-magenta { border-color: var(--color-neo-magenta); }
     .border-neo-yellow { border-color: var(--color-neo-yellow); }
     .border-neo-green { border-color: var(--color-neo-green); }
+    .border-neo-orange { border-color: var(--color-neo-orange); }
     .border-neon-green { border-color: var(--color-neon-green); }
 
     .font-body { font-family: var(--font-mono); }
