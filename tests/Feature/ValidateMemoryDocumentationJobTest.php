@@ -9,6 +9,7 @@ use App\Jobs\ValidateMemoryDocumentationJob;
 use App\Models\Memory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class ValidateMemoryDocumentationJobTest extends TestCase
@@ -131,6 +132,7 @@ class ValidateMemoryDocumentationJobTest extends TestCase
 
     public function test_engine_failure_records_inconclusive_with_note(): void
     {
+        Sleep::fake(); // pula o backoff do retry em 5xx
         Http::fake(array_merge($this->fakeContext7(), [
             'fake.minimax.test/*' => Http::response(['error' => 'overloaded'], 500),
         ]));

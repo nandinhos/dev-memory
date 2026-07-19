@@ -13,6 +13,7 @@ use App\Services\Curation\CaptureSanitizer;
 use App\Services\Curation\CaptureService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class CurateCaptureJobTest extends TestCase
@@ -155,6 +156,7 @@ class CurateCaptureJobTest extends TestCase
 
     public function test_marks_capture_failed_when_engine_fails(): void
     {
+        Sleep::fake(); // pula o backoff do retry (5xx é transiente)
         Http::fake(['*' => Http::response(['error' => 'overloaded'], 500)]);
 
         $capture = $this->ingestCapture();

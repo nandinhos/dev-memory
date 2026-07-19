@@ -7,9 +7,13 @@ use App\Jobs\CurateCaptureJob;
 use App\Livewire\Admin\CapturesInbox;
 use App\Models\Capture;
 use App\Models\User;
+use App\Services\Curation\AnthropicCurationEngine;
+use App\Services\Curation\CurationFailedException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Sleep;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -78,5 +82,36 @@ class Fase2RobustnessTest extends TestCase
         );
 
         $this->assertTrue($found, 'O comando de recuperação deve estar agendado.');
+    }
+
+    public function test_engine_retries_on_429_then_succeeds(): void
+    {
+        Sleep::fake(); // pula o backoff
+        $draft = json_encode([
+            'title' => 'Boa prática de teste do retry em 429',
+            'summary' => 'resumo', 'problem' => 'problema', 'solution' => 'solução',
+            'category' => 'lesson', 'confidence' => 0.9,
+            'technologies' => [], 'root_cause' => null,
+            'evidence' => [], 'applicability' => [], 'risks' => [],
+        ]);
+        Http::fake(['*' => Http::sequence()
+            ->push(['error' => 'rate limited'], 429)
+            ->push(['content' => [['type' => 'text', 'text' => $draft]], 'usage' => ['input_tokens' => 1, 'output_tokens' => 1]], 200),
+        ]);
+
+        $engine = app(AnthropicCurationEngine::class);
+        $result = $engine->prepare('captura de teste');
+
+        // 429 transitório foi superado pelo retry → draft válido.
+        $this->assertSame('Boa prática de teste do retry em 429', $result->title);
+    }
+
+    public function test_engine_fails_after_persistent_429(): void
+    {
+        Sleep::fake();
+        Http::fake(['*' => Http::response(['error' => 'rate limited'], 429)]);
+
+        $this->expectException(CurationFailedException::class);
+        app(AnthropicCurationEngine::class)->prepare('captura');
     }
 }

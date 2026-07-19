@@ -2,6 +2,8 @@
 
 namespace App\Services\Curation;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -63,24 +65,44 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
         for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
             $this->lastAttempts = $attempt;
 
-            $response = Http::baseUrl($this->baseUrl)
-                ->timeout(120)
-                ->retry(1, 1000, throw: false)
-                ->withHeaders([
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => '2023-06-01',
-                ])
-                ->post('/v1/messages', [
-                    'model' => $this->model,
-                    'max_tokens' => 6000,
-                    'temperature' => self::TEMPERATURE,
-                    'system' => $systemPrompt,
-                    'messages' => $messages,
-                ]);
+            try {
+                $response = Http::baseUrl($this->baseUrl)
+                    ->timeout(120)
+                    // Retry só em transiente (conexão, 429, 5xx) com backoff
+                    // exponencial respeitando Retry-After — 4xx falha na hora.
+                    ->retry(3, function (int $attempt, Throwable $e) {
+                        $retryAfter = ($e instanceof RequestException)
+                            ? (int) $e->response->header('Retry-After') : 0;
 
-            if ($response->failed()) {
+                        return $retryAfter > 0
+                            ? min($retryAfter, 30) * 1000
+                            : (int) ((2 ** $attempt) * 1000);
+                    }, function (Throwable $e) {
+                        return $e instanceof ConnectionException
+                            || ($e instanceof RequestException
+                                && in_array($e->response->status(), [429, 500, 502, 503, 504], true));
+                    })
+                    ->withHeaders([
+                        'x-api-key' => $this->apiKey,
+                        'anthropic-version' => '2023-06-01',
+                    ])
+                    ->post('/v1/messages', [
+                        'model' => $this->model,
+                        'max_tokens' => 6000,
+                        'temperature' => self::TEMPERATURE,
+                        'system' => $systemPrompt,
+                        'messages' => $messages,
+                    ])
+                    ->throw();
+            } catch (RequestException $e) {
                 throw new CurationFailedException(
-                    "Requisição ao motor falhou com HTTP {$response->status()}"
+                    "Requisição ao motor falhou com HTTP {$e->response->status()} após retries",
+                    previous: $e,
+                );
+            } catch (ConnectionException $e) {
+                throw new CurationFailedException(
+                    'Conexão com o motor falhou após retries: '.$e->getMessage(),
+                    previous: $e,
                 );
             }
 
