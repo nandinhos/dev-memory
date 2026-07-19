@@ -34,13 +34,16 @@
 
 ---
 
-## FASE 0 — Housekeeping (minutos, na retomada)
+> **Progresso:** ✅ FASE 0 e ✅ FASE 1 concluídas e em produção (commit `a7554b3`, 2026-07-19).
+> Próxima recomendada: FASE 3 (valor do produto).
+
+## FASE 0 — Housekeeping ✅ FEITA
 
 - [ ] **`DB_QUEUE_RETRY_AFTER=330` no `shared/.env` da VPS** (ação manual do usuário; sem isso, job de curadoria >90s é re-reservado por outro worker e marcado como falho enquanto roda):
   `echo "DB_QUEUE_RETRY_AFTER=330" >> /var/www/devmemory.fssdev.com.br/shared/.env && cd /var/www/devmemory.fssdev.com.br/current && php artisan config:clear && php artisan queue:restart`
 - [ ] Smoke: `https://devmemory.fssdev.com.br` 200, login ok, `/admin/settings` renderiza.
 
-## FASE 1 — Bloco de segurança (auditoria: os 4 confirmados de maior peso)
+## FASE 1 — Bloco de segurança ✅ FEITA (commit a7554b3)
 
 > Aceite geral: suíte verde + teste novo por item + nada quebra o fluxo MCP existente.
 
