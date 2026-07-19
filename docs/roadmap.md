@@ -1,6 +1,7 @@
 # Roadmap — Dev Memory Hub
 
 Visão de evolução. Estado atual em [`STATUS.md`](STATUS.md).
+**Plano de execução faseado (handoff): [`plans/plano-mestre-2026-07-19.md`](plans/plano-mestre-2026-07-19.md).**
 
 ---
 
