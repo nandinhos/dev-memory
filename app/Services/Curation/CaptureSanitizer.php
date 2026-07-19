@@ -25,6 +25,8 @@ class CaptureSanitizer
             '/\b([A-Za-z_][A-Za-z0-9_]*(?:PASSWORD|SECRET|TOKEN|_KEY|APIKEY|AUTH)[A-Za-z0-9_]*)(\s*[=:]\s*)["\']?[^\s"\']{4,}["\']?/i',
             '$1$2[REDACTED]',
         ],
+        'pem_private_key' => ['/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/', '[REDACTED_PRIVATE_KEY]'],
+        'google_api_key' => ['/\bAIza[0-9A-Za-z\-_]{35}\b/', '[REDACTED_KEY]'],
         'vendor_api_key' => ['/\b(?:sk|pk|rk|ghp|gho|ghs|glpat)[-_][A-Za-z0-9\-_]{8,}\b/', '[REDACTED_KEY]'],
         'github_pat' => ['/\bgithub_pat_[A-Za-z0-9_]{20,}\b/', '[REDACTED_KEY]'],
         'aws_access_key' => ['/\bAKIA[0-9A-Z]{16}\b/', '[REDACTED_KEY]'],

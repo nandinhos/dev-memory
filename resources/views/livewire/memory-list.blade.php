@@ -1,4 +1,10 @@
 <div class="animate-fade-in-up">
+    @if (session('success'))
+        <div class="bg-neo-green neo-border-sm shadow-neo p-3 mb-4 font-mono text-sm font-bold" role="status">
+            &#10003; {{ session('success') }}
+        </div>
+    @endif
+
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <p class="text-sm text-gray-600 font-mono m-0">Repositório de lições aprendidas.</p>
         <a href="{{ route('memories.create') }}" class="btn-neo bg-neo-teal neo-border-sm shadow-neo px-4 py-2 font-heading text-sm hover:bg-neo-yellow transition-colors flex items-center gap-2">
@@ -34,9 +40,19 @@
                     <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Tipo</label>
                     <select wire:model.live="typeFilter" class="input-neo w-full neo-border-sm shadow-neo-sm px-3 py-2 outline-none font-mono text-sm cursor-pointer">
                         <option value="">Todos</option>
-                        <option value="error">Erro</option>
-                        <option value="lesson">Lição</option>
-                        <option value="best_practice">Boa Prática</option>
+                        @foreach (\App\Enums\MemoryType::cases() as $tipoOpcao)
+                            <option value="{{ $tipoOpcao->value }}">{{ $tipoOpcao->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Stack</label>
+                    <select wire:model.live="stackFilter" class="input-neo w-full neo-border-sm shadow-neo-sm px-3 py-2 outline-none font-mono text-sm cursor-pointer">
+                        <option value="">Todas</option>
+                        @foreach ($stacks as $stackOpcao)
+                            <option value="{{ $stackOpcao }}">{{ $stackOpcao }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -53,13 +69,13 @@
                     <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Status</label>
                     <select wire:model.live="statusFilter" class="input-neo w-full neo-border-sm shadow-neo-sm px-3 py-2 outline-none font-mono text-sm cursor-pointer">
                         <option value="">Todos</option>
-                        <option value="pending">Pendente</option>
-                        <option value="validated">Validado</option>
-                        <option value="rejected">Rejeitado</option>
+                        @foreach (\App\Enums\ValidationStatus::cases() as $statusOpcao)
+                            <option value="{{ $statusOpcao->value }}">{{ $statusOpcao->label() }}</option>
+                        @endforeach
                     </select>
                 </div>
 
-                @if($search || $typeFilter || $scopeFilter || $statusFilter)
+                @if($search || $typeFilter || $scopeFilter || $stackFilter || $statusFilter)
                     <button wire:click="clearFilters" class="btn-neo bg-neo-salmon neo-border-sm shadow-neo-sm px-4 py-2 font-heading text-xs w-full hover:bg-neo-magenta transition-colors">
                         Limpar Filtros
                     </button>
@@ -115,7 +131,7 @@
             @else
                 <div class="space-y-4">
                     @foreach($memories as $memory)
-                        <div class="card-stagger-item"
+                        <div class="card-stagger-item" wire:key="memory-{{ $memory->id }}"
                              style="animation-delay: {{ min($loop->index, 6) * 80 }}ms">
                             <x-neo.memory-card :memoria="$memory" />
                         </div>
@@ -123,24 +139,25 @@
                 </div>
 
                 @if($memories->hasPages())
+                    {{-- Paginação via Livewire (wire:click) preserva busca e filtros ativos --}}
                     <div class="mt-8 flex justify-center">
-                        <nav class="flex gap-2 flex-wrap justify-center">
+                        <nav class="flex gap-2 flex-wrap justify-center" aria-label="Paginação">
                             @if($memories->onFirstPage())
                                 <span class="neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm bg-gray-200 cursor-not-allowed opacity-50">«</span>
                             @else
-                                <a href="{{ $memories->previousPageUrl() }}" class="btn-neo bg-neo-white neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm hover:bg-neo-yellow">«</a>
+                                <button type="button" wire:click="previousPage" class="btn-neo bg-neo-white neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm hover:bg-neo-yellow">«</button>
                             @endif
 
-                            @foreach($memories->getUrlRange(max(1, $memories->currentPage() - 2), min($memories->lastPage(), $memories->currentPage() + 2)) as $page => $url)
+                            @foreach(range(max(1, $memories->currentPage() - 2), min($memories->lastPage(), $memories->currentPage() + 2)) as $page)
                                 @if($page == $memories->currentPage())
-                                    <span class="neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm bg-neo-teal">{{ $page }}</span>
+                                    <span class="neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm bg-neo-teal" aria-current="page">{{ $page }}</span>
                                 @else
-                                    <a href="{{ $url }}" class="btn-neo bg-neo-white neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm hover:bg-neo-yellow">{{ $page }}</a>
+                                    <button type="button" wire:click="gotoPage({{ $page }})" class="btn-neo bg-neo-white neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm hover:bg-neo-yellow">{{ $page }}</button>
                                 @endif
                             @endforeach
 
                             @if($memories->hasMorePages())
-                                <a href="{{ $memories->nextPageUrl() }}" class="btn-neo bg-neo-white neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm hover:bg-neo-yellow">»</a>
+                                <button type="button" wire:click="nextPage" class="btn-neo bg-neo-white neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm hover:bg-neo-yellow">»</button>
                             @else
                                 <span class="neo-border-sm shadow-neo-sm px-3 py-1 font-heading text-sm bg-gray-200 cursor-not-allowed opacity-50">»</span>
                             @endif

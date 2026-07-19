@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Enums\MemoryScope;
 use App\Models\Memory;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -63,6 +65,15 @@ class MemoryList extends Component
         $this->stackFilter = null;
         $this->statusFilter = null;
         $this->resetPage();
+    }
+
+    #[On('promote-memory')]
+    public function promoteMemory(string $id): void
+    {
+        $memory = Memory::findOrFail($id);
+        $memory->update(['scope' => MemoryScope::GLOBAL]);
+
+        $this->dispatch('show-toast', message: 'Memória promovida a Global!', type: 'sucesso');
     }
 
     public function render()

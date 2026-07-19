@@ -4,6 +4,7 @@ namespace App\Services\Curation;
 
 use App\Enums\CaptureStatus;
 use App\Models\Capture;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
  * Immutable capture ingestion: raw content is never rewritten, sanitized
@@ -33,16 +34,22 @@ class CaptureService
 
         $result = $this->sanitizer->sanitize($rawContent);
 
-        return Capture::create([
-            'source_system' => $sourceSystem,
-            'trigger_event' => $triggerEvent,
-            'source_project' => $sourceProject,
-            'raw_content' => $rawContent,
-            'sanitized_content' => $result->text,
-            'metadata' => array_merge($metadata, ['redactions' => $result->redactions]),
-            'idempotency_key' => $key,
-            'status' => CaptureStatus::SANITIZED,
-        ]);
+        try {
+            return Capture::create([
+                'source_system' => $sourceSystem,
+                'trigger_event' => $triggerEvent,
+                'source_project' => $sourceProject,
+                'raw_content' => $rawContent,
+                'sanitized_content' => $result->text,
+                'metadata' => array_merge($metadata, ['redactions' => $result->redactions]),
+                'idempotency_key' => $key,
+                'status' => CaptureStatus::SANITIZED,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Corrida entre requests simultâneas com o mesmo conteúdo: a outra
+            // venceu o check-then-create — devolve a capture dela (idempotência real).
+            return Capture::where('idempotency_key', $key)->firstOrFail();
+        }
     }
 
     public function idempotencyKey(

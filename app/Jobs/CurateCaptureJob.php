@@ -104,6 +104,16 @@ class CurateCaptureJob implements ShouldQueue
         ]);
     }
 
+    /**
+     * Última rede de proteção: exceção inesperada ou kill por timeout.
+     * Sem isto a capture ficaria presa em 'sanitized' para sempre
+     * (recuperável depois via memory:process-captures --retry-failed).
+     */
+    public function failed(?\Throwable $exception): void
+    {
+        $this->capture->update(['status' => CaptureStatus::FAILED]);
+    }
+
     private function buildDescription(LessonDraft $draft): string
     {
         $parts = [$draft->summary];

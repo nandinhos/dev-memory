@@ -27,11 +27,13 @@ workers **precisam** do `queue:restart` no hook para não rodarem código/config
 
 ## `.env` de produção (chaves que importam)
 
-- `APP_ENV=production`, `APP_KEY` (gerar 1×), `APP_URL=https://devmemory.fssdev.com.br`
+- `APP_ENV=production`, **`APP_DEBUG=false`** (nunca true em prod — vaza stack/segredos em erro), `APP_KEY` (gerar 1×), `APP_URL=https://devmemory.fssdev.com.br`
 - **`DB_CONNECTION=pgsql`, `DB_PORT=5432`** (ver gotcha #2)
-- **`MINIMAX_API_KEY`** — obrigatório p/ a curadoria (lido via `config('services.minimax.api_key')`)
+- **`MINIMAX_API_KEY`** — obrigatório p/ a curadoria (lido via `config('services.minimax.api_key')`); pode também ser administrado pela tela **CONFIGURAÇÕES** (criptografado em DB, sobrepõe o env)
 - `CONTEXT7_API_KEY` — **opcional** (validação documental funciona keyless; ver gotcha #6)
 - `SESSION_DRIVER`/`CACHE_STORE`/`QUEUE_CONNECTION` = `database`/`file`/`database` (ver gotcha #3)
+- **`DB_QUEUE_RETRY_AFTER=330`** — precisa ser MAIOR que o timeout dos jobs (300s); com o default (90s) um job lento de curadoria é re-reservado por outro worker e marcado como falho enquanto ainda roda
+- `SESSION_SECURE_COOKIE=true` — cookie de sessão só via HTTPS
 
 ## Gotchas aprendidos (2026-07-17) — leia antes de deployar
 

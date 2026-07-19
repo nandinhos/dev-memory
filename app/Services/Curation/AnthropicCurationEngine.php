@@ -29,9 +29,10 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 
     public function __construct(?string $baseUrl = null, ?string $apiKey = null, ?string $model = null)
     {
-        $this->baseUrl = $baseUrl ?? config('services.minimax.base_url');
-        $this->apiKey = $apiKey ?? config('services.minimax.api_key', '');
-        $this->model = $model ?? config('services.minimax.model');
+        // "?: ''" cobre env/painel ausentes (config devolve null) sem TypeError nas props string.
+        $this->baseUrl = $baseUrl ?? (config('services.minimax.base_url') ?: '');
+        $this->apiKey = $apiKey ?? (config('services.minimax.api_key') ?: '');
+        $this->model = $model ?? (config('services.minimax.model') ?: '');
     }
 
     public function prepare(string $capture): LessonDraft
@@ -108,8 +109,17 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 
     public function lastMeta(): array
     {
+        // Proveniência real: derivada do endpoint efetivo (a tela de
+        // configurações permite trocar de provider sem tocar em código).
+        $host = (string) (parse_url($this->baseUrl, PHP_URL_HOST) ?: '');
+        $provider = match (true) {
+            str_contains($host, 'minimax') || $host === '' => 'minimax',
+            str_contains($host, 'anthropic') => 'anthropic',
+            default => $host,
+        };
+
         return [
-            'provider' => 'minimax',
+            'provider' => $provider,
             'model' => $this->model,
             'prompt_version' => self::PROMPT_VERSION,
             'temperature' => self::TEMPERATURE,

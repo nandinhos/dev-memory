@@ -26,7 +26,8 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95 translate-x-10"
-            class="relative bg-[#39FF14] text-black font-bold px-6 py-4 border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden min-w-[300px]"
+            class="relative text-black font-bold px-6 py-4 border-4 border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] overflow-hidden min-w-[300px]"
+            :class="{ sucesso: 'bg-[#39FF14]', erro: 'bg-neo-magenta', aviso: 'bg-neo-yellow', info: 'bg-neo-teal' }[toast.type] ?? 'bg-[#39FF14]'"
             role="alert"
         >
             {{-- CRT Overlay integrada com opacidade 0.05 --}}

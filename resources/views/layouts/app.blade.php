@@ -10,7 +10,8 @@
     @livewireStyles
     <style>[x-cloak]{display:none!important}</style>
 </head>
-<body class="bg-neo-bg min-h-screen flex overflow-hidden" x-data="{ sidebarOpen: false }">
+<body class="bg-neo-bg min-h-screen flex overflow-hidden" x-data="{ sidebarOpen: false }"
+      @keydown.escape.window="sidebarOpen = false">
 
     <!-- Backdrop (apenas mobile/tablet, quando o drawer está aberto) -->
     <div x-show="sidebarOpen" x-cloak x-transition.opacity
@@ -18,7 +19,7 @@
          class="fixed inset-0 bg-black/50 z-30 lg:hidden"></div>
 
     <!-- Sidebar (drawer em <lg, estática em lg+) -->
-    <aside @click="sidebarOpen = false"
+    <aside id="sidebar-nav" @click="sidebarOpen = false"
            class="sidebar-bege w-72 flex-shrink-0 flex flex-col h-screen fixed lg:relative inset-y-0 left-0 -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 lg:z-20"
            :class="{ 'translate-x-0': sidebarOpen }">
         <div class="logo-block">
@@ -71,6 +72,11 @@
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.harness') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
                 <span>HARNESS</span>
             </a>
+
+            <a href="{{ route('admin.settings') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.settings') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>CONFIGURAÇÕES</span>
+            </a>
         </nav>
 
         <!-- Profile Area -->
@@ -99,6 +105,7 @@
         <header class="h-80px bg-neo-white border-b-4 border-black flex items-center px-4 sm:px-6 lg:px-8 justify-between flex-shrink-0 gap-3">
             <div class="flex items-center gap-3 min-w-0">
                 <button type="button" @click="sidebarOpen = true" aria-label="Abrir menu"
+                        :aria-expanded="sidebarOpen" aria-controls="sidebar-nav"
                         class="lg:hidden flex-shrink-0 btn-neo bg-neo-yellow neo-border-sm shadow-neo-sm p-2 hover:bg-neo-magenta transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />

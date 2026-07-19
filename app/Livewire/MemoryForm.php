@@ -2,7 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Enums\MemoryScope;
+use App\Enums\MemoryType;
+use App\Enums\ValidationStatus;
 use App\Models\Memory;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class MemoryForm extends Component
@@ -51,9 +55,10 @@ class MemoryForm extends Component
         $this->validate([
             'title' => ['required', 'string', 'max:500'],
             'description' => ['required', 'string'],
-            'type' => ['required', 'in:error,lesson,best_practice'],
+            'type' => ['required', Rule::enum(MemoryType::class)],
             'stack' => ['nullable', 'string', 'max:100'],
-            'scope' => ['nullable', 'in:project,global'],
+            'scope' => ['nullable', Rule::enum(MemoryScope::class)],
+            'validation_status' => ['required', Rule::enum(ValidationStatus::class)],
             'official_reference' => ['nullable', 'url', 'max:1000'],
         ]);
 

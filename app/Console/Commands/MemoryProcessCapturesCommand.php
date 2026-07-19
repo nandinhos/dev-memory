@@ -11,14 +11,21 @@ class MemoryProcessCapturesCommand extends Command
 {
     protected $signature = 'memory:process-captures
                             {--sync : Processa na hora em vez de enfileirar}
-                            {--limit=0 : Limitar número de captures (0 = todas)}';
+                            {--limit=0 : Limitar número de captures (0 = todas)}
+                            {--retry-failed : Inclui captures FAILED (ex.: motor fora do ar), resetando-as para nova curadoria}';
 
     protected $description = 'Despacha o pipeline de curadoria para captures sanitizadas pendentes';
 
     public function handle(): int
     {
+        $statuses = [CaptureStatus::PENDING, CaptureStatus::SANITIZED];
+
+        if ($this->option('retry-failed')) {
+            $statuses[] = CaptureStatus::FAILED;
+        }
+
         $query = Capture::query()
-            ->whereIn('status', [CaptureStatus::PENDING, CaptureStatus::SANITIZED])
+            ->whereIn('status', $statuses)
             ->orderBy('created_at');
 
         $limit = (int) $this->option('limit');
@@ -36,6 +43,11 @@ class MemoryProcessCapturesCommand extends Command
         }
 
         foreach ($captures as $capture) {
+            // FAILED volta a SANITIZED antes do re-despacho — o job parte de estado limpo.
+            if ($capture->status === CaptureStatus::FAILED) {
+                $capture->update(['status' => CaptureStatus::SANITIZED]);
+            }
+
             $this->option('sync')
                 ? CurateCaptureJob::dispatchSync($capture)
                 : CurateCaptureJob::dispatch($capture);

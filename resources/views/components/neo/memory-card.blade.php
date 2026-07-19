@@ -76,8 +76,10 @@ $statusBg = $statusColors[$memoria->validation_status->value] ?? 'bg-gray-400';
         {{-- Botão "Promover p/ Global" em Azul Vibrante (#60A5FA) --}}
         @if($memoria->scope->value !== 'global')
             <div class="mt-4">
-                <button 
-                    onclick="window.location.href='{{ route('memories.show', $memoria) }}'"
+                <button
+                    type="button"
+                    x-data
+                    @click="$dispatch('promote-memory', { id: '{{ $memoria->id }}' })"
                     class="w-full bg-[#60A5FA] text-black border-2 border-black px-4 py-2 font-black uppercase text-xs shadow-[4px_4px_0px_0px_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
                 >
                     Promover p/ Global

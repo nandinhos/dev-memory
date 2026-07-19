@@ -408,6 +408,10 @@ class MemoryMcpServer
         $type = $args['type'] ?? null;
         $scope = $args['scope'] ?? 'project';
 
+        if (trim((string) ($args['title'] ?? '')) === '' || trim((string) ($args['description'] ?? '')) === '') {
+            return ['error' => 'title e description são obrigatórios'];
+        }
+
         if (! in_array($type, $allowedTypes, true)) {
             return ['error' => 'Tipo inválido. Valores permitidos: '.implode(', ', $allowedTypes)];
         }
