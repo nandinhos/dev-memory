@@ -75,7 +75,20 @@
                     </select>
                 </div>
 
-                @if($search || $typeFilter || $scopeFilter || $stackFilter || $statusFilter)
+                <div class="mb-4">
+                    <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-2">Context7 (doc oficial)</label>
+                    <select wire:model.live="docFilter" class="input-neo w-full neo-border-sm shadow-neo-sm px-3 py-2 outline-none font-mono text-sm cursor-pointer">
+                        <option value="">Todas</option>
+                        <option value="unchecked">Não verificada</option>
+                        @foreach (\App\Enums\DocumentationValidationStatus::cases() as $docOpcao)
+                            @if ($docOpcao->value !== 'pending')
+                                <option value="{{ $docOpcao->value }}">{{ $docOpcao->label() }}</option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+
+                @if($search || $typeFilter || $scopeFilter || $stackFilter || $statusFilter || $docFilter)
                     <button wire:click="clearFilters" class="btn-neo bg-neo-salmon neo-border-sm shadow-neo-sm px-4 py-2 font-heading text-xs w-full hover:bg-neo-magenta transition-colors">
                         Limpar Filtros
                     </button>

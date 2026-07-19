@@ -24,12 +24,15 @@ class MemoryList extends Component
 
     public ?string $statusFilter = null;
 
+    public ?string $docFilter = null;
+
     protected $queryString = [
         'search' => ['except' => ''],
         'typeFilter' => ['except' => null],
         'scopeFilter' => ['except' => null],
         'stackFilter' => ['except' => null],
         'statusFilter' => ['except' => null],
+        'docFilter' => ['except' => null],
     ];
 
     public function updatedSearch(): void
@@ -57,6 +60,11 @@ class MemoryList extends Component
         $this->resetPage();
     }
 
+    public function updatedDocFilter(): void
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters(): void
     {
         $this->search = '';
@@ -64,6 +72,7 @@ class MemoryList extends Component
         $this->scopeFilter = null;
         $this->stackFilter = null;
         $this->statusFilter = null;
+        $this->docFilter = null;
         $this->resetPage();
     }
 
@@ -94,6 +103,12 @@ class MemoryList extends Component
                 $q->whereRaw('LOWER(stack) LIKE ?', ['%'.strtolower($stack).'%']);
             })
             ->when($this->statusFilter, fn ($q, $status) => $q->where('validation_status', $status))
+            ->when($this->docFilter, function ($q, $doc) {
+                // 'unchecked' = memórias que ainda não passaram pela checagem Context7.
+                $doc === 'unchecked'
+                    ? $q->whereNull('doc_validation_status')
+                    : $q->where('doc_validation_status', $doc);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
