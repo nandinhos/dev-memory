@@ -9,83 +9,107 @@
                 default => ['bg-neo-magenta text-white', 'NÃO CONFIGURADA'],
             };
         };
+        // Cor + ícone do box de resultado do teste de conexão.
+        $testBox = function (array $t) {
+            return match ($t['type'] ?? '') {
+                'sucesso' => ['bg-neo-teal', '&#10003;'],
+                'aviso' => ['bg-neo-yellow', '&#9888;'],
+                default => ['bg-neo-magenta text-white', '&#10007;'],
+            };
+        };
     @endphp
 
-    <form wire:submit="save">
-        {{-- ===================== MOTOR DE CURADORIA ===================== --}}
-        <div class="bg-neo-white neo-border shadow-neo p-6 mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                <h2 class="font-heading text-lg m-0">Motor de curadoria</h2>
-                <div class="flex gap-2">
-                    @php [$cor, $txt] = $badge($sources['curation.api_key'] ?? 'nenhuma'); @endphp
-                    <span class="{{ $cor }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase">CHAVE: {{ $txt }}</span>
-                </div>
-            </div>
-            <p class="text-xs font-mono text-gray-500 mb-4">Qualquer endpoint Anthropic-compatible (MiniMax, Anthropic, proxy local). É quem transforma capturas em memórias curadas.</p>
-
-            <div class="grid md:grid-cols-2 gap-4">
-                <x-neo.input rotulo="BASE URL" wire:model="curationBaseUrl" placeholder="https://api.minimax.io/anthropic" :erro="$errors->first('curationBaseUrl')" />
-                <x-neo.input rotulo="MODELO" wire:model="curationModel" placeholder="MiniMax-M2.5" :erro="$errors->first('curationModel')" />
-            </div>
-
-            <div class="mt-4">
-                <x-neo.input tipo="password" rotulo="CHAVE DE API (write-only — nunca é re-exibida)" wire:model="curationApiKey"
-                    placeholder="{{ ($sources['curation.api_key'] ?? '') === 'nenhuma' ? 'cole a chave do provider' : '•••••••• configurada — preencha só para substituir' }}"
-                    :erro="$errors->first('curationApiKey')" autocomplete="off" />
-            </div>
-
-            <div class="flex flex-wrap gap-2 mt-4">
-                <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="testCuration" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="testCuration">TESTAR CONEXÃO</span>
-                    <span wire:loading wire:target="testCuration">TESTANDO…</span>
-                </x-neo.button>
-                @if (($sources['curation.api_key'] ?? '') === 'painel')
-                    <x-neo.button variante="destrutivo" tamanho="sm" tipo="button" wire:click="removeKey('curation.api_key')"
-                        wire:confirm="Remover a chave do painel? O env volta a valer.">REMOVER CHAVE DO PAINEL</x-neo.button>
-                @endif
+    {{-- ===================== MOTOR DE CURADORIA ===================== --}}
+    <form wire:submit="saveCuration" class="bg-neo-white neo-border shadow-neo p-6 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+            <h2 class="font-heading text-lg m-0">Motor de curadoria</h2>
+            <div class="flex gap-2">
+                @php [$cor, $txt] = $badge($sources['curation.api_key'] ?? 'nenhuma'); @endphp
+                <span class="{{ $cor }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase">CHAVE: {{ $txt }}</span>
             </div>
         </div>
+        <p class="text-xs font-mono text-gray-500 mb-4">Qualquer endpoint Anthropic-compatible (MiniMax, Anthropic, proxy local). É quem transforma capturas em memórias curadas.</p>
 
-        {{-- ===================== CONTEXT7 ===================== --}}
-        <div class="bg-neo-white neo-border shadow-neo p-6 mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                <h2 class="font-heading text-lg m-0">Context7 — validação documental</h2>
-                <div class="flex gap-2">
-                    @php [$cor7, $txt7] = $badge($sources['context7.api_key'] ?? 'nenhuma'); @endphp
-                    <span class="{{ $cor7 }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase">CHAVE: {{ $txt7 }}</span>
-                </div>
-            </div>
-            <p class="text-xs font-mono text-gray-500 mb-4">Valida memórias contra a documentação oficial. <strong>Funciona sem chave</strong> (keyless) — a chave só aumenta os limites de uso. Gere a sua em <a href="https://context7.com/dashboard" target="_blank" rel="noopener noreferrer" class="text-neo-magenta underline">context7.com/dashboard</a>.</p>
-
-            <div class="grid md:grid-cols-2 gap-4">
-                <x-neo.input rotulo="BASE URL" wire:model="context7BaseUrl" placeholder="https://context7.com/api/v1" :erro="$errors->first('context7BaseUrl')" />
-                <x-neo.input tipo="password" rotulo="CHAVE DE API (opcional, write-only)" wire:model="context7ApiKey"
-                    placeholder="{{ ($sources['context7.api_key'] ?? '') === 'nenhuma' ? 'vazio = modo keyless' : '•••••••• configurada — preencha só para substituir' }}"
-                    :erro="$errors->first('context7ApiKey')" autocomplete="off" />
-            </div>
-
-            <div class="flex flex-wrap gap-2 mt-4">
-                <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="testContext7" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="testContext7">TESTAR CONEXÃO</span>
-                    <span wire:loading wire:target="testContext7">TESTANDO…</span>
-                </x-neo.button>
-                @if (($sources['context7.api_key'] ?? '') === 'painel')
-                    <x-neo.button variante="destrutivo" tamanho="sm" tipo="button" wire:click="removeKey('context7.api_key')"
-                        wire:confirm="Remover a chave do painel? O env volta a valer.">REMOVER CHAVE DO PAINEL</x-neo.button>
-                @endif
-            </div>
+        <div class="grid md:grid-cols-2 gap-4">
+            <x-neo.input rotulo="BASE URL" wire:model="curationBaseUrl" placeholder="https://api.minimax.io/anthropic" :erro="$errors->first('curationBaseUrl')" />
+            <x-neo.input rotulo="MODELO" wire:model="curationModel" placeholder="MiniMax-M2.5" :erro="$errors->first('curationModel')" />
         </div>
 
-        {{-- ===================== AÇÕES ===================== --}}
-        <div class="flex flex-wrap gap-3 mb-6">
-            <x-neo.button tipo="submit" variante="sucesso" tamanho="md" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="save">SALVAR CONFIGURAÇÕES</span>
-                <span wire:loading wire:target="save">SALVANDO…</span>
+        <div class="mt-4">
+            <x-neo.input tipo="password" rotulo="CHAVE DE API (write-only — nunca é re-exibida)" wire:model="curationApiKey"
+                placeholder="{{ ($sources['curation.api_key'] ?? '') === 'nenhuma' ? 'cole a chave do provider' : '•••••••• configurada — preencha só para substituir' }}"
+                :erro="$errors->first('curationApiKey')" autocomplete="off" />
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-4">
+            <x-neo.button tipo="submit" variante="sucesso" tamanho="sm" wire:loading.attr="disabled" wire:target="saveCuration">
+                <span wire:loading.remove wire:target="saveCuration">SALVAR MOTOR</span>
+                <span wire:loading wire:target="saveCuration">SALVANDO…</span>
             </x-neo.button>
-            <x-neo.button variante="contorno" tamanho="md" tipo="button" wire:click="restoreEnv"
-                wire:confirm="Limpar TODAS as configurações do painel? Tudo volta a valer pelo .env.">RESTAURAR ENV</x-neo.button>
+            <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="testCuration" wire:loading.attr="disabled" wire:target="testCuration">
+                <span wire:loading.remove wire:target="testCuration">TESTAR CONEXÃO</span>
+                <span wire:loading wire:target="testCuration">TESTANDO…</span>
+            </x-neo.button>
+            @if (($sources['curation.api_key'] ?? '') === 'painel')
+                <x-neo.button variante="destrutivo" tamanho="sm" tipo="button" wire:click="removeKey('curation.api_key')"
+                    wire:confirm="Remover a chave do painel? O env volta a valer.">REMOVER CHAVE DO PAINEL</x-neo.button>
+            @endif
         </div>
+
+        @if ($curationTest !== [])
+            @php [$boxCor, $boxIco] = $testBox($curationTest); @endphp
+            <div class="mt-3 {{ $boxCor }} neo-border-sm px-3 py-2 text-xs font-mono font-bold flex items-start gap-2" wire:key="curation-test">
+                <span class="shrink-0">{!! $boxIco !!}</span><span>{{ $curationTest['message'] }}</span>
+            </div>
+        @endif
     </form>
+
+    {{-- ===================== CONTEXT7 ===================== --}}
+    <form wire:submit="saveContext7" class="bg-neo-white neo-border shadow-neo p-6 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+            <h2 class="font-heading text-lg m-0">Context7 — validação documental</h2>
+            <div class="flex gap-2">
+                @php [$cor7, $txt7] = $badge($sources['context7.api_key'] ?? 'nenhuma'); @endphp
+                <span class="{{ $cor7 }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase">CHAVE: {{ $txt7 }}</span>
+            </div>
+        </div>
+        <p class="text-xs font-mono text-gray-500 mb-4">Valida memórias contra a documentação oficial. <strong>Funciona sem chave</strong> (keyless) — a chave só aumenta os limites de uso. Gere a sua em <a href="https://context7.com/dashboard" target="_blank" rel="noopener noreferrer" class="text-neo-magenta underline">context7.com/dashboard</a>.</p>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <x-neo.input rotulo="BASE URL" wire:model="context7BaseUrl" placeholder="https://context7.com/api/v1" :erro="$errors->first('context7BaseUrl')" />
+            <x-neo.input tipo="password" rotulo="CHAVE DE API (opcional, write-only)" wire:model="context7ApiKey"
+                placeholder="{{ ($sources['context7.api_key'] ?? '') === 'nenhuma' ? 'vazio = modo keyless' : '•••••••• configurada — preencha só para substituir' }}"
+                :erro="$errors->first('context7ApiKey')" autocomplete="off" />
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-4">
+            <x-neo.button tipo="submit" variante="sucesso" tamanho="sm" wire:loading.attr="disabled" wire:target="saveContext7">
+                <span wire:loading.remove wire:target="saveContext7">SALVAR CONTEXT7</span>
+                <span wire:loading wire:target="saveContext7">SALVANDO…</span>
+            </x-neo.button>
+            <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="testContext7" wire:loading.attr="disabled" wire:target="testContext7">
+                <span wire:loading.remove wire:target="testContext7">TESTAR CONEXÃO</span>
+                <span wire:loading wire:target="testContext7">TESTANDO…</span>
+            </x-neo.button>
+            @if (($sources['context7.api_key'] ?? '') === 'painel')
+                <x-neo.button variante="destrutivo" tamanho="sm" tipo="button" wire:click="removeKey('context7.api_key')"
+                    wire:confirm="Remover a chave do painel? O env volta a valer.">REMOVER CHAVE DO PAINEL</x-neo.button>
+            @endif
+        </div>
+
+        @if ($context7Test !== [])
+            @php [$boxCor7, $boxIco7] = $testBox($context7Test); @endphp
+            <div class="mt-3 {{ $boxCor7 }} neo-border-sm px-3 py-2 text-xs font-mono font-bold flex items-start gap-2" wire:key="context7-test">
+                <span class="shrink-0">{!! $boxIco7 !!}</span><span>{{ $context7Test['message'] }}</span>
+            </div>
+        @endif
+    </form>
+
+    {{-- ===================== RODAPÉ: RESET GLOBAL ===================== --}}
+    <div class="flex flex-wrap gap-3 mb-6">
+        <x-neo.button variante="contorno" tamanho="md" tipo="button" wire:click="restoreEnv"
+            wire:confirm="Limpar TODAS as configurações do painel? Tudo volta a valer pelo .env.">RESTAURAR ENV (TUDO)</x-neo.button>
+    </div>
 
     {{-- ===================== COMO A SEGURANÇA FUNCIONA ===================== --}}
     <div class="bg-neo-white neo-border shadow-neo p-6 mb-6">

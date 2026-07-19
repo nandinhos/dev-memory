@@ -65,19 +65,31 @@ class SystemSettingsTest extends TestCase
         $this->assertSame($envModel !== null && $envModel !== '' ? 'env' : 'nenhuma', $service->sourceOf('curation.model'));
     }
 
-    public function test_save_persists_and_keeps_secret_write_only(): void
+    public function test_save_curation_persists_and_keeps_secret_write_only(): void
     {
         Livewire::test(SystemSettings::class)
             ->set('curationBaseUrl', 'https://api.exemplo.dev/anthropic')
             ->set('curationModel', 'Modelo-X')
             ->set('curationApiKey', 'nova-chave-secreta')
-            ->set('context7BaseUrl', 'https://context7.com/api/v1')
-            ->call('save')
+            ->call('saveCuration')
             ->assertSet('curationApiKey', '') // write-only: campo é limpo após salvar
             ->assertDispatched('show-toast');
 
         $this->assertSame('nova-chave-secreta', Setting::get('curation.api_key'));
         $this->assertSame('Modelo-X', Setting::get('curation.model'));
+    }
+
+    public function test_save_context7_persists_independently(): void
+    {
+        Livewire::test(SystemSettings::class)
+            ->set('context7BaseUrl', 'https://context7.com/api/v1')
+            ->set('context7ApiKey', 'chave-c7')
+            ->call('saveContext7')
+            ->assertSet('context7ApiKey', '')
+            ->assertDispatched('show-toast');
+
+        $this->assertSame('chave-c7', Setting::get('context7.api_key'));
+        $this->assertNull(Setting::find('curation.api_key')); // salvar Context7 não toca no motor
     }
 
     public function test_empty_secret_field_keeps_existing_key(): void
@@ -87,8 +99,7 @@ class SystemSettingsTest extends TestCase
         Livewire::test(SystemSettings::class)
             ->set('curationBaseUrl', 'https://api.exemplo.dev/anthropic')
             ->set('curationModel', 'Modelo-X')
-            ->set('context7BaseUrl', 'https://context7.com/api/v1')
-            ->call('save');
+            ->call('saveCuration');
 
         $this->assertSame('chave-existente', Setting::get('curation.api_key'));
     }
@@ -106,7 +117,7 @@ class SystemSettingsTest extends TestCase
     {
         Livewire::test(SystemSettings::class)
             ->set('curationBaseUrl', 'nao-e-url')
-            ->call('save')
+            ->call('saveCuration')
             ->assertHasErrors(['curationBaseUrl' => 'url']);
     }
 
@@ -115,19 +126,28 @@ class SystemSettingsTest extends TestCase
         Http::fake([
             'api.ok.dev/*' => Http::response(['id' => 'msg'], 200),
             'api.ruim.dev/*' => Http::response(['error' => 'unauthorized'], 401),
+            'api.cheia.dev/*' => Http::response(['error' => 'rate limited'], 429),
         ]);
 
+        // Resultado inline persistente (não mais toast efêmero).
         Livewire::test(SystemSettings::class)
             ->set('curationBaseUrl', 'https://api.ok.dev/anthropic')
             ->set('curationApiKey', 'chave-teste')
             ->call('testCuration')
-            ->assertDispatched('show-toast', type: 'sucesso');
+            ->assertSet('curationTest.type', 'sucesso');
 
         Livewire::test(SystemSettings::class)
             ->set('curationBaseUrl', 'https://api.ruim.dev/anthropic')
             ->set('curationApiKey', 'chave-invalida')
             ->call('testCuration')
-            ->assertDispatched('show-toast', type: 'erro');
+            ->assertSet('curationTest.type', 'erro');
+
+        // 429 = chave válida, cota cheia → aviso (não erro).
+        Livewire::test(SystemSettings::class)
+            ->set('curationBaseUrl', 'https://api.cheia.dev/anthropic')
+            ->set('curationApiKey', 'chave-ok')
+            ->call('testCuration')
+            ->assertSet('curationTest.type', 'aviso');
     }
 
     public function test_context7_test_works_keyless(): void
@@ -139,6 +159,6 @@ class SystemSettingsTest extends TestCase
         Livewire::test(SystemSettings::class)
             ->set('context7BaseUrl', 'https://context7.com/api/v1')
             ->call('testContext7')
-            ->assertDispatched('show-toast', type: 'sucesso');
+            ->assertSet('context7Test.type', 'sucesso');
     }
 }
