@@ -6,10 +6,13 @@ use App\Enums\SkillGroupStatus;
 use App\Models\SkillGroup;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Grupos de Skills')]
 class SkillGroupsReview extends Component
 {
+    use WithPagination;
+
     public function approve(string $id): void
     {
         $group = SkillGroup::findOrFail($id);
@@ -31,7 +34,7 @@ class SkillGroupsReview extends Component
         return view('livewire.admin.skill-groups-review', [
             'groups' => SkillGroup::with('memories:id,title,type')
                 ->orderByDesc('cohesion')
-                ->get(),
+                ->paginate(20),
         ]);
     }
 }

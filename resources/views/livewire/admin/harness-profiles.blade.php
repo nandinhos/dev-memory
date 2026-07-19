@@ -47,4 +47,8 @@ php artisan harness:capture-local claude-code
     @empty
         <x-neo.empty-state titulo="Nenhum perfil" mensagem="Rode php artisan harness:capture-local para subir sua configuração." />
     @endforelse
+
+    @if ($profiles->hasPages())
+        <div class="mt-6">{{ $profiles->links() }}</div>
+    @endif
 </div>

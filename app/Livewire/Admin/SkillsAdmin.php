@@ -7,10 +7,13 @@ use App\Models\Skill;
 use App\Services\Curation\SkillPublisher;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Skills')]
 class SkillsAdmin extends Component
 {
+    use WithPagination;
+
     public ?string $expandedId = null;
 
     public function toggle(string $id): void
@@ -47,7 +50,7 @@ class SkillsAdmin extends Component
             'skills' => Skill::with('skillGroup:id,name')
                 ->orderBy('status')
                 ->orderBy('name')
-                ->get(),
+                ->paginate(20),
         ]);
     }
 }

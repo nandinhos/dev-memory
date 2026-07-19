@@ -5,10 +5,13 @@ namespace App\Livewire\Admin;
 use App\Models\HarnessProfile;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Harness')]
 class HarnessProfiles extends Component
 {
+    use WithPagination;
+
     public ?string $expandedId = null;
 
     public function toggle(string $id): void
@@ -26,7 +29,7 @@ class HarnessProfiles extends Component
     public function render()
     {
         return view('livewire.admin.harness-profiles', [
-            'profiles' => HarnessProfile::orderBy('harness')->orderBy('name')->get(),
+            'profiles' => HarnessProfile::orderBy('harness')->orderBy('name')->paginate(20),
         ]);
     }
 }

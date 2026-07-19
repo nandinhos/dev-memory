@@ -7,13 +7,19 @@
     'valor' => null,
 ])
 
+@php
+    // Gera um id estável quando não informado, para o label for= associar de
+    // verdade (acessibilidade) em vez de ficar for="" .
+    $id ??= 'neo-input-'.($attributes->get('wire:model') ?: \Illuminate\Support\Str::random(6));
+@endphp
+
 <div class="space-y-1 w-full">
     @if($rotulo)
         <label for="{{ $id }}" class="block text-xs font-bold font-mono uppercase tracking-wider">
             {{ $rotulo }}
         </label>
-    @elseif($id)
-        <label for="{{ $id }}" class="sr-only">{{ $placeholder ?: $id }}</label>
+    @else
+        <label for="{{ $id }}" class="sr-only">{{ $rotulo ?: ($placeholder ?: $id) }}</label>
     @endif
     
     <div class="relative">

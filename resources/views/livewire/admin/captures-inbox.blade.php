@@ -1,6 +1,20 @@
 <div class="animate-fade-in-up">
     <p class="text-sm text-gray-600 font-mono mb-6">Entradas do pipeline de curadoria.</p>
 
+    @if ($failedCount > 0)
+        <div class="bg-neo-magenta text-white neo-border shadow-neo p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 font-mono text-sm">
+                <span class="text-lg font-black">&#9888;</span>
+                <span><strong>{{ $failedCount }}</strong> captura(s) falharam a curadoria (motor fora do ar ou timeout). O conteúdo bruto foi preservado.</span>
+            </div>
+            <button type="button" wire:click="retryFailed" wire:loading.attr="disabled"
+                    class="btn-neo bg-neo-yellow text-black neo-border-sm shadow-neo-sm px-4 py-2 font-heading text-xs hover:bg-neo-green transition-colors flex-shrink-0">
+                <span wire:loading.remove wire:target="retryFailed">REPROCESSAR FALHAS</span>
+                <span wire:loading wire:target="retryFailed">REENFILEIRANDO…</span>
+            </button>
+        </div>
+    @endif
+
     @forelse($captures as $capture)
         @php
             $statusVariant = match ($capture->status->value) {

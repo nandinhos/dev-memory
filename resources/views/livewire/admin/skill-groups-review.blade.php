@@ -51,4 +51,8 @@
     @empty
         <x-neo.empty-state titulo="Nenhum grupo" mensagem="Rode php artisan memory:group-skills para gerar propostas de agrupamento." />
     @endforelse
+
+    @if ($groups->hasPages())
+        <div class="mt-6">{{ $groups->links() }}</div>
+    @endif
 </div>

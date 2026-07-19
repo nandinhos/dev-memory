@@ -50,4 +50,8 @@
     @empty
         <x-neo.empty-state titulo="Nenhuma skill" mensagem="Compile grupos aprovados via php artisan memory:compile-skills." />
     @endforelse
+
+    @if ($skills->hasPages())
+        <div class="mt-6">{{ $skills->links() }}</div>
+    @endif
 </div>

@@ -11,7 +11,10 @@ use Throwable;
  */
 class AnthropicCurationEngine implements KnowledgePreparationEngine
 {
-    private const MAX_ATTEMPTS = 3;
+    // 2 tentativas (1 original + 1 reparo) × ~120s cabem no timeout de 300s do
+    // job (com retry_after=330 > 300). Conteúdo denso deixava o loop de reparo
+    // (antes 3×) estourar 300s e o worker matava o job (captura presa em FAILED).
+    private const MAX_ATTEMPTS = 2;
 
     private const TEMPERATURE = 0.1;
 
@@ -62,7 +65,7 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 
             $response = Http::baseUrl($this->baseUrl)
                 ->timeout(120)
-                ->retry(2, 1000, throw: false)
+                ->retry(1, 1000, throw: false)
                 ->withHeaders([
                     'x-api-key' => $this->apiKey,
                     'anthropic-version' => '2023-06-01',

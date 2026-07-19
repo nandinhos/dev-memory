@@ -5,8 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Sistema de Memória Técnica e Lições Aprendidas">
-    @vite(['resources/css/app.css'])
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/base16/catppuccin-mocha.min.css">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>[x-cloak]{display:none!important}</style>
 </head>
@@ -144,19 +143,7 @@
         </footer>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof hljs !== 'undefined') {
-                hljs.highlightAll();
-            }
-        });
-        document.addEventListener('livewire:navigated', function() {
-            if (typeof hljs !== 'undefined') {
-                hljs.highlightAll();
-            }
-        });
-    </script>
+    {{-- highlight.js agora vem bundlado via Vite (resources/js/app.js) — sem CDN --}}
     <x-neo.toast />
     @livewireScripts
 </body>
