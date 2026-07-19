@@ -9,8 +9,13 @@
 
 @php
     // Gera um id estável quando não informado, para o label for= associar de
-    // verdade (acessibilidade) em vez de ficar for="" .
-    $id ??= 'neo-input-'.($attributes->get('wire:model') ?: \Illuminate\Support\Str::random(6));
+    // verdade (acessibilidade). Detecta qualquer variante de wire:model
+    // (wire:model.live, .blur, .debounce…) para o id não virar aleatório.
+    if ($id === null) {
+        $wireKey = collect($attributes->getAttributes())->keys()
+            ->first(fn ($k) => str_starts_with($k, 'wire:model'));
+        $id = 'neo-input-'.($wireKey ? $attributes->get($wireKey) : \Illuminate\Support\Str::random(6));
+    }
 @endphp
 
 <div class="space-y-1 w-full">

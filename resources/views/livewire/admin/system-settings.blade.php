@@ -31,21 +31,23 @@
         <p class="text-xs font-mono text-gray-500 mb-4">Qualquer endpoint Anthropic-compatible (MiniMax, Anthropic, proxy local). É quem transforma capturas em memórias curadas.</p>
 
         <div class="grid md:grid-cols-2 gap-4">
-            <x-neo.input rotulo="BASE URL" wire:model="curationBaseUrl" placeholder="https://api.minimax.io/anthropic" :erro="$errors->first('curationBaseUrl')" />
-            <x-neo.input rotulo="MODELO" wire:model="curationModel" placeholder="MiniMax-M2.5" :erro="$errors->first('curationModel')" />
+            <x-neo.input rotulo="BASE URL" wire:model.live.debounce.400ms="curationBaseUrl" placeholder="https://api.minimax.io/anthropic" :erro="$errors->first('curationBaseUrl')" />
+            <x-neo.input rotulo="MODELO" wire:model.live.debounce.400ms="curationModel" placeholder="MiniMax-M2.5" :erro="$errors->first('curationModel')" />
         </div>
 
         <div class="mt-4">
-            <x-neo.input tipo="password" rotulo="CHAVE DE API (write-only — nunca é re-exibida)" wire:model="curationApiKey"
+            <x-neo.input tipo="password" rotulo="CHAVE DE API (write-only — nunca é re-exibida)" wire:model.live.debounce.400ms="curationApiKey"
                 placeholder="{{ ($sources['curation.api_key'] ?? '') === 'nenhuma' ? 'cole a chave do provider' : '•••••••• configurada — preencha só para substituir' }}"
                 :erro="$errors->first('curationApiKey')" autocomplete="off" />
         </div>
 
         <div class="flex flex-wrap gap-2 mt-4">
-            <x-neo.button tipo="submit" variante="sucesso" tamanho="sm" wire:loading.attr="disabled" wire:target="saveCuration">
-                <span wire:loading.remove wire:target="saveCuration">SALVAR MOTOR</span>
-                <span wire:loading wire:target="saveCuration">SALVANDO…</span>
-            </x-neo.button>
+            @if ($this->curationDirty)
+                <x-neo.button tipo="submit" variante="sucesso" tamanho="sm" wire:loading.attr="disabled" wire:target="saveCuration">
+                    <span wire:loading.remove wire:target="saveCuration">SALVAR MOTOR</span>
+                    <span wire:loading wire:target="saveCuration">SALVANDO…</span>
+                </x-neo.button>
+            @endif
             <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="testCuration" wire:loading.attr="disabled" wire:target="testCuration">
                 <span wire:loading.remove wire:target="testCuration">TESTAR CONEXÃO</span>
                 <span wire:loading wire:target="testCuration">TESTANDO…</span>
@@ -58,8 +60,12 @@
 
         @if ($curationTest !== [])
             @php [$boxCor, $boxIco] = $testBox($curationTest); @endphp
-            <div class="mt-3 {{ $boxCor }} neo-border-sm px-3 py-2 text-xs font-mono font-bold flex items-start gap-2" wire:key="curation-test">
-                <span class="shrink-0">{!! $boxIco !!}</span><span>{{ $curationTest['message'] }}</span>
+            <div class="mt-3 {{ $boxCor }} neo-border-sm px-3 py-2 text-xs font-mono font-bold flex items-start gap-2"
+                wire:key="curation-test-{{ crc32($curationTest['message']) }}"
+                x-data x-init="setTimeout(() => $wire.dismissCurationTest(), 7000)">
+                <span class="shrink-0">{!! $boxIco !!}</span>
+                <span class="flex-1">{{ $curationTest['message'] }}</span>
+                <button type="button" wire:click="dismissCurationTest" class="shrink-0 font-black text-base leading-none hover:opacity-60" aria-label="Fechar">&times;</button>
             </div>
         @endif
     </form>
@@ -76,17 +82,19 @@
         <p class="text-xs font-mono text-gray-500 mb-4">Valida memórias contra a documentação oficial. <strong>Funciona sem chave</strong> (keyless) — a chave só aumenta os limites de uso. Gere a sua em <a href="https://context7.com/dashboard" target="_blank" rel="noopener noreferrer" class="text-neo-magenta underline">context7.com/dashboard</a>.</p>
 
         <div class="grid md:grid-cols-2 gap-4">
-            <x-neo.input rotulo="BASE URL" wire:model="context7BaseUrl" placeholder="https://context7.com/api/v1" :erro="$errors->first('context7BaseUrl')" />
-            <x-neo.input tipo="password" rotulo="CHAVE DE API (opcional, write-only)" wire:model="context7ApiKey"
+            <x-neo.input rotulo="BASE URL" wire:model.live.debounce.400ms="context7BaseUrl" placeholder="https://context7.com/api/v1" :erro="$errors->first('context7BaseUrl')" />
+            <x-neo.input tipo="password" rotulo="CHAVE DE API (opcional, write-only)" wire:model.live.debounce.400ms="context7ApiKey"
                 placeholder="{{ ($sources['context7.api_key'] ?? '') === 'nenhuma' ? 'vazio = modo keyless' : '•••••••• configurada — preencha só para substituir' }}"
                 :erro="$errors->first('context7ApiKey')" autocomplete="off" />
         </div>
 
         <div class="flex flex-wrap gap-2 mt-4">
-            <x-neo.button tipo="submit" variante="sucesso" tamanho="sm" wire:loading.attr="disabled" wire:target="saveContext7">
-                <span wire:loading.remove wire:target="saveContext7">SALVAR CONTEXT7</span>
-                <span wire:loading wire:target="saveContext7">SALVANDO…</span>
-            </x-neo.button>
+            @if ($this->context7Dirty)
+                <x-neo.button tipo="submit" variante="sucesso" tamanho="sm" wire:loading.attr="disabled" wire:target="saveContext7">
+                    <span wire:loading.remove wire:target="saveContext7">SALVAR CONTEXT7</span>
+                    <span wire:loading wire:target="saveContext7">SALVANDO…</span>
+                </x-neo.button>
+            @endif
             <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="testContext7" wire:loading.attr="disabled" wire:target="testContext7">
                 <span wire:loading.remove wire:target="testContext7">TESTAR CONEXÃO</span>
                 <span wire:loading wire:target="testContext7">TESTANDO…</span>
@@ -99,8 +107,12 @@
 
         @if ($context7Test !== [])
             @php [$boxCor7, $boxIco7] = $testBox($context7Test); @endphp
-            <div class="mt-3 {{ $boxCor7 }} neo-border-sm px-3 py-2 text-xs font-mono font-bold flex items-start gap-2" wire:key="context7-test">
-                <span class="shrink-0">{!! $boxIco7 !!}</span><span>{{ $context7Test['message'] }}</span>
+            <div class="mt-3 {{ $boxCor7 }} neo-border-sm px-3 py-2 text-xs font-mono font-bold flex items-start gap-2"
+                wire:key="context7-test-{{ crc32($context7Test['message']) }}"
+                x-data x-init="setTimeout(() => $wire.dismissContext7Test(), 7000)">
+                <span class="shrink-0">{!! $boxIco7 !!}</span>
+                <span class="flex-1">{{ $context7Test['message'] }}</span>
+                <button type="button" wire:click="dismissContext7Test" class="shrink-0 font-black text-base leading-none hover:opacity-60" aria-label="Fechar">&times;</button>
             </div>
         @endif
     </form>

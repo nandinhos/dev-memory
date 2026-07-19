@@ -161,4 +161,35 @@ class SystemSettingsTest extends TestCase
             ->call('testContext7')
             ->assertSet('context7Test.type', 'sucesso');
     }
+
+    public function test_save_button_hidden_until_a_change_is_made(): void
+    {
+        // Sem alteração, o SALVAR não aparece (evita impressão de "pendência").
+        Livewire::test(SystemSettings::class)
+            ->assertDontSee('SALVAR MOTOR')
+            ->set('curationApiKey', 'nova-chave') // digitar uma chave = alteração
+            ->assertSee('SALVAR MOTOR');
+    }
+
+    public function test_save_button_disappears_again_after_saving(): void
+    {
+        Livewire::test(SystemSettings::class)
+            ->set('curationBaseUrl', 'https://api.exemplo.dev/anthropic')
+            ->set('curationModel', 'Modelo-X')
+            ->assertSee('SALVAR MOTOR')
+            ->call('saveCuration')
+            ->assertDontSee('SALVAR MOTOR'); // limpo de novo após salvar
+    }
+
+    public function test_test_result_can_be_dismissed(): void
+    {
+        Http::fake(['context7.com/*' => Http::response(['results' => []], 200)]);
+
+        Livewire::test(SystemSettings::class)
+            ->set('context7BaseUrl', 'https://context7.com/api/v1')
+            ->call('testContext7')
+            ->assertSet('context7Test.type', 'sucesso')
+            ->call('dismissContext7Test')
+            ->assertSet('context7Test', []);
+    }
 }

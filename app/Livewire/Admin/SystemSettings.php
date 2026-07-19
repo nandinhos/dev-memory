@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Services\SettingsService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -38,6 +39,13 @@ class SystemSettings extends Component
     /** @var array{type:string,message:string} */
     public array $context7Test = [];
 
+    /** Valores efetivos no carregamento — base para detectar alteração (dirty). */
+    public string $curationBaseUrlOriginal = '';
+
+    public string $curationModelOriginal = '';
+
+    public string $context7BaseUrlOriginal = '';
+
     public function mount(SettingsService $settings): void
     {
         // Campos NÃO-secretos são pré-preenchidos com o valor efetivo.
@@ -45,7 +53,39 @@ class SystemSettings extends Component
         $this->curationModel = (string) config('services.minimax.model');
         $this->context7BaseUrl = (string) config('services.context7.base_url');
 
+        // Snapshot para detectar alteração — o botão SALVAR só aparece se algo mudar.
+        $this->curationBaseUrlOriginal = $this->curationBaseUrl;
+        $this->curationModelOriginal = $this->curationModel;
+        $this->context7BaseUrlOriginal = $this->context7BaseUrl;
+
         $this->refreshSources($settings);
+    }
+
+    /** Há alteração no motor a salvar? (chave nova digitada ou campo editado) */
+    #[Computed]
+    public function curationDirty(): bool
+    {
+        return $this->curationApiKey !== ''
+            || $this->curationBaseUrl !== $this->curationBaseUrlOriginal
+            || $this->curationModel !== $this->curationModelOriginal;
+    }
+
+    /** Há alteração no Context7 a salvar? */
+    #[Computed]
+    public function context7Dirty(): bool
+    {
+        return $this->context7ApiKey !== ''
+            || $this->context7BaseUrl !== $this->context7BaseUrlOriginal;
+    }
+
+    public function dismissCurationTest(): void
+    {
+        $this->curationTest = [];
+    }
+
+    public function dismissContext7Test(): void
+    {
+        $this->context7Test = [];
     }
 
     public function saveCuration(SettingsService $settings): void
@@ -66,6 +106,9 @@ class SystemSettings extends Component
 
         $settings->applyOverrides();
         $this->curationApiKey = '';
+        $this->curationBaseUrlOriginal = $this->curationBaseUrl;
+        $this->curationModelOriginal = $this->curationModel;
+        unset($this->curationDirty); // recomputa: volta a "limpo" e esconde o SALVAR
         $this->refreshSources($settings);
 
         Artisan::call('queue:restart');
@@ -88,6 +131,8 @@ class SystemSettings extends Component
 
         $settings->applyOverrides();
         $this->context7ApiKey = '';
+        $this->context7BaseUrlOriginal = $this->context7BaseUrl;
+        unset($this->context7Dirty);
         $this->refreshSources($settings);
 
         Artisan::call('queue:restart');
