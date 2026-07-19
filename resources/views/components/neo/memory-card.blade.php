@@ -35,10 +35,21 @@ $ss = $statusStyles[$memoria->validation_status->value] ?? $statusStyles['reject
         <span class="text-[10px] font-mono {{ $ss['headerText'] }} font-bold tracking-wider">
             MEM_ID: {{ str_pad($memoria->id, 4, '0', STR_PAD_LEFT) }}
         </span>
-        {{-- Badge de status em cor semântica (laranja/verde/cinza) --}}
-        <span class="{{ $ss['badge'] }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter">
-            {{ $memoria->validation_status->label() }}
-        </span>
+        <div class="flex items-center gap-1.5">
+            {{-- Badge de status em cor semântica (laranja/verde/cinza) --}}
+            <span class="{{ $ss['badge'] }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter">
+                {{ $memoria->validation_status->label() }}
+            </span>
+            {{-- Resultado da checagem no Context7, ao lado do status humano: são eixos
+                 DIFERENTES (um é curadoria, outro é confronto com a documentação oficial).
+                 Ausente = memória ainda não passou pela checagem. --}}
+            @if($memoria->doc_validation_status)
+                <span class="{{ $memoria->doc_validation_status->badgeClasses() }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter"
+                      title="Checagem na documentação oficial: {{ $memoria->doc_validation_status->label() }}">
+                    {{ $memoria->doc_validation_status->shortLabel() }}
+                </span>
+            @endif
+        </div>
     </div>
 
     <div class="p-5">
