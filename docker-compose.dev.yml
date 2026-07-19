@@ -21,6 +21,10 @@ services:
     volumes:
       # Código por bind-mount: editar no host reflete na hora, sem rebuild.
       - .:/var/www/html
+      # .env do container (pgsql/redis) sobrepondo o .env do host (sqlite). Sem isto,
+      # `php artisan serve` lê o .env do host e o WEB cai no SQLite, não no Postgres —
+      # o CLI (docker exec) usa a env do compose e vai no pgsql: bancos divergentes.
+      - ./.env.dev:/var/www/html/.env
     environment:
       APP_ENV: local
       APP_DEBUG: 'true'
@@ -64,6 +68,7 @@ services:
     command: php artisan queue:work --tries=2 --timeout=300
     volumes:
       - .:/var/www/html
+      - ./.env.dev:/var/www/html/.env  # mesma paridade de env do app (pgsql/redis)
     environment:
       APP_ENV: local
       DB_CONNECTION: pgsql

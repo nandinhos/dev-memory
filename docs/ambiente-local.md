@@ -77,3 +77,32 @@ Por isso `bin/dev test` declara `APP_ENV=testing` (e cache/sessão/fila de teste
 Prompts se comportam conforme exista terminal interativo: no host passavam, no container sem TTY
 quebravam com `NonInteractiveValidationException`, e com TTY ficavam pendurados esperando
 digitação. O fallback usa o QuestionHelper do Symfony, que é o que `expectsQuestion()` intercepta.
+
+## `php artisan serve` lê o `.env` do host — o WEB caía no SQLite
+
+Sintoma: usuário criado via `docker exec ... make-admin` (que usa a env do compose → **pgsql**)
+não logava no navegador, "credenciais inválidas". Causa: o `.env` do host (bind-mount) tem
+`DB_CONNECTION=sqlite`, e o **`php artisan serve` repassa o `.env` ao processo do servidor** —
+então o WEB lia o SQLite do host (que tinha outros usuários), enquanto o CLI (`docker exec`, que
+respeita a env do compose) ia no Postgres. **Dois bancos divergentes.** O `queue:work` não sofre
+disso (não passa pelo serve → usa a env do compose).
+
+Fix: cada serviço PHP monta um **`.env.dev`** (gitignored, copiado do `.env` do host preservando
+`APP_KEY`/chaves, com DB/redis/sessão apontando para a topologia do compose — `postgres`/`redis`)
+por cima do `.env`:
+```yaml
+volumes:
+  - .:/var/www/html
+  - ./.env.dev:/var/www/html/.env   # pgsql/redis; sem isto o serve cai no SQLite do host
+```
+Recriar após criar/alterar o `.env.dev`: `docker compose -f docker-compose.dev.yml up -d app queue`.
+
+## Criar o admin (o DB dev começa vazio)
+
+O Postgres dev não tem usuário. O `make-admin` usa Laravel Prompts (senha interativa), então
+precisa de **TTY de verdade** — não funciona sob o `!` do agente:
+```bash
+docker exec -it devmem-dev-app php artisan memory:make-admin --email=voce@exemplo.com --name="Voce"
+# ou, para script/sem prompt: reset via tinker
+docker exec devmem-dev-app php artisan tinker --execute="\$u=App\Models\User::firstWhere('email','voce@exemplo.com'); \$u->password=Hash::make('SUA_SENHA'); \$u->save();"
+```
