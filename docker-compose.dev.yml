@@ -1,0 +1,124 @@
+# Ambiente de DESENVOLVIMENTO local. O `docker-compose.yml` (sem sufixo) é o de
+# PRODUÇÃO/VPS e não é tocado por este arquivo.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Portas deslocadas de propósito (25xxx) para poder subir os dois lado a lado sem
+# colisão com o compose de produção (15432/16379) nem com outros projetos.
+name: dev-memory-dev
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        UID: '${DEV_UID:-1000}'
+        GID: '${DEV_GID:-1000}'
+    container_name: devmem-dev-app
+    ports:
+      - '${DEV_APP_PORT:-25080}:8000'
+    volumes:
+      # Código por bind-mount: editar no host reflete na hora, sem rebuild.
+      - .:/var/www/html
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      APP_URL: 'http://localhost:${DEV_APP_PORT:-25080}'
+      # Postgres também em DEV — de propósito. O SQLite local não impõe largura de
+      # coluna e foi por isso que o `varchar(20)` estourou só em produção, passando
+      # por 184 testes verdes. Paridade de banco fecha essa classe de bug.
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: '${DB_DATABASE:-dev_memory}'
+      DB_USERNAME: '${DB_USERNAME:-dev_memory}'
+      DB_PASSWORD: '${DB_PASSWORD:-secret}'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 'null'
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      XDEBUG_MODE: '${XDEBUG_MODE:-off}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # A curadoria de memórias roda em fila — sem worker, capturas ficam paradas e o
+  # comportamento local diverge do de produção.
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        UID: '${DEV_UID:-1000}'
+        GID: '${DEV_GID:-1000}'
+    container_name: devmem-dev-queue
+    command: php artisan queue:work --tries=2 --timeout=300
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: '${DB_DATABASE:-dev_memory}'
+      DB_USERNAME: '${DB_USERNAME:-dev_memory}'
+      DB_PASSWORD: '${DB_PASSWORD:-secret}'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 'null'
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  vite:
+    image: node:20-alpine
+    container_name: devmem-dev-vite
+    working_dir: /var/www/html
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - '${DEV_VITE_PORT:-25173}:5173'
+    volumes:
+      - .:/var/www/html
+
+  postgres:
+    # MESMA major de produção (16) — versão diferente traz diferença de plano,
+    # de tipo e de mensagem de erro justamente onde se quer paridade.
+    image: postgres:16-alpine
+    container_name: devmem-dev-postgres
+    environment:
+      POSTGRES_DB: '${DB_DATABASE:-dev_memory}'
+      POSTGRES_USER: '${DB_USERNAME:-dev_memory}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    ports:
+      - '${DEV_DB_PORT:-25432}:5432'
+    volumes:
+      - dev_postgres:/var/lib/postgresql/data
+    healthcheck:
+      # `up` só libera o app depois do banco aceitar conexão — evita o
+      # "connection refused" de corrida na primeira subida.
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-dev_memory} -d ${DB_DATABASE:-dev_memory}']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: devmem-dev-redis
+    ports:
+      - '${DEV_REDIS_PORT:-25379}:6379'
+    volumes:
+      - dev_redis:/data
+
+volumes:
+  dev_postgres:
+  dev_redis:
