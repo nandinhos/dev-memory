@@ -54,9 +54,10 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 | | |
 |---|---|
-| Memórias (produção) | 19 — Tier 1 da escavação, curadas MiniMax, 19/19 com prova Context7, pendentes de validação manual |
-| Skills (produção) | pipeline `group → compile → publish` ainda não rodou (0 groups / 0 skills) |
-| Testes | 153 verdes (360 asserções) |
+| Memórias (produção) | 48 — Tier 1+2+3 da escavação, curadas MiniMax; 19 validadas (cluster Laravel/PHP/Livewire) |
+| Skills (produção) | **5 publicadas** (git-versionadas) — Laravel Clean Architecture, Alpine+Livewire, Docker Laravel, PHP Code Quality, Artisan CLI |
+| Skill groups | 5 (compilados) |
+| Testes | 172 verdes (417 asserções) |
 
 ## Próximos passos (curto prazo)
 

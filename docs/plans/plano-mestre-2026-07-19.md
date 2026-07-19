@@ -34,8 +34,11 @@
 
 ---
 
-> **Progresso:** ✅ FASE 0 e ✅ FASE 1 concluídas e em produção (commit `a7554b3`, 2026-07-19).
-> Próxima recomendada: FASE 3 (valor do produto).
+> **Progresso:** ✅ FASE 0, ✅ FASE 1 e ✅ FASE 3 (parcial) concluídas em produção (2026-07-19).
+> FASE 3: Tier 2+3 ingeridos (48 memórias, 19 validadas) e **pipeline de skills rodou ponta a
+> ponta → 5 skills publicadas** (git). Pendente da FASE 3: Tier 4 (7 peças, opcional), capturar
+> configs de harness, e as 3 captures FAILED (timeout de curadoria em conteúdo denso — reprocessar).
+> Próxima recomendada: FASE 2 (robustez) — inclui tratar o timeout de curadoria.
 
 ## FASE 0 — Housekeeping ✅ FEITA
 
