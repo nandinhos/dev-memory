@@ -11,6 +11,7 @@ use App\Models\CurationExecution;
 use App\Models\Memory;
 use App\Services\Curation\CaptureSanitizer;
 use App\Services\Curation\CaptureService;
+use App\Services\MemoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -169,5 +170,29 @@ class CurateCaptureJobTest extends TestCase
         $execution = CurationExecution::first();
         $this->assertSame('failed', $execution->status);
         $this->assertStringContainsString('HTTP 500', $execution->error);
+    }
+
+    public function test_records_failure_when_persistence_throws(): void
+    {
+        Http::fake(['*' => Http::response($this->fakeDraftResponse())]);
+
+        // Simula um erro de persistência (ex.: coluna curta em Postgres) — que
+        // NÃO é CurationFailedException. A rede de proteção deve registrar e
+        // marcar FAILED em vez de deixar a exceção derrubar o worker.
+        $this->mock(MemoryService::class, function ($mock) {
+            $mock->shouldReceive('create')->andThrow(new \RuntimeException('value too long for type character varying(20)'));
+        });
+
+        $capture = $this->ingestCapture();
+        CurateCaptureJob::dispatchSync($capture);
+
+        $capture->refresh();
+        $this->assertSame(CaptureStatus::FAILED, $capture->status);
+        $this->assertSame(0, Memory::count());
+
+        $execution = CurationExecution::first();
+        $this->assertSame('failed', $execution->status);
+        $this->assertStringContainsString('erro inesperado', $execution->error);
+        $this->assertStringContainsString('value too long', $execution->error);
     }
 }

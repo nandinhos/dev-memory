@@ -44,64 +44,69 @@ class CurateCaptureJob implements ShouldQueue
 
         try {
             $draft = $engine->prepare($input);
+
+            $decision = $policy->evaluate($draft);
+
+            if (! $decision->persist) {
+                $this->recordExecution($engine, $input, $startedAt, 'completed', 'discarded');
+                $this->capture->update([
+                    'status' => CaptureStatus::DISCARDED,
+                    'metadata' => array_merge($this->capture->metadata ?? [], [
+                        'discard_reasons' => $decision->reasons,
+                        'draft_confidence' => $draft->confidence,
+                    ]),
+                ]);
+
+                return;
+            }
+
+            $match = $scorer->findMatch($draft, $this->capture);
+
+            if ($match !== null) {
+                if ($match->independent) {
+                    $memories->incrementRecurrence($match->memory);
+                }
+
+                $this->recordExecution($engine, $input, $startedAt, 'completed', 'deduplicated', draft: $draft);
+                $this->capture->update([
+                    'status' => CaptureStatus::CURATED,
+                    'memory_id' => $match->memory->id,
+                    'metadata' => array_merge($this->capture->metadata ?? [], [
+                        'dedup' => $match->score->toArray() + ['independent' => $match->independent],
+                    ]),
+                ]);
+
+                return;
+            }
+
+            $memory = $memories->create([
+                'title' => $draft->title,
+                'description' => $this->buildDescription($draft),
+                'type' => $draft->category,
+                'stack' => $this->buildStack($draft),
+                'scope' => MemoryScope::PROJECT,
+                'validation_status' => ValidationStatus::PENDING,
+                'source_system' => MemorySource::CAPTURE,
+                'source_project' => $this->capture->source_project,
+                'original_id' => $this->capture->id,
+            ]);
+
+            $this->recordExecution($engine, $input, $startedAt, 'completed', 'memory_created', draft: $draft);
+            $this->capture->update([
+                'status' => CaptureStatus::CURATED,
+                'memory_id' => $memory->id,
+            ]);
         } catch (CurationFailedException $e) {
             $this->recordExecution($engine, $input, $startedAt, 'failed', null, $e->getMessage());
             $this->capture->update(['status' => CaptureStatus::FAILED]);
-
-            return;
+        } catch (\Throwable $e) {
+            // Rede de proteção: erro inesperado na persistência (ex.: coluna curta,
+            // falha de DB) não pode derrubar o worker nem sumir sem rastro. Registra
+            // o motivo real e deixa a captura FAILED (recuperável via --retry-failed).
+            report($e);
+            $this->recordExecution($engine, $input, $startedAt, 'failed', null, 'erro inesperado: '.$e->getMessage());
+            $this->capture->update(['status' => CaptureStatus::FAILED]);
         }
-
-        $decision = $policy->evaluate($draft);
-
-        if (! $decision->persist) {
-            $this->recordExecution($engine, $input, $startedAt, 'completed', 'discarded');
-            $this->capture->update([
-                'status' => CaptureStatus::DISCARDED,
-                'metadata' => array_merge($this->capture->metadata ?? [], [
-                    'discard_reasons' => $decision->reasons,
-                    'draft_confidence' => $draft->confidence,
-                ]),
-            ]);
-
-            return;
-        }
-
-        $match = $scorer->findMatch($draft, $this->capture);
-
-        if ($match !== null) {
-            if ($match->independent) {
-                $memories->incrementRecurrence($match->memory);
-            }
-
-            $this->recordExecution($engine, $input, $startedAt, 'completed', 'deduplicated', draft: $draft);
-            $this->capture->update([
-                'status' => CaptureStatus::CURATED,
-                'memory_id' => $match->memory->id,
-                'metadata' => array_merge($this->capture->metadata ?? [], [
-                    'dedup' => $match->score->toArray() + ['independent' => $match->independent],
-                ]),
-            ]);
-
-            return;
-        }
-
-        $memory = $memories->create([
-            'title' => $draft->title,
-            'description' => $this->buildDescription($draft),
-            'type' => $draft->category,
-            'stack' => $this->buildStack($draft),
-            'scope' => MemoryScope::PROJECT,
-            'validation_status' => ValidationStatus::PENDING,
-            'source_system' => MemorySource::CAPTURE,
-            'source_project' => $this->capture->source_project,
-            'original_id' => $this->capture->id,
-        ]);
-
-        $this->recordExecution($engine, $input, $startedAt, 'completed', 'memory_created', draft: $draft);
-        $this->capture->update([
-            'status' => CaptureStatus::CURATED,
-            'memory_id' => $memory->id,
-        ]);
     }
 
     /**
