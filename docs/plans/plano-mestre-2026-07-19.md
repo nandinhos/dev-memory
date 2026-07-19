@@ -71,12 +71,17 @@
 7. ✅ **highlight.js: CDN → bundle local** (core + 12 linguagens tree-shaken, atom-one-dark) + re-highlight pós-morph Livewire.
 8. ✅ **Labels acessíveis** — `neo/input` gera `id` automático p/ `for=`.
 9. ✅ **Agendar recuperação**: `memory:process-captures --retry-failed` a cada hora (`withoutOverlapping`).
-10. ✅ **Backoff exponencial em 429/5xx** (commit d191fa1) — a causa-raiz real das 3 capturas FAILED
-    da FASE 3 era **HTTP 429** (rate limit MiniMax) no burst de ingestão, não timeout. O motor agora
-    retenta só em transiente (conexão, 429, 500, 502, 503, 504) com backoff exponencial + Retry-After;
-    4xx falha na hora. Testes com `Sleep::fake()` cobrem 429→200 e 429 persistente.
-    - **Pendente operacional:** as 3 capturas FAILED em prod são auto-recuperadas pelo agendador
-      horário (item 9) assim que o deploy do d191fa1 sobe; ou reprocesso manual via UI/CLI na VPS.
+10. ✅ **Backoff exponencial em 429/5xx** (commit d191fa1) — o motor retenta só em transiente
+    (conexão, 429, 500, 502, 503, 504) com backoff exponencial + Retry-After; 4xx falha na hora.
+    Testes com `Sleep::fake()` cobrem 429→200 e 429 persistente.
+11. ✅ **`memories.type` varchar(20)→varchar(50)** (commit c74bb90) — 2º bug, escondido atrás do 429:
+    a migration 2026_07_10 liberou `architecture_decision` (21 chars) no CHECK mas deixou a coluna
+    varchar(20) → insert estourava em Postgres (SQLite não enforça, testes não pegavam). + rede de
+    proteção no `CurateCaptureJob` (erro de persistência é registrado e vira FAILED, não derruba o
+    worker) + guard `EnumColumnWidthTest` (largura-vs-enum, DB-agnóstico).
+
+> **As 3 capturas FAILED da FASE 3 foram RESOLVIDAS e curadas (2026-07-19):** eram os dois bugs acima
+> empilhados. Prod: 48→51 memórias, failed=0. Deploy do Jarvis Forge roda migrations automaticamente.
 
 ## FASE 3 — Produto: o hub trabalhando de verdade
 
