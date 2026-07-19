@@ -34,11 +34,12 @@
 
 ---
 
-> **Progresso:** ✅ FASE 0, ✅ FASE 1 e ✅ FASE 3 (parcial) concluídas em produção (2026-07-19).
+> **Progresso:** ✅ FASE 0, ✅ FASE 1, ✅ FASE 2 e ✅ FASE 3 (parcial) concluídas em produção (2026-07-19).
 > FASE 3: Tier 2+3 ingeridos (48 memórias, 19 validadas) e **pipeline de skills rodou ponta a
 > ponta → 5 skills publicadas** (git). Pendente da FASE 3: Tier 4 (7 peças, opcional), capturar
-> configs de harness, e as 3 captures FAILED (timeout de curadoria em conteúdo denso — reprocessar).
-> Próxima recomendada: FASE 2 (robustez) — inclui tratar o timeout de curadoria.
+> configs de harness. As 3 captures FAILED tinham causa real **HTTP 429** (não timeout) — resolvido
+> na FASE 2 com backoff; auto-recuperadas pelo agendador horário.
+> Próxima recomendada: FASE 3 restante (Tier 4 + harness) ou FASE 4 (inteligência/embeddings).
 
 ## FASE 0 — Housekeeping ✅ FEITA
 
@@ -63,13 +64,19 @@
 4. **Allowlist de paths no harness** (achado #11): validar `path` do `harness_capture` contra
    prefixos seguros (ex.: `~/.claude/`, `.mcp.json`, `CLAUDE.md`) antes de virar passo `write_file`.
 
-## FASE 2 — Robustez operacional (restantes da auditoria + lows valiosos)
+## FASE 2 — Robustez operacional ✅ FEITA (commits 11bf5ba + d191fa1)
 
-5. **Visibilidade de failed_jobs na UI** — contador no dashboard/admin + ação retry (`queue:retry`).
-6. **Paginação** em SkillsAdmin, SkillGroupsReview, HarnessProfiles (hoje `get()` ilimitado).
-7. **highlight.js: CDN → bundle local** (`npm i highlight.js`, import no `app.js`, remover `<script>` CDN do layout) + re-highlight pós-morph Livewire (hoje só em `livewire:navigated`).
-8. **Labels acessíveis** nos componentes neo (`input/select/textarea` gerarem `id` automático p/ `for=`).
-9. **Agendar recuperação**: `routes/console.php` → `memory:process-captures --retry-failed` a cada hora (auto-cura de capturas FAILED após indisponibilidade do MiniMax).
+5. ✅ **Visibilidade de failed_jobs na UI** — banner de capturas FAILED + botão "REPROCESSAR FALHAS" no CapturesInbox.
+6. ✅ **Paginação** em SkillsAdmin, SkillGroupsReview, HarnessProfiles (WithPagination + paginate(20)).
+7. ✅ **highlight.js: CDN → bundle local** (core + 12 linguagens tree-shaken, atom-one-dark) + re-highlight pós-morph Livewire.
+8. ✅ **Labels acessíveis** — `neo/input` gera `id` automático p/ `for=`.
+9. ✅ **Agendar recuperação**: `memory:process-captures --retry-failed` a cada hora (`withoutOverlapping`).
+10. ✅ **Backoff exponencial em 429/5xx** (commit d191fa1) — a causa-raiz real das 3 capturas FAILED
+    da FASE 3 era **HTTP 429** (rate limit MiniMax) no burst de ingestão, não timeout. O motor agora
+    retenta só em transiente (conexão, 429, 500, 502, 503, 504) com backoff exponencial + Retry-After;
+    4xx falha na hora. Testes com `Sleep::fake()` cobrem 429→200 e 429 persistente.
+    - **Pendente operacional:** as 3 capturas FAILED em prod são auto-recuperadas pelo agendador
+      horário (item 9) assim que o deploy do d191fa1 sobe; ou reprocesso manual via UI/CLI na VPS.
 
 ## FASE 3 — Produto: o hub trabalhando de verdade
 
