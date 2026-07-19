@@ -57,6 +57,10 @@ services:
         UID: '${DEV_UID:-1000}'
         GID: '${DEV_GID:-1000}'
     container_name: devmem-dev-queue
+    # queue:work sai com código 0 ao receber um sinal de queue:restart (que o app
+    # dispara, ex.: ao salvar Configurações). Sem restart, o Docker não o traz de
+    # volta e o pipeline assíncrono congela. unless-stopped = auto-cura.
+    restart: unless-stopped
     command: php artisan queue:work --tries=2 --timeout=300
     volumes:
       - .:/var/www/html
