@@ -27,12 +27,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/memories/{memory}', MemoryDetail::class)->name('memories.show');
     Route::get('/memories/{memory}/edit', MemoryForm::class)->name('memories.edit');
 
-    Route::get('/admin/captures', CapturesInbox::class)->name('admin.captures');
-    Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
-    Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');
-    Route::get('/admin/tokens', ApiTokens::class)->name('admin.tokens');
-    Route::get('/admin/harness', HarnessProfiles::class)->name('admin.harness');
-    Route::get('/admin/settings', SystemSettings::class)->name('admin.settings');
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/captures', CapturesInbox::class)->name('admin.captures');
+        Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
+        Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');
+        Route::get('/admin/tokens', ApiTokens::class)->name('admin.tokens');
+        Route::get('/admin/harness', HarnessProfiles::class)->name('admin.harness');
+        Route::get('/admin/settings', SystemSettings::class)->name('admin.settings');
+    });
 
     Route::post('/logout', function () {
         Auth::logout();

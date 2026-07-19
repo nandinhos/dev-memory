@@ -599,12 +599,16 @@ class MemoryMcpServer
             return ['error' => 'files é obrigatório (lista de {path, content})'];
         }
 
-        $profile = app(HarnessProfileService::class)->capture(
-            harness: $harness,
-            files: $files,
-            name: $args['name'] ?? 'default',
-            description: $args['description'] ?? null,
-        );
+        try {
+            $profile = app(HarnessProfileService::class)->capture(
+                harness: $harness,
+                files: $files,
+                name: $args['name'] ?? 'default',
+                description: $args['description'] ?? null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return ['error' => $e->getMessage()];
+        }
 
         $redacted = collect($profile->files)
             ->filter(fn ($f) => ! empty($f['redactions']))

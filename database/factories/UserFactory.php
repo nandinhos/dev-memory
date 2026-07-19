@@ -30,6 +30,9 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Neste hub, usuários são criados via memory:make-admin e são admins.
+            // Use ->state(['is_admin' => false]) para testar um usuário comum.
+            'is_admin' => true,
         ];
     }
 

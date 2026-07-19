@@ -7,6 +7,15 @@
             <div class="flex-1">
                 <x-neo.input rotulo="NOME (ex.: projeto-eventos-control)" wire:model="name" placeholder="nome do projeto/máquina" :erro="$errors->first('name')" />
             </div>
+            <div>
+                <label class="block text-xs font-bold font-mono uppercase tracking-wider mb-1">Validade</label>
+                <select wire:model="expiresInDays" class="input-neo neo-border-sm shadow-neo-sm px-3 py-2 outline-none font-mono text-sm cursor-pointer">
+                    <option value="0">Sem expiração</option>
+                    <option value="30">30 dias</option>
+                    <option value="90">90 dias</option>
+                    <option value="365">1 ano</option>
+                </select>
+            </div>
             <x-neo.button tipo="submit" variante="sucesso" tamanho="md">GERAR TOKEN</x-neo.button>
         </form>
 
@@ -39,6 +48,11 @@
                 <div class="text-xs font-mono text-gray-500">
                     criado {{ $token->created_at->format('d/m/Y') }}
                     · {{ $token->last_used_at ? 'usado '.$token->last_used_at->diffForHumans() : 'nunca usado' }}
+                    @if ($token->expires_at)
+                        · <span class="{{ $token->isExpired() ? 'text-neo-magenta font-bold' : '' }}">{{ $token->isExpired() ? 'EXPIRADO' : 'expira '.$token->expires_at->format('d/m/Y') }}</span>
+                    @else
+                        · sem expiração
+                    @endif
                 </div>
             </div>
             <x-neo.button variante="destrutivo" tamanho="sm" wire:click="revoke('{{ $token->id }}')"

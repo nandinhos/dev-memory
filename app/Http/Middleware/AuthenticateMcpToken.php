@@ -13,10 +13,12 @@ class AuthenticateMcpToken
     {
         $token = ApiToken::findByPlaintext($request->bearerToken());
 
-        if ($token === null) {
+        if ($token === null || $token->isExpired()) {
+            $message = $token?->isExpired() ? 'Token de API expirado' : 'Token de API inválido ou ausente';
+
             return response()->json([
                 'jsonrpc' => '2.0',
-                'error' => ['code' => -32001, 'message' => 'Token de API inválido ou ausente'],
+                'error' => ['code' => -32001, 'message' => $message],
                 'id' => null,
             ], 401);
         }

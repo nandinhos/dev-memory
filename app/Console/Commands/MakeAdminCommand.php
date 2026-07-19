@@ -43,7 +43,7 @@ class MakeAdminCommand extends Command
 
         $user = User::updateOrCreate(
             ['email' => $email],
-            ['name' => $name, 'password' => Hash::make($plain)],
+            ['name' => $name, 'password' => Hash::make($plain), 'is_admin' => true],
         );
 
         $this->info($user->wasRecentlyCreated

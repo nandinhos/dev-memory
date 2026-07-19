@@ -44,6 +44,7 @@
                 <span>+ NOVA</span>
             </a>
 
+            @if (auth()->user()?->is_admin)
             <div class="pt-4 mt-2 border-t-4 border-black/10">
                 <span class="px-4 text-[10px] font-mono font-bold text-gray-500 uppercase tracking-[0.2em]">// pipeline</span>
             </div>
@@ -77,6 +78,7 @@
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.settings') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
                 <span>CONFIGURAÇÕES</span>
             </a>
+            @endif
         </nav>
 
         <!-- Profile Area -->

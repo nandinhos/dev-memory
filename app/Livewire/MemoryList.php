@@ -70,6 +70,8 @@ class MemoryList extends Component
     #[On('promote-memory')]
     public function promoteMemory(string $id): void
     {
+        abort_unless(auth()->user()?->is_admin === true, 403);
+
         $memory = Memory::findOrFail($id);
         $memory->update(['scope' => MemoryScope::GLOBAL]);
 

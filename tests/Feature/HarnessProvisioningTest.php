@@ -59,8 +59,8 @@ class HarnessProvisioningTest extends TestCase
     {
         $service = app(HarnessProfileService::class);
 
-        $service->capture(HarnessType::CLAUDE_CODE, [['path' => 'a', 'content' => 'x']]);
-        $second = $service->capture(HarnessType::CLAUDE_CODE, [['path' => 'a', 'content' => 'y']]);
+        $service->capture(HarnessType::CLAUDE_CODE, [['path' => '.mcp.json', 'content' => 'x']]);
+        $second = $service->capture(HarnessType::CLAUDE_CODE, [['path' => '.mcp.json', 'content' => 'y']]);
 
         $this->assertSame('1.0.1', $second->version);
         $this->assertSame(1, HarnessProfile::count());

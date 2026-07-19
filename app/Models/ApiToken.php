@@ -16,10 +16,12 @@ class ApiToken extends Model
         'name',
         'token_hash',
         'last_used_at',
+        'expires_at',
     ];
 
     protected $casts = [
         'last_used_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     protected $hidden = [
@@ -37,7 +39,7 @@ class ApiToken extends Model
      *
      * @return array{0: self, 1: string}
      */
-    public static function issue(User $user, string $name): array
+    public static function issue(User $user, string $name, ?\DateTimeInterface $expiresAt = null): array
     {
         $plain = Str::random(48);
 
@@ -45,6 +47,7 @@ class ApiToken extends Model
             'user_id' => $user->id,
             'name' => $name,
             'token_hash' => hash('sha256', $plain),
+            'expires_at' => $expiresAt,
         ]);
 
         return [$token, $plain];
@@ -57,5 +60,10 @@ class ApiToken extends Model
         }
 
         return static::firstWhere('token_hash', hash('sha256', $plain));
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
     }
 }

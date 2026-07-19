@@ -27,6 +27,10 @@ class Capture extends Model
     protected $casts = [
         'metadata' => 'array',
         'status' => CaptureStatus::class,
+        // Conteúdo cru pode conter segredos que escaparam da sanitização —
+        // criptografado at-rest com a APP_KEY. Migração re-grava os existentes.
+        'raw_content' => 'encrypted',
+        'sanitized_content' => 'encrypted',
     ];
 
     public function memory(): BelongsTo

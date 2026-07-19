@@ -20,6 +20,7 @@ class MemoryDetail extends Component
 
     public function delete(): void
     {
+        $this->authorizeAdmin();
         $this->memory->delete();
         session()->flash('success', 'Memória removida com sucesso!');
         $this->redirect('/memories', navigate: true);
@@ -37,6 +38,7 @@ class MemoryDetail extends Component
 
     public function markAsValidated(): void
     {
+        $this->authorizeAdmin();
         $this->memory->update(['validation_status' => ValidationStatus::VALIDATED]);
         $this->memory->refresh();
         $this->dispatch('show-toast',
@@ -47,6 +49,7 @@ class MemoryDetail extends Component
 
     public function promoteToGlobal(): void
     {
+        $this->authorizeAdmin();
         $this->memory->update(['scope' => MemoryScope::GLOBAL]);
         $this->memory->refresh();
         $this->dispatch('show-toast',
@@ -58,5 +61,11 @@ class MemoryDetail extends Component
     public function render()
     {
         return view('livewire.memory-detail');
+    }
+
+    /** Ações de curadoria (validar/promover/excluir) são restritas a admin. */
+    private function authorizeAdmin(): void
+    {
+        abort_unless(auth()->user()?->is_admin === true, 403);
     }
 }
