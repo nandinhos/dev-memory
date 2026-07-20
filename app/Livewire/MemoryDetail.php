@@ -8,6 +8,9 @@ use App\Enums\ValidationStatus;
 use App\Jobs\ValidateMemoryDocumentationJob;
 use App\Models\Memory;
 use App\Services\Curation\CanonicalizationAdvisor;
+use App\Services\Curation\CurationFailedException;
+use App\Services\Curation\DocumentationValidator;
+use App\Services\Curation\DocValidationOutcome;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -18,6 +21,9 @@ class MemoryDetail extends Component
 
     /** Resultado efêmero da análise de contradição (IA) — não persistido. */
     public array $canonAssessment = [];
+
+    /** Resumo efêmero da última reanálise no Context7 (para exibir o antes/depois). */
+    public array $reanalysisResult = [];
 
     public function mount(Memory $memory): void
     {
@@ -83,6 +89,60 @@ class MemoryDetail extends Component
             report($e);
             $this->dispatch('show-toast', message: 'Falha na análise: '.mb_substr($e->getMessage(), 0, 120), type: 'erro');
         }
+    }
+
+    /**
+     * Reanálise guiada por IA: re-roda a validação documental usando a biblioteca
+     * CORRETA que a IA apontou (o falso-negativo veio de resolução errada). Preserva
+     * o resultado original (trilha de auditoria) e NUNCA auto-valida — a IA escolheu
+     * onde olhar, então a validação continua sendo decisão humana.
+     */
+    public function reanalyzeInContext7(DocumentationValidator $validator): void
+    {
+        $this->authorizeAdmin();
+
+        $query = $this->canonAssessment['suggested_context7_query'] ?? null;
+
+        if (! is_string($query) || trim($query) === '') {
+            return;
+        }
+
+        if ($this->memory->reanalyzed_by_ai) {
+            $this->dispatch('show-toast', message: 'Esta memória já foi reanalisada uma vez.', type: 'aviso');
+
+            return;
+        }
+
+        $previousReport = $this->memory->doc_validation_report ?? [];
+        $previousStatus = $this->memory->doc_validation_status?->value;
+
+        try {
+            $outcome = $validator->validate($this->memory, $query);
+        } catch (CurationFailedException $e) {
+            $outcome = DocValidationOutcome::inconclusive('falha do motor na reanálise: '.$e->getMessage());
+        }
+
+        $report = $outcome->toReport();
+        // Trilha de auditoria: o resultado original É a confiabilidade — nunca sobrescreve.
+        $report['reanalysis'] = ['query' => $query, 'previous_library' => $previousReport['library'] ?? null, 'previous_status' => $previousStatus];
+        $report['previous_report'] = $previousReport;
+
+        $this->memory->update([
+            'doc_validation_status' => $outcome->status,
+            'doc_validation_report' => $report,
+            'reanalyzed_by_ai' => true,
+            'doc_validated_at' => now(),
+        ]);
+        // NUNCA auto-valida (escolha do usuário): a IA escolheu a biblioteca, o humano confirma.
+
+        $this->memory->refresh();
+        $this->reanalysisResult = [
+            'status' => $outcome->status->value,
+            'library' => $outcome->libraryId,
+            'previous_library' => $previousReport['library'] ?? null,
+        ];
+
+        $this->dispatch('show-toast', message: 'Reanálise concluída no Context7', type: 'sucesso');
     }
 
     public function applyCorrection(): void

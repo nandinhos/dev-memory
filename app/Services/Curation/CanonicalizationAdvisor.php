@@ -47,7 +47,8 @@ REGRAS INEGOCIÁVEIS:
 1. Só use "correct" quando a contradição for REAL e fundamentável nas notas da checagem. NUNCA invente suporte nem reescreva por padrão.
 2. Para "correct", forneça "suggested_title" e "suggested_description" — a versão canônica corrigida, preservando o valor da lição e ajustando só o que a documentação exige.
 3. Para "keep" e "reject", "suggested_title" e "suggested_description" DEVEM ser null.
-4. Responda APENAS com o objeto JSON. Sem markdown, sem texto antes ou depois.
+4. "suggested_context7_query": se a checagem resolveu a biblioteca ERRADA e EXISTE uma biblioteca/framework oficial correto para o assunto (ex.: a memória é sobre "Livewire" mas resolveu um plugin tangente → sugira "livewire/livewire"), preencha com o nome/termo a re-buscar no Context7. Se o assunto for uma METODOLOGIA/PRÁTICA/OPINIÃO sem documentação de biblioteca (TDD, SOLID, Conventional Commits), preencha com null — re-buscar seria fútil. Sugira SÓ o alvo da busca; você NÃO decide o veredito da re-busca.
+5. Responda APENAS com o objeto JSON. Sem markdown, sem texto antes ou depois.
 
 CONTRATO (todos os campos obrigatórios):
 {
@@ -56,6 +57,7 @@ CONTRATO (todos os campos obrigatórios):
   "recommendation": "keep" | "correct" | "reject",
   "suggested_title": string ou null,
   "suggested_description": string ou null,
+  "suggested_context7_query": string ou null,
   "confidence": número entre 0 e 1
 }
 PROMPT;

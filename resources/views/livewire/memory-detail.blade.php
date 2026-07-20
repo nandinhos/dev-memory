@@ -127,6 +127,9 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span class="text-xs font-bold font-mono uppercase tracking-wide">Comprovação em documentação oficial</span>
+                                    @if($memory->reanalyzed_by_ai)
+                                        <span class="bg-neo-purple text-white border-2 border-black px-1.5 py-0.5 text-[10px] font-black" title="Checagem refeita pela IA na biblioteca correta">IA</span>
+                                    @endif
                                 </div>
                                 <div class="flex items-center gap-2">
                                     @if($docStatus)
@@ -203,7 +206,7 @@
                     @endif
 
                     {{-- Análise de contradição assistida por IA (canonização) --}}
-                    @if($memory->doc_validation_status?->value === 'contradicted')
+                    @if($memory->doc_validation_status?->value === 'contradicted' || ! empty($canonAssessment))
                         <div class="neo-border shadow-neo p-4 mt-6 bg-neo-white">
                             <div class="flex items-center gap-2 mb-3 pb-2 border-b-2 border-black">
                                 <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -229,6 +232,7 @@
                                         'outdated' => ['bg-neo-orange', 'Desatualizada'],
                                     ];
                                     [$aCor, $aLabel] = $assessMap[$canonAssessment['assessment'] ?? ''] ?? ['bg-gray-300', $canonAssessment['assessment'] ?? '?'];
+                                    $reQuery = $canonAssessment['suggested_context7_query'] ?? null;
                                 @endphp
                                 <div class="flex items-center gap-2 mb-3 flex-wrap">
                                     <span class="{{ $aCor }} border-2 border-black px-2 py-0.5 text-xs font-black uppercase">{{ $aLabel }}</span>
@@ -244,8 +248,34 @@
                                     </div>
                                 @endif
 
+                                @if(!empty($reanalysisResult))
+                                    @php
+                                        $reStatusMap = [
+                                            'confirmed' => ['bg-neo-green', 'Confirmado pela documentação'],
+                                            'partially_confirmed' => ['bg-neo-yellow', 'Parcialmente confirmado'],
+                                            'contradicted' => ['bg-neo-magenta text-white', 'Ainda contradiz'],
+                                            'inconclusive' => ['bg-gray-300', 'Ainda inconclusivo'],
+                                        ];
+                                        [$reCor, $reLabel] = $reStatusMap[$reanalysisResult['status'] ?? ''] ?? ['bg-gray-300', $reanalysisResult['status'] ?? '?'];
+                                    @endphp
+                                    <div class="bg-[#F0FDFA] neo-border-sm p-3 mb-3">
+                                        <span class="text-[10px] font-mono uppercase text-black font-black block mb-2">Reanálise no Context7 · guiada por IA</span>
+                                        <div class="text-xs font-mono text-gray-600 mb-1">Buscou: <span class="font-bold text-black">{{ $reQuery }}</span></div>
+                                        @if(!empty($reanalysisResult['previous_library']))
+                                            <div class="text-xs font-mono text-gray-500 mb-2">Biblioteca: <span class="line-through">{{ $reanalysisResult['previous_library'] }}</span> &rarr; <span class="font-bold text-black">{{ $reanalysisResult['library'] ?? '(nenhuma encontrada)' }}</span></div>
+                                        @endif
+                                        <span class="{{ $reCor }} border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase inline-block">Novo veredito: {{ $reLabel }}</span>
+                                    </div>
+                                @endif
+
                                 @if(auth()->user()?->is_admin)
                                     <div class="flex flex-wrap gap-2">
+                                        @if($reQuery && ! $memory->reanalyzed_by_ai && empty($reanalysisResult))
+                                            <x-neo.button variante="sucesso" tamanho="sm" tipo="button" wire:click="reanalyzeInContext7" wire:loading.attr="disabled" wire:target="reanalyzeInContext7">
+                                                <span wire:loading.remove wire:target="reanalyzeInContext7">Reanalisar no Context7 (buscar: {{ Str::limit($reQuery, 28) }})</span>
+                                                <span wire:loading wire:target="reanalyzeInContext7">Reanalisando…</span>
+                                            </x-neo.button>
+                                        @endif
                                         @if(($canonAssessment['recommendation'] ?? '') === 'correct')
                                             <x-neo.button variante="sucesso" tamanho="sm" tipo="button" wire:click="applyCorrection"
                                                 wire:confirm="Aplicar a correção sugerida? Título e descrição serão substituídos e a memória será revalidada.">Aplicar correção</x-neo.button>

@@ -19,6 +19,10 @@ final class CanonicalizationAssessment
         public ?string $suggestedTitle,
         public ?string $suggestedDescription,
         public float $confidence,
+        // Biblioteca/termo CORRETO a re-buscar no Context7 (quando o falso-negativo
+        // veio de resolução errada e existe uma lib certa). null = sem lib aplicável
+        // (metodologia/opinião): reanalisar seria fútil.
+        public ?string $suggestedContext7Query = null,
     ) {}
 
     /** @return list<string> */
@@ -66,6 +70,8 @@ final class CanonicalizationAssessment
             throw new InvalidArgumentException(implode('; ', $errors));
         }
 
+        $query = $data['suggested_context7_query'] ?? null;
+
         return new self(
             assessment: $data['assessment'],
             reasoning: $data['reasoning'],
@@ -73,6 +79,7 @@ final class CanonicalizationAssessment
             suggestedTitle: ($data['recommendation'] === 'correct') ? $data['suggested_title'] : null,
             suggestedDescription: ($data['recommendation'] === 'correct') ? $data['suggested_description'] : null,
             confidence: (float) $data['confidence'],
+            suggestedContext7Query: (is_string($query) && trim($query) !== '') ? trim($query) : null,
         );
     }
 
@@ -85,6 +92,7 @@ final class CanonicalizationAssessment
             'suggested_title' => $this->suggestedTitle,
             'suggested_description' => $this->suggestedDescription,
             'confidence' => $this->confidence,
+            'suggested_context7_query' => $this->suggestedContext7Query,
         ];
     }
 }

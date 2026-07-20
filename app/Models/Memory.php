@@ -28,6 +28,7 @@ class Memory extends Model
         'doc_validation_status',
         'doc_validation_report',
         'doc_validated_at',
+        'reanalyzed_by_ai',
         'official_reference',
         'recurrence_count',
         // Extended fields
@@ -48,6 +49,7 @@ class Memory extends Model
         'doc_validation_status' => DocumentationValidationStatus::class,
         'doc_validation_report' => 'array',
         'doc_validated_at' => 'datetime',
+        'reanalyzed_by_ai' => 'boolean',
         'source_system' => MemorySource::class,
         'severity' => Severity::class,
         'recurrence_count' => 'integer',

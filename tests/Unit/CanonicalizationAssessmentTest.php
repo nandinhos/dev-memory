@@ -62,6 +62,27 @@ class CanonicalizationAssessmentTest extends TestCase
         ]);
     }
 
+    public function test_captura_a_biblioteca_sugerida_para_reanalise(): void
+    {
+        $comLib = CanonicalizationAssessment::fromArray([
+            'assessment' => 'false_negative',
+            'reasoning' => 'lib errada, mas existe a certa',
+            'recommendation' => 'keep',
+            'suggested_context7_query' => '  livewire/livewire  ',
+            'confidence' => 0.9,
+        ]);
+        $this->assertSame('livewire/livewire', $comLib->suggestedContext7Query); // trim aplicado
+
+        $metodologia = CanonicalizationAssessment::fromArray([
+            'assessment' => 'not_library_documentable',
+            'reasoning' => 'metodologia, sem lib',
+            'recommendation' => 'keep',
+            'suggested_context7_query' => null,
+            'confidence' => 0.95,
+        ]);
+        $this->assertNull($metodologia->suggestedContext7Query);
+    }
+
     public function test_keep_descarta_sugestao_enviada(): void
     {
         // Viés de segurança: mesmo se o modelo mandar sugestão com "keep",

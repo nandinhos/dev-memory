@@ -17,9 +17,17 @@ class DocumentationValidator
         private Context7Client $docs,
     ) {}
 
-    public function validate(Memory $memory): DocValidationOutcome
+    /**
+     * $technologyOverride: quando a IA aponta a biblioteca CORRETA após um
+     * falso-negativo, re-resolvemos o Context7 por ela em vez do 1º termo do stack.
+     * O veredito segue 100% ancorado nos trechos recuperados — a IA só escolhe ONDE
+     * olhar, nunca decide o resultado.
+     */
+    public function validate(Memory $memory, ?string $technologyOverride = null): DocValidationOutcome
     {
-        $technology = $this->primaryTechnology($memory);
+        $technology = $technologyOverride !== null && trim($technologyOverride) !== ''
+            ? trim($technologyOverride)
+            : $this->primaryTechnology($memory);
 
         if ($technology === null) {
             return DocValidationOutcome::inconclusive('memória sem stack definida');
