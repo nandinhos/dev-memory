@@ -25,3 +25,4 @@ Thumbs.db
 
 /.playwright-mcp
 .env.dev
+.playwright-mcp/
