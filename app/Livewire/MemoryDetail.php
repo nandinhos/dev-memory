@@ -79,7 +79,10 @@ class MemoryDetail extends Component
     {
         $this->authorizeAdmin();
 
-        if ($this->memory->doc_validation_status !== DocumentationValidationStatus::CONTRADICTED) {
+        if (! in_array($this->memory->doc_validation_status, [
+            DocumentationValidationStatus::CONTRADICTED,
+            DocumentationValidationStatus::INCONCLUSIVE,
+        ], true)) {
             return;
         }
 

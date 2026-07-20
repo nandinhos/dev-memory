@@ -28,7 +28,7 @@ final class CanonicalizationAssessment
     /** @return list<string> */
     public static function assessments(): array
     {
-        return ['false_negative', 'not_library_documentable', 'real_contradiction', 'outdated'];
+        return ['false_negative', 'not_library_documentable', 'real_contradiction', 'outdated', 'genuinely_inconclusive'];
     }
 
     /** @return list<string> */

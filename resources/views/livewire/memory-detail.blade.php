@@ -205,21 +205,23 @@
                         </div>
                     @endif
 
-                    {{-- Análise de contradição assistida por IA (canonização) --}}
-                    @if($memory->doc_validation_status?->value === 'contradicted' || ! empty($canonAssessment))
+                    {{-- Análise da checagem documental assistida por IA (canonização) --}}
+                    @php $docNeg = in_array($memory->doc_validation_status?->value, ['contradicted', 'inconclusive'], true); @endphp
+                    @if($docNeg || ! empty($canonAssessment))
                         <div class="neo-border shadow-neo p-4 mt-6 bg-neo-white">
                             <div class="flex items-center gap-2 mb-3 pb-2 border-b-2 border-black">
                                 <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                 </svg>
-                                <span class="text-xs font-bold font-mono uppercase tracking-wide">Análise de contradição (IA)</span>
+                                <span class="text-xs font-bold font-mono uppercase tracking-wide">Análise da checagem documental (IA)</span>
                             </div>
 
                             @if(empty($canonAssessment))
-                                <p class="text-xs font-mono text-gray-600 mb-3">A checagem marcou esta memória como <strong>contradita</strong>. A IA avalia se é contradição real ou falso-negativo (biblioteca errada / assunto não documentável por biblioteca) e, se real, sugere uma correção canônica.</p>
+                                @php $negWord = $memory->doc_validation_status?->value === 'inconclusive' ? 'inconclusiva' : 'contradita'; @endphp
+                                <p class="text-xs font-mono text-gray-600 mb-3">A checagem marcou esta memória como <strong>{{ $negWord }}</strong>. A IA avalia se foi falso-negativo (biblioteca errada / assunto não documentável) e, quando existe a biblioteca certa, oferece <strong>reanalisar no Context7</strong> nela.</p>
                                 @if(auth()->user()?->is_admin)
                                     <x-neo.button variante="contorno" tamanho="sm" tipo="button" wire:click="analyzeContradiction" wire:loading.attr="disabled" wire:target="analyzeContradiction">
-                                        <span wire:loading.remove wire:target="analyzeContradiction">Analisar contradição (IA)</span>
+                                        <span wire:loading.remove wire:target="analyzeContradiction">Analisar com IA</span>
                                         <span wire:loading wire:target="analyzeContradiction">Analisando…</span>
                                     </x-neo.button>
                                 @endif
@@ -230,6 +232,7 @@
                                         'not_library_documentable' => ['bg-neo-teal', 'Não documentável por biblioteca'],
                                         'real_contradiction' => ['bg-neo-magenta text-white', 'Contradição real'],
                                         'outdated' => ['bg-neo-orange', 'Desatualizada'],
+                                        'genuinely_inconclusive' => ['bg-gray-300', 'Inconclusivo legítimo (doc não cobre)'],
                                     ];
                                     [$aCor, $aLabel] = $assessMap[$canonAssessment['assessment'] ?? ''] ?? ['bg-gray-300', $canonAssessment['assessment'] ?? '?'];
                                     $reQuery = $canonAssessment['suggested_context7_query'] ?? null;

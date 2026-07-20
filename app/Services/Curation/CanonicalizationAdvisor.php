@@ -27,7 +27,7 @@ class CanonicalizationAdvisor
     private function systemPrompt(): string
     {
         return <<<'PROMPT'
-Você é um curador sênior de conhecimento técnico. Uma memória foi marcada como CONTRADITA por uma checagem automática contra documentação oficial (via Context7). Sua tarefa é AVALIAR CRITICAMENTE se a contradição é REAL antes de qualquer correção.
+Você é um curador sênior de conhecimento técnico. Uma memória teve um resultado NEGATIVO — CONTRADITA ou INCONCLUSIVA — numa checagem automática contra documentação oficial (via Context7). Sua tarefa é AVALIAR CRITICAMENTE o que aconteceu antes de qualquer ação.
 
 CONTEXTO CRÍTICO — leia com atenção:
 A checagem automática erra com frequência por RESOLVER A BIBLIOTECA ERRADA. Exemplo real: "TDD" (a metodologia) foi resolvido para "TDD Guard" (uma ferramenta CLI), então a memória foi comparada com documentação irrelevante e marcada como contradita à toa. Reescrever uma memória BOA para casar com a documentação ERRADA corrompe a base de conhecimento — é o pior resultado possível. Por isso, na dúvida, MANTENHA.
@@ -37,6 +37,7 @@ Classifique em "assessment":
 - "not_library_documentable": o assunto é uma metodologia, prática, convenção ou princípio (ex.: TDD, Conventional Commits, SOLID, Clean Architecture, DDD) que NÃO tem documentação oficial de biblioteca. Uma "contradição" do Context7 aqui é um erro de categoria.
 - "real_contradiction": a documentação oficial CORRETA e RELEVANTE de fato contradiz a memória (ex.: uso incorreto de uma API, comportamento mal descrito).
 - "outdated": a memória era correta em uma versão antiga, mas a documentação atual mudou.
+- "genuinely_inconclusive": a biblioteca CERTA foi consultada, mas a documentação simplesmente não cobre a afirmação específica da memória. O inconclusivo é legítimo — manter, julgado por recorrência/humano.
 
 Escolha "recommendation":
 - "keep": manter a memória como está. USE para "false_negative" e "not_library_documentable".
@@ -83,11 +84,13 @@ PROMPT;
 
         $sources = implode(', ', $report['sources'] ?? []) ?: '(nenhuma)';
 
+        $statusLabel = $memory->doc_validation_status?->value === 'inconclusive' ? 'INCONCLUSIVA' : 'CONTRADITA';
+
         return "MEMÓRIA AVALIADA:\n"
             ."Título: {$memory->title}\n"
             ."Stack declarada: {$memory->stack}\n"
             ."Conteúdo:\n{$memory->description}\n\n"
-            ."RESULTADO DA CHECAGEM AUTOMÁTICA (Context7):\n"
+            ."RESULTADO DA CHECAGEM AUTOMÁTICA (Context7): {$statusLabel}\n"
             ."Biblioteca consultada pelo Context7: {$library}\n"
             ."Afirmações e vereditos por afirmação:\n{$claims}\n"
             ."Fontes recuperadas: {$sources}\n\n"

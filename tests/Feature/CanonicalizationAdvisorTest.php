@@ -73,9 +73,9 @@ class CanonicalizationAdvisorTest extends TestCase
             ->assertSet('canonAssessment.recommendation', 'keep');
     }
 
-    public function test_analise_nao_roda_para_memoria_nao_contradita(): void
+    public function test_analise_nao_roda_para_memoria_nao_negativa(): void
     {
-        // Guard: sem HTTP fake — se chamasse o motor, o teste falharia.
+        // Guard: sem HTTP fake — só contradicted/inconclusive analisam; parcial não.
         $memory = Memory::factory()->create([
             'doc_validation_status' => DocumentationValidationStatus::PARTIALLY_CONFIRMED,
         ]);
@@ -83,6 +83,29 @@ class CanonicalizationAdvisorTest extends TestCase
         Livewire::test(MemoryDetail::class, ['memory' => $memory])
             ->call('analyzeContradiction')
             ->assertSet('canonAssessment', []);
+    }
+
+    public function test_analise_roda_para_memoria_inconclusive_e_sugere_biblioteca(): void
+    {
+        Http::fake(['*' => Http::response($this->engineResponse([
+            'assessment' => 'false_negative',
+            'reasoning' => 'O Context7 resolveu um plugin tangente, mas existe a lib oficial.',
+            'recommendation' => 'keep',
+            'suggested_context7_query' => 'livewire/livewire',
+            'confidence' => 0.85,
+        ]))]);
+
+        $memory = Memory::factory()->create([
+            'stack' => 'Livewire',
+            'validation_status' => ValidationStatus::PENDING,
+            'doc_validation_status' => DocumentationValidationStatus::INCONCLUSIVE,
+            'doc_validation_report' => ['library' => '/tangente/plugin', 'verdict' => ['claims' => []], 'sources' => []],
+        ]);
+
+        Livewire::test(MemoryDetail::class, ['memory' => $memory])
+            ->call('analyzeContradiction')
+            ->assertSet('canonAssessment.assessment', 'false_negative')
+            ->assertSet('canonAssessment.suggested_context7_query', 'livewire/livewire');
     }
 
     public function test_manter_valida_a_memoria(): void
