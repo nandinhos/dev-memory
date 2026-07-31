@@ -102,7 +102,7 @@ services:
   postgres:
     # MESMA major de produção (16) — versão diferente traz diferença de plano,
     # de tipo e de mensagem de erro justamente onde se quer paridade.
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: devmem-dev-postgres
     environment:
       POSTGRES_DB: '${DB_DATABASE:-dev_memory}'
