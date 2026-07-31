@@ -53,14 +53,24 @@ class HarnessProfileService
             return false;
         }
 
-        $allowedPrefixes = ['~/.claude/', '.claude/', '~/.codex/', '.codex/', '~/.config/', '~/.serena/', '.serena/', '.agent/', '.devorq/'];
+        $allowedPrefixes = [
+            '~/.claude/', '.claude/',
+            '~/.codex/', '.codex/',
+            '~/.gemini/', '.gemini/', '.agents/',
+            '~/.hermes/', '.hermes/',
+            '~/.config/', '~/.serena/', '.serena/', '.agent/', '.devorq/',
+        ];
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return true;
             }
         }
 
-        $allowedNames = ['.mcp.json', 'CLAUDE.md', 'AGENTS.md', 'settings.json', 'settings.local.json', 'keybindings.json'];
+        $allowedNames = [
+            '.mcp.json', 'mcp_config.json', 'CLAUDE.md', 'AGENTS.md',
+            'settings.json', 'settings.local.json', 'keybindings.json',
+            'config.toml', 'config.json',
+        ];
 
         return in_array($basename, $allowedNames, true);
     }

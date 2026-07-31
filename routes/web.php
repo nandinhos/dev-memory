@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HarnessInstallerController;
 use App\Livewire\Admin\ApiTokens;
 use App\Livewire\Admin\CapturesInbox;
 use App\Livewire\Admin\HarnessProfiles;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'landing')->name('home');
+Route::get('/install/harness/{harness}/{name?}', [HarnessInstallerController::class, 'download'])->name('harness.installer');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');

@@ -10,6 +10,7 @@ use App\Models\HarnessProfile;
 use App\Models\Memory;
 use App\Services\ConfirmationGuard;
 use App\Services\Curation\CaptureService;
+use App\Services\HarnessInstallerGenerator;
 use App\Services\HarnessProfileService;
 use App\Services\HubBriefingService;
 use App\Services\MemoryService;
@@ -166,11 +167,11 @@ class MemoryMcpServer
             ],
             'harness_paths' => [
                 'name' => 'harness_paths',
-                'description' => 'Retorna os caminhos de configuração recomendados para capturar de um harness (ex: claude-code). Leia esses arquivos na máquina de origem e envie via harness_capture.',
+                'description' => 'Retorna os caminhos de configuração recomendados para capturar de um harness (ex: claude-code, codex, antigravity, hermes). Leia esses arquivos na máquina de origem e envie via harness_capture.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
-                        'harness' => ['type' => 'string', 'enum' => ['claude-code'], 'description' => 'Harness alvo'],
+                        'harness' => ['type' => 'string', 'enum' => array_column(HarnessType::cases(), 'value'), 'description' => 'Harness alvo'],
                     ],
                     'required' => ['harness'],
                 ],
@@ -181,7 +182,7 @@ class MemoryMcpServer
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
-                        'harness' => ['type' => 'string', 'enum' => ['claude-code']],
+                        'harness' => ['type' => 'string', 'enum' => array_column(HarnessType::cases(), 'value')],
                         'name' => ['type' => 'string', 'description' => 'Nome do perfil (ex: default, trabalho)', 'default' => 'default'],
                         'description' => ['type' => 'string'],
                         'files' => [
@@ -210,7 +211,19 @@ class MemoryMcpServer
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
-                        'harness' => ['type' => 'string', 'enum' => ['claude-code']],
+                        'harness' => ['type' => 'string', 'enum' => array_column(HarnessType::cases(), 'value')],
+                        'name' => ['type' => 'string', 'default' => 'default'],
+                    ],
+                    'required' => ['harness'],
+                ],
+            ],
+            'harness_installer_script' => [
+                'name' => 'harness_installer_script',
+                'description' => 'Gera um script Bash de instalação idempotente para provisionar o harness em máquina limpa',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'harness' => ['type' => 'string', 'enum' => array_column(HarnessType::cases(), 'value')],
                         'name' => ['type' => 'string', 'default' => 'default'],
                     ],
                     'required' => ['harness'],
@@ -289,6 +302,7 @@ class MemoryMcpServer
             'harness_capture' => $this->toolHarnessCapture($args),
             'harness_list' => $this->toolHarnessList(),
             'harness_provision' => $this->toolHarnessProvision($args),
+            'harness_installer_script' => $this->toolHarnessInstallerScript($args),
             default => null,
         };
 
@@ -668,6 +682,32 @@ class MemoryMcpServer
         }
 
         return app(HarnessProfileService::class)->provisionPlan($profile);
+    }
+
+    private function toolHarnessInstallerScript(array $args): array
+    {
+        $harness = $this->resolveHarness($args['harness'] ?? null);
+
+        if ($harness === null) {
+            return ['error' => 'Harness inválido'];
+        }
+
+        $profile = HarnessProfile::where('harness', $harness->value)
+            ->where('name', $args['name'] ?? 'default')
+            ->first();
+
+        if ($profile === null) {
+            return ['error' => 'Perfil não encontrado. Capture a configuração primeiro com harness_capture.'];
+        }
+
+        $generator = app(HarnessInstallerGenerator::class);
+
+        return [
+            'harness' => $harness->value,
+            'name' => $profile->name,
+            'version' => $profile->version,
+            'script' => $generator->generateScript($profile),
+        ];
     }
 
     private function toolMemoryIngest(array $args): array
