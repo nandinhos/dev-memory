@@ -53,4 +53,19 @@ enum HarnessType: string
             ],
         };
     }
+
+    /**
+     * Caminhos dos scripts de hook para captura contínua de aprendizados.
+     *
+     * @return list<string>
+     */
+    public function hookPaths(): array
+    {
+        return match ($this) {
+            self::CLAUDE_CODE => ['~/.claude/hooks/post_tool_use.sh'],
+            self::CODEX => ['~/.codex/hooks/post_execution.sh'],
+            self::ANTIGRAVITY => ['.agents/hooks/post-execution.sh'],
+            self::HERMES => ['~/.hermes/hooks/post_stop.sh'],
+        };
+    }
 }

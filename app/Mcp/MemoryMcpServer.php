@@ -10,6 +10,7 @@ use App\Models\HarnessProfile;
 use App\Models\Memory;
 use App\Services\ConfirmationGuard;
 use App\Services\Curation\CaptureService;
+use App\Services\HarnessHookGenerator;
 use App\Services\HarnessInstallerGenerator;
 use App\Services\HarnessProfileService;
 use App\Services\HubBriefingService;
@@ -229,6 +230,18 @@ class MemoryMcpServer
                     'required' => ['harness'],
                 ],
             ],
+            'harness_hook_script' => [
+                'name' => 'harness_hook_script',
+                'description' => 'Gera um script de hook leve e não-bloqueante para captura contínua de aprendizados do harness',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'harness' => ['type' => 'string', 'enum' => array_column(HarnessType::cases(), 'value')],
+                        'mcp_url' => ['type' => 'string', 'description' => 'URL do endpoint MCP (ex: https://devmemory.fssdev.com.br/api/mcp)', 'default' => 'https://devmemory.fssdev.com.br/api/mcp'],
+                    ],
+                    'required' => ['harness'],
+                ],
+            ],
         ];
     }
 
@@ -303,6 +316,7 @@ class MemoryMcpServer
             'harness_list' => $this->toolHarnessList(),
             'harness_provision' => $this->toolHarnessProvision($args),
             'harness_installer_script' => $this->toolHarnessInstallerScript($args),
+            'harness_hook_script' => $this->toolHarnessHookScript($args),
             default => null,
         };
 
@@ -707,6 +721,24 @@ class MemoryMcpServer
             'name' => $profile->name,
             'version' => $profile->version,
             'script' => $generator->generateScript($profile),
+        ];
+    }
+
+    private function toolHarnessHookScript(array $args): array
+    {
+        $harness = $this->resolveHarness($args['harness'] ?? null);
+
+        if ($harness === null) {
+            return ['error' => 'Harness inválido'];
+        }
+
+        $mcpUrl = $args['mcp_url'] ?? 'https://devmemory.fssdev.com.br/api/mcp';
+        $generator = app(HarnessHookGenerator::class);
+
+        return [
+            'harness' => $harness->value,
+            'hook_paths' => $harness->hookPaths(),
+            'script' => $generator->generateHookScript($harness, $mcpUrl),
         ];
     }
 
