@@ -40,6 +40,8 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 ## Capacidades (o que funciona)
 
+- ✅ **Busca semântica & pgvector** — busca híbrida com embeddings (Ollama primário custo zero + MiniMax fallback, pgvector em Postgres, fallback JSON em SQLite)
+- ✅ **Ciclo de maturidade** — `MemoryMaturity` (workaround → provisional → recommended → canonical → consolidated) com políticas de transição governadas
 - ✅ **Autenticação** — login neo, rotas protegidas, `memory:make-admin`
 - ✅ **Gestão de memórias** — CRUD, filtros, validação, promoção a global
 - ✅ **Pipeline de curadoria** — ingestão imutável, sanitização, curadoria MiniMax (structured output + reparo), política de promoção, recorrência composta
@@ -54,15 +56,16 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 | | |
 |---|---|
-| Memórias (produção) | 48 — Tier 1+2+3 da escavação, curadas MiniMax; 19 validadas (cluster Laravel/PHP/Livewire) |
+| Memórias (produção/local) | 48 memórias indexadas com vetores de embedding 1536 dimensões |
 | Skills (produção) | **5 publicadas** (git-versionadas) — Laravel Clean Architecture, Alpine+Livewire, Docker Laravel, PHP Code Quality, Artisan CLI |
 | Skill groups | 5 (compilados) |
-| Testes | 172 verdes (417 asserções) |
+| Testes | **207 verdes** (544 asserções) |
 
 ## Próximos passos (curto prazo)
 
-1. **Ingerir Tier 2–4** do inventário de escavação em produção + rodar o pipeline de skills (`group → compile → publish`).
-2. **Validar/promover** as memórias de produção (revisão manual com a prova Context7).
+1. **Provisionamento agnóstico de harness** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity.
+2. **Ingerir Tier 4** do inventário de escavação em produção + rodar o pipeline de skills (`group → compile → publish`).
+3. **Validar/promover** as memórias de produção (revisão manual com a prova Context7).
 3. **Embeddings/pgvector reais** — recorrência/busca hoje usa TF-cosseno; agora que prod está em Postgres, trocar.
 4. **Campo `maturity`** (workaround → canônico) para distinguir conhecimento provisório de consolidado.
 

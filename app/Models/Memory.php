@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DocumentationValidationStatus;
+use App\Enums\MemoryMaturity;
 use App\Enums\MemoryScope;
 use App\Enums\MemorySource;
 use App\Enums\MemoryType;
@@ -24,6 +25,10 @@ class Memory extends Model
         'type',
         'stack',
         'scope',
+        'maturity',
+        'embedding',
+        'embedding_model',
+        'embedding_hash',
         'validation_status',
         'doc_validation_status',
         'doc_validation_report',
@@ -45,6 +50,8 @@ class Memory extends Model
     protected $casts = [
         'type' => MemoryType::class,
         'scope' => MemoryScope::class,
+        'maturity' => MemoryMaturity::class,
+        'embedding' => 'array',
         'validation_status' => ValidationStatus::class,
         'doc_validation_status' => DocumentationValidationStatus::class,
         'doc_validation_report' => 'array',
@@ -55,6 +62,16 @@ class Memory extends Model
         'recurrence_count' => 'integer',
         'validated_at' => 'datetime',
     ];
+
+    public function scopeByMaturity($query, $maturity)
+    {
+        return $query->where('maturity', $maturity);
+    }
+
+    public function scopeWithEmbedding($query)
+    {
+        return $query->whereNotNull('embedding');
+    }
 
     public function scopeFilter($query, array $filters)
     {

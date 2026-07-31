@@ -26,6 +26,8 @@ class MemoryList extends Component
 
     public ?string $docFilter = null;
 
+    public ?string $maturityFilter = null;
+
     protected $queryString = [
         'search' => ['except' => ''],
         'typeFilter' => ['except' => null],
@@ -33,6 +35,7 @@ class MemoryList extends Component
         'stackFilter' => ['except' => null],
         'statusFilter' => ['except' => null],
         'docFilter' => ['except' => null],
+        'maturityFilter' => ['except' => null],
     ];
 
     public function updatedSearch(): void
@@ -109,6 +112,7 @@ class MemoryList extends Component
                     ? $q->whereNull('doc_validation_status')
                     : $q->where('doc_validation_status', $doc);
             })
+            ->when($this->maturityFilter, fn ($q, $mat) => $q->where('maturity', $mat))
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 

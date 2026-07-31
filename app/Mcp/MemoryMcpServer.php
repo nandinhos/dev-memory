@@ -13,6 +13,7 @@ use App\Services\Curation\CaptureService;
 use App\Services\HarnessProfileService;
 use App\Services\HubBriefingService;
 use App\Services\MemoryService;
+use App\Services\Search\MemorySearchService;
 
 class MemoryMcpServer
 {
@@ -357,23 +358,31 @@ class MemoryMcpServer
         $query = $args['query'] ?? '';
         $limit = $args['limit'] ?? 10;
 
-        $results = Memory::where(fn ($q) => $q->where('title', 'like', "%{$query}%")
-            ->orWhere('description', 'like', "%{$query}%")
-        )
-            ->orderBy('recurrence_count', 'desc')
-            ->limit($limit)
-            ->get();
+        /** @var MemorySearchService $searchService */
+        $searchService = app(MemorySearchService::class);
+        $searchResult = $searchService->search($query, [], $limit);
+
+        $results = $searchResult['results'];
 
         return [
             'query' => $query,
-            'total' => $results->count(),
-            'results' => $results->map(fn ($m) => [
-                'id' => $m->id,
-                'title' => $m->title,
-                'description' => substr($m->description, 0, 200).(strlen($m->description) > 200 ? '...' : ''),
-                'type' => $m->type->value,
-                'score' => $m->recurrence_count,
-            ])->toArray(),
+            'search_mode' => $searchResult['search_mode'],
+            'total' => count($results),
+            'results' => collect($results)->map(function ($item) {
+                /** @var Memory $m */
+                $m = $item['memory'] ?? $item;
+                $similarity = $item['similarity'] ?? 0.0;
+
+                return [
+                    'id' => $m->id,
+                    'title' => $m->title,
+                    'description' => substr($m->description, 0, 200).(strlen($m->description) > 200 ? '...' : ''),
+                    'type' => $m->type->value,
+                    'maturity' => $m->maturity?->value ?? 'provisional',
+                    'similarity' => round($similarity, 4),
+                    'score' => $m->recurrence_count,
+                ];
+            })->toArray(),
         ];
     }
 
