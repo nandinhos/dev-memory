@@ -11,14 +11,21 @@ use Illuminate\Support\Facades\Storage;
 class MemoryGroupSkillsCommand extends Command
 {
     protected $signature = 'memory:group-skills
-                            {--min-recurrence=3 : Recorrência mínima para candidatura}';
+                            {--min-recurrence=3 : Recorrência mínima para candidatura}
+                            {--min-maturity= : Maturidade mínima para candidatura (ex: provisional, recommended, canonical)}';
 
     protected $description = 'Propõe agrupamentos de candidatas que compõem a mesma skill (motor propõe, humano aprova)';
 
     public function handle(SkillGroupProposer $proposer): int
     {
-        $candidates = Memory::query()
-            ->skillCandidates((int) $this->option('min-recurrence'))
+        $query = Memory::query()
+            ->skillCandidates((int) $this->option('min-recurrence'));
+
+        if ($maturityFilter = $this->option('min-maturity')) {
+            $query->where('maturity', $maturityFilter);
+        }
+
+        $candidates = $query
             ->orderByDesc('recurrence_count')
             ->get();
 

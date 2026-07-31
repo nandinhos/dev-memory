@@ -101,10 +101,11 @@ PROMPT;
     {
         $listing = $candidates->map(function (Memory $memory) {
             $summary = mb_substr(trim(preg_replace('/\s+/', ' ', $memory->description)), 0, 160);
+            $maturity = $memory->maturity?->value ?? 'provisional';
 
             return "- memory_id: {$memory->id}\n"
                 ."  título: {$memory->title}\n"
-                ."  tipo: {$memory->type->value} | stack: ".($memory->stack ?? '—')." | recorrência: {$memory->recurrence_count}\n"
+                ."  tipo: {$memory->type->value} | maturidade: {$maturity} | stack: ".($memory->stack ?? '—')." | recorrência: {$memory->recurrence_count}\n"
                 ."  resumo: {$summary}";
         })->implode("\n\n");
 
