@@ -4,7 +4,7 @@ Sistema de memória técnica para capturar, organizar e reutilizar aprendizados 
 
 ## Stack
 
-- **Backend**: Laravel 13 + PHP 8.3
+- **Backend**: Laravel 13 + PHP 8.4
 - **Frontend**: Livewire 4 + Tailwind CSS 4
 - **Banco de dados**: PostgreSQL 16
 - **Cache/Queue**: Redis 7
@@ -23,11 +23,13 @@ app/
 │   ├── Dashboard/List/Form/Detail.php   # Gestão de memórias
 │   └── Admin/                # Painel do pipeline: CapturesInbox, SkillGroupsReview,
 │                             # SkillsAdmin, ApiTokens
-├── Models/                   # Memory, Capture, CurationExecution, SkillGroup, Skill, ApiToken
+├── Models/                   # Memory, KnowledgeNode/Edge/Evidence, Capture, SkillGroup, Skill
 ├── Services/
 │   ├── MemoryService.php     # CRUD e regras de negócio
 │   ├── HubBriefingService.php # Consulta preventiva (briefing)
 │   ├── ConfirmationGuard.php # Confirmação de ações destrutivas
+│   ├── Search/               # Busca lexical + vetorial e fusão RRF
+│   ├── KnowledgeGraph/       # Projeção governada e consulta explicável
 │   └── Curation/             # Pipeline: CaptureService, CaptureSanitizer,
 │                             # AnthropicCurationEngine (MiniMax), DocumentationValidator
 │                             # (Context7), RecurrenceScorer, PromotionPolicy,
@@ -36,7 +38,7 @@ app/
 ├── Http/
 │   ├── Controllers/McpController.php     # Endpoint MCP remoto (HTTP)
 │   └── Middleware/AuthenticateMcpToken.php
-└── Mcp/MemoryMcpServer.php   # Servidor MCP (11 tools, stdio + HTTP)
+└── Mcp/MemoryMcpServer.php   # Servidor MCP (18 tools, stdio + HTTP)
 ```
 
 Pipeline de curadoria (P1–P6): captura imutável → sanitização determinística →
@@ -88,7 +90,7 @@ As rotas web ficam sob middleware `auth`; guests são redirecionados para `/logi
 ## MCP Tools
 
 O MCP é o **único caminho programático oficial** — tokenizado, com transportes stdio (local)
-e HTTP (remoto). São **11 tools**: leitura (`memory_list/search/get/stats`), escrita
+e HTTP (remoto). São **18 tools**: leitura (`memory_list/search/get/related/stats`), escrita
 (`memory_create/update/validate/promote/delete`) e inteligência (`hub_briefing`, `memory_ingest`).
 
 `memory_delete` é destrutiva e exige confirmação em duas fases (preview + token single-use).
@@ -210,7 +212,12 @@ php artisan memory:group-skills        # Propõe agrupamentos de candidatas a sk
 php artisan memory:compile-skills      # Compila grupos aprovados em skills (draft)
 php artisan memory:publish-skills      # Publica skills aprovadas no repo git
 php artisan memory:curate --source=eval # Piloto de curadoria (medição de qualidade)
+php artisan memory:embeddings:backfill --sync # Regera embeddings fora do espaço canônico
+php artisan memory:graph:backfill --sync      # Projeta memórias existentes no grafo
 ```
+
+A arquitetura de embeddings, busca híbrida e knowledge graph está documentada em
+[`docs/architecture/memoria-semantica-e-knowledge-graph.md`](docs/architecture/memoria-semantica-e-knowledge-graph.md).
 
 > O motor de curadoria usa MiniMax (API compatível com Anthropic) — configure `MINIMAX_API_KEY` no `.env`.
 > A validação documental usa Context7 (free tier funciona sem chave; `CONTEXT7_API_KEY` sobe limites).

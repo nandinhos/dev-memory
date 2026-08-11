@@ -9,13 +9,16 @@ Visão de evolução. Estado atual em [`STATUS.md`](STATUS.md).
 
 - ✅ **Deploy na VPS** (F1 físico) — ENTREGUE em 2026-07-17 (`https://devmemory.fssdev.com.br`, VPS srv084270, PostgreSQL + SSL, workers de fila, deploy via Jarvis Forge). Ver [`deploy.md`](deploy.md).
 - Ingerir Tier 2–4 da escavação + rodar o pipeline de skills em produção.
-- **Embeddings/pgvector** — recorrência e busca semântica reais (hoje TF-cosseno).
-- **Campo `maturity`** — workaround → provisório → recomendado → canônico → consolidado.
+- ✅ **Embeddings consistentes + busca híbrida** — espaço vetorial versionado por provedor/modelo, validação estrita de dimensão, full-text PostgreSQL e fusão RRF.
+- ✅ **Knowledge graph PostgreSQL — fundação** — nós, arestas, evidências, projeção determinística e consulta explicável via MCP.
+- **Extração governada de relações por IA** — propostas auditáveis, revisão humana e métricas de qualidade sobre a fundação atual.
+- ✅ **Campo `maturity`** — workaround → provisório → recomendado → canônico → consolidado.
 
 ## Médio prazo
 
 - ✅ **Landing page (neo brutalist)** — ENTREGUE em 2026-07-16 (`/`, terminal macOS-neo, seções semânticas, links oficiais).
 - **Captura contínua** — hooks dos harnesses (PostToolUse/Stop) alimentando `memory_ingest` automaticamente.
+- **Grafo semântico ampliado** — entidades de erro, causa, solução, referência e skill; relações extraídas por IA permanecem `proposed` até validação.
 
 ---
 

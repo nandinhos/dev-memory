@@ -9,7 +9,7 @@ O MCP é o **único caminho programático oficial** para o hub. Todo acesso é t
 | **stdio** | Local, mesmo host (`php artisan mcp:serve`) | processo local |
 | **HTTP** | Remoto, outros projetos (`POST /api/mcp`) | token de API (Bearer) |
 
-Ambos expõem o mesmo `MemoryMcpServer` e as mesmas 15 tools.
+Ambos expõem o mesmo `MemoryMcpServer` e as mesmas 18 tools. No HTTP, um token comum é vinculado a um projeto: ele lê o próprio projeto e memórias globais. O campo `project` enviado pelo cliente em `memory_ingest` é apenas proveniência, nunca autorização. Token global é reservado a administrador.
 
 ### Conectar via HTTP (outro projeto)
 
@@ -39,25 +39,26 @@ Gere um token na UI (**MCP_TOKENS**) e configure o `.mcp.json` do projeto consum
 
 ---
 
-## Tools (11)
+## Tools (18)
 
 ### Leitura
 
 | Tool | Argumentos | Retorno |
 |------|-----------|---------|
 | `memory_list` | `type?`, `scope?`, `stack?`, `limit?=20` | lista de memórias filtrada |
-| `memory_search` | `query` (obrig.), `limit?=10` | busca em título/descrição, ordenada por recorrência |
+| `memory_search` | `query` (obrig.), `limit?=10` | busca híbrida lexical + semântica, fundida por RRF |
 | `memory_get` | `id` (obrig.) | detalhes completos de uma memória |
+| `memory_related` | `id` (obrig.), `depth?=2`, `limit?=20` | memórias relacionadas no grafo, com caminho, confiança e evidências |
 | `memory_stats` | — | totais por tipo, escopo e top stacks |
 
 ### Escrita
 
 | Tool | Argumentos | Comportamento |
 |------|-----------|---------------|
-| `memory_create` | `title`, `description`, `type` (obrig.), `stack?`, `scope?=project` | cria memória |
+| `memory_create` | `title`, `description`, `type` (obrig.), `stack?`, `scope?=project` | cria memória no projeto do token; `scope=global` exige token global de administrador |
 | `memory_update` | `id` (obrig.), `title?`, `description?`, `type?`, `stack?`, `scope?` | atualiza campos informados (valida enums) |
 | `memory_validate` | `id` (obrig.) | marca como validada |
-| `memory_promote` | `id` (obrig.) | promove a global (exige estar validada) |
+| `memory_promote` | `id` (obrig.) | promove a global (exige estar validada e token global de administrador) |
 | `memory_delete` | `id` (obrig.), `confirmation_token?` | **destrutiva — ver fluxo abaixo** |
 
 ### Inteligência
@@ -65,7 +66,7 @@ Gere um token na UI (**MCP_TOKENS**) e configure o `.mcp.json` do projeto consum
 | Tool | Argumentos | Retorno |
 |------|-----------|---------|
 | `hub_briefing` | `stack?`, `description?` | consulta preventiva: riscos conhecidos, padrões aprovados, lições relevantes e skills para o contexto — **use ANTES de implementar** |
-| `memory_ingest` | `content` (obrig.), `source?=mcp`, `trigger?`, `project?` | ingere evento bruto no pipeline (sanitiza, deduplica, enfileira curadoria) |
+| `memory_ingest` | `content` (obrig.), `source?=mcp`, `trigger?`, `project?` | ingere evento bruto no pipeline; `project` é proveniência e o escopo vem do token |
 
 ### Provisionamento de harness
 
@@ -78,7 +79,7 @@ Sobe a configuração do seu ambiente para o hub e a replica em máquinas limpas
 | `harness_list` | — | perfis salvos |
 | `harness_provision` | `harness` (obrig.), `name?=default` | plano de instalação (`steps` write_file + notas) para replicar numa máquina limpa |
 
-**Fluxo (Claude Code):** na máquina de origem, `harness_paths` → o agente lê os arquivos → `harness_capture`. Na máquina limpa, `harness_provision` → o agente aplica os `steps` (escreve os arquivos), reinserindo segredos redigidos. Também há o comando local `php artisan harness:capture-local claude-code`.
+**Fluxo (Claude Code):** na máquina de origem, `harness_paths` → o agente lê os arquivos → `harness_capture`. Na máquina limpa, `harness_provision` → o agente aplica os `steps` (escreve os arquivos), reinserindo segredos redigidos. Também há o comando local `php artisan harness:capture-local claude-code --user=admin@exemplo.com`; com exatamente um administrador cadastrado, `--user` é opcional.
 
 ---
 
@@ -106,4 +107,4 @@ Garantias do token: **single-use**, **target-bound** (o token de A não apaga B)
 
 ## Gestão de tokens
 
-Na UI, seção **MCP_TOKENS** (`/admin/tokens`): emitir (o texto é exibido **uma única vez**, apenas o hash SHA-256 é persistido), ver último uso e revogar. Tokens são escopados por usuário.
+Na UI, seção **MCP_TOKENS** (`/admin/tokens`): emitir (o texto é exibido **uma única vez**, apenas o hash SHA-256 é persistido), ver último uso e revogar. Por padrão, cada token é associado a um projeto do usuário; token global só pode ser emitido explicitamente por administrador.

@@ -62,8 +62,10 @@ php artisan memory:make-admin --email=… --name="…"   # senha é interativa, 
 
 ## Pós-deploy — ingestão de produção (MCP)
 
-1. Emitir um **API token** em `/admin/tokens` (mostrado 1× só).
-2. Ingerir via **MCP HTTP**: `POST https://devmemory.fssdev.com.br/api/mcp` com
+1. Antes de aplicar a migration de escopo MCP, inventariar `memories`, `captures`, `api_tokens` e `harness_profiles` sem `project_id`/`user_id`; não inferir a associação por texto ou nome.
+2. Aplicar `php artisan migrate --force`, revisar os registros legados e associar cada um explicitamente antes de reativar ingestão remota.
+3. Emitir um **API token** em `/admin/tokens` (mostrado 1× só). Tokens novos são vinculados a projeto; use token global somente para operação administrativa deliberada.
+4. Ingerir via **MCP HTTP**: `POST https://devmemory.fssdev.com.br/api/mcp` com
    `Authorization: Bearer <token>`, JSON-RPC `tools/call` → `memory_ingest`.
-3. Os workers processam a fila e a curadoria roda automática (MiniMax). Validação documental:
+5. Os workers processam a fila e a curadoria roda automática (MiniMax). Validação documental:
    `php artisan memory:validate-docs`.
