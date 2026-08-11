@@ -35,6 +35,44 @@ workers **precisam** do `queue:restart` no hook para não rodarem código/config
 - **`DB_QUEUE_RETRY_AFTER=330`** — precisa ser MAIOR que o timeout dos jobs (300s); com o default (90s) um job lento de curadoria é re-reservado por outro worker e marcado como falho enquanto ainda roda
 - `SESSION_SECURE_COOKIE=true` — cookie de sessão só via HTTPS
 
+### Embeddings (`services.embeddings.*`)
+
+Dois provedores suportados. A escolha afeta o **tamanho do vetor** (`EMBEDDING_DIMENSIONS`):
+
+| Provider | Modelo | Dimensões | Custo | Privacidade |
+|---|---|---|---|---|
+| `minimax` | `embo-01` | 1536 | $$ (API MiniMax) | nuvem |
+| `ollama` | `nomic-embed-text` | 768 | $0 (local) | local |
+
+**Ollama local (recomendado para VPS pequena):**
+
+```bash
+# Na VPS, uma vez
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull nomic-embed-text
+systemctl enable ollama
+```
+
+No `.env`:
+```
+EMBEDDING_PROVIDER=ollama
+EMBEDDING_DIMENSIONS=768
+OLLAMA_HOST=http://127.0.0.1:11434
+OLLAMA_EMBED_MODEL=nomic-embed-text
+```
+
+**Atenção à mudança de dimensão:** se você alternar de MiniMax (1536) para Ollama (768) ou vice-versa, **a coluna `memories.embedding` precisa ser redimensionada**:
+
+```sql
+-- Ollama (768): rodar como superuser
+ALTER TABLE memories ALTER COLUMN embedding TYPE vector(768);
+
+-- MiniMax (1536):
+ALTER TABLE memories ALTER COLUMN embedding TYPE vector(1536);
+```
+
+CPU Ollama leva ~3-10s por texto longo; timeout HTTP no `EmbeddingGeneratorService` é de **60s** (CPU-friendly; cloud Ollama responde em <1s).
+
 ## Gotchas aprendidos (2026-07-17) — leia antes de deployar
 
 1. **`public/build` é gitignored** → o repo não traz os assets. Sem `npm run build` no deploy,
