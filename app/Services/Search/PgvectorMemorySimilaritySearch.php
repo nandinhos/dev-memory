@@ -8,12 +8,17 @@ use Illuminate\Support\Collection;
 
 class PgvectorMemorySimilaritySearch implements MemorySimilaritySearch
 {
-    public function search(array $embedding, int $limit = 10, array $filters = []): Collection
-    {
+    public function search(
+        array $embedding,
+        string $embeddingModel,
+        int $limit = 10,
+        array $filters = [],
+    ): Collection {
         $vectorString = '['.implode(',', $embedding).']';
 
         $query = Memory::query()
             ->withEmbedding()
+            ->where('embedding_model', $embeddingModel)
             ->select('*')
             ->selectRaw('(1 - (embedding <=> ?::vector)) as similarity', [$vectorString]);
 

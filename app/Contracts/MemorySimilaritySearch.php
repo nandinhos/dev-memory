@@ -14,5 +14,10 @@ interface MemorySimilaritySearch
      * @param  array<string, mixed>  $filters
      * @return Collection<int, array{memory: Memory, similarity: float}>
      */
-    public function search(array $embedding, int $limit = 10, array $filters = []): Collection;
+    public function search(
+        array $embedding,
+        string $embeddingModel,
+        int $limit = 10,
+        array $filters = [],
+    ): Collection;
 }

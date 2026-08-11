@@ -6,6 +6,7 @@ use App\Enums\MemoryMaturity;
 use App\Enums\MemoryScope;
 use App\Enums\ValidationStatus;
 use App\Jobs\GenerateMemoryEmbeddingJob;
+use App\Jobs\ProjectMemoryKnowledgeGraphJob;
 use App\Models\Memory;
 use App\Models\User;
 use App\Services\Search\MemorySearchService;
@@ -43,7 +44,7 @@ class MemoryService
     public function create(array $data): Memory
     {
         $memory = Memory::create($data);
-        GenerateMemoryEmbeddingJob::dispatch($memory);
+        $this->refreshDerivedState($memory, regenerateEmbedding: true);
 
         return $memory;
     }
@@ -51,18 +52,22 @@ class MemoryService
     public function update(Memory $memory, array $data): Memory
     {
         $memory->update($data);
-        GenerateMemoryEmbeddingJob::dispatch($memory);
+        $this->refreshDerivedState($memory, regenerateEmbedding: true);
 
         return $memory->fresh();
     }
 
     public function promoteMaturity(Memory $memory, MemoryMaturity $target, ?User $user = null): Memory
     {
-        return $this->maturityPolicy->transition($memory, $target, $user);
+        $memory = $this->maturityPolicy->transition($memory, $target, $user);
+        $this->refreshDerivedState($memory);
+
+        return $memory;
     }
 
     public function delete(Memory $memory): void
     {
+        $memory->knowledgeNode()->update(['status' => 'inactive']);
         $memory->delete();
     }
 
@@ -101,6 +106,7 @@ class MemoryService
     public function validate(Memory $memory): Memory
     {
         $memory->update(['validation_status' => ValidationStatus::VALIDATED]);
+        $this->refreshDerivedState($memory);
 
         return $memory->fresh();
     }
@@ -108,6 +114,7 @@ class MemoryService
     public function reject(Memory $memory): Memory
     {
         $memory->update(['validation_status' => ValidationStatus::REJECTED]);
+        $this->refreshDerivedState($memory);
 
         return $memory->fresh();
     }
@@ -119,6 +126,7 @@ class MemoryService
         }
 
         $memory->update(['scope' => MemoryScope::GLOBAL]);
+        $this->refreshDerivedState($memory);
 
         return $memory->fresh();
     }
@@ -147,5 +155,14 @@ class MemoryService
                 ->limit(5)
                 ->get(),
         ];
+    }
+
+    private function refreshDerivedState(Memory $memory, bool $regenerateEmbedding = false): void
+    {
+        if ($regenerateEmbedding) {
+            GenerateMemoryEmbeddingJob::dispatch($memory)->afterCommit();
+        }
+
+        ProjectMemoryKnowledgeGraphJob::dispatch($memory->id)->afterCommit();
     }
 }

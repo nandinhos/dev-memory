@@ -8,9 +8,15 @@ use Illuminate\Support\Collection;
 
 class SqliteMemorySimilaritySearch implements MemorySimilaritySearch
 {
-    public function search(array $embedding, int $limit = 10, array $filters = []): Collection
-    {
-        $query = Memory::query()->withEmbedding();
+    public function search(
+        array $embedding,
+        string $embeddingModel,
+        int $limit = 10,
+        array $filters = [],
+    ): Collection {
+        $query = Memory::query()
+            ->withEmbedding()
+            ->where('embedding_model', $embeddingModel);
         $query->filter($filters);
 
         if (! empty($filters['maturity'])) {
@@ -42,8 +48,8 @@ class SqliteMemorySimilaritySearch implements MemorySimilaritySearch
         $normA = 0.0;
         $normB = 0.0;
 
-        $count = min(count($vecA), count($vecB));
-        if ($count === 0) {
+        $count = count($vecA);
+        if ($count === 0 || $count !== count($vecB)) {
             return 0.0;
         }
 
