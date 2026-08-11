@@ -30,6 +30,8 @@ class Context7ClientTest extends TestCase
 
     public function test_resolution_is_cached(): void
     {
+        Cache::flush();
+
         Http::fake([
             'context7.test/api/v1/search*' => Http::response([
                 'results' => [['id' => '/laravel/docs']],

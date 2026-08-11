@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\DocumentationValidationStatus;
+use App\Enums\MemoryScope;
 use App\Livewire\MemoryList;
 use App\Models\Memory;
 use App\Models\User;
@@ -48,5 +49,20 @@ class MemoryListFilterTest extends TestCase
             ->set('docFilter', 'unchecked')
             ->assertSee('Nunca passou pelo Context7')
             ->assertDontSee('Checada e confirmada');
+    }
+
+    public function test_promover_memoria_nao_validada_dispara_toast_de_erro_sem_mudar_escopo(): void
+    {
+        $this->actingAs(User::factory()->create(['is_admin' => true]));
+        $memory = Memory::factory()->create([
+            'scope' => 'project',
+            'validation_status' => 'pending',
+        ]);
+
+        Livewire::test(MemoryList::class)
+            ->call('promoteMemory', $memory->id)
+            ->assertDispatched('show-toast', type: 'erro');
+
+        $this->assertSame(MemoryScope::PROJECT, $memory->fresh()->scope);
     }
 }

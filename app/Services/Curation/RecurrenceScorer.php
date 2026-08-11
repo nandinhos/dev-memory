@@ -41,7 +41,15 @@ class RecurrenceScorer
     {
         $best = null;
 
-        foreach (Memory::query()->get() as $memory) {
+        $memories = Memory::query();
+
+        if ($capture?->project_id !== null) {
+            $memories->where('project_id', $capture->project_id);
+        } else {
+            $memories->whereNull('project_id');
+        }
+
+        foreach ($memories->get() as $memory) {
             $score = $this->score($draft, $memory);
 
             if ($score->total < self::TOTAL_FLOOR || $score->components['text'] < self::TEXT_FLOOR) {
@@ -114,7 +122,7 @@ class RecurrenceScorer
         $query = Capture::query()
             ->where('memory_id', $memory->id)
             ->where('id', '!=', $capture->id)
-            ->where('source_project', $capture->source_project);
+            ->where('project_id', $capture->project_id);
 
         $commit = $capture->metadata['commit'] ?? null;
 

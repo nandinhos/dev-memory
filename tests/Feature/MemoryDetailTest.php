@@ -72,4 +72,16 @@ class MemoryDetailTest extends TestCase
             $memory->fresh()->validation_status
         );
     }
+
+    public function test_promote_unvalidated_memory_shows_error_toast_without_changing_scope(): void
+    {
+        $this->actingAs(User::factory()->create(['is_admin' => true]));
+        $memory = $this->makeMemory(['validation_status' => ValidationStatus::PENDING]);
+
+        Livewire::test(MemoryDetail::class, ['memory' => $memory])
+            ->call('promoteToGlobal')
+            ->assertDispatched('show-toast', type: 'erro');
+
+        $this->assertSame(MemoryScope::PROJECT, $memory->fresh()->scope);
+    }
 }

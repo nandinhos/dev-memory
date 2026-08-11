@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DocumentationValidationStatus;
+use App\Enums\MemoryMaturity;
 use App\Enums\MemoryScope;
 use App\Enums\MemorySource;
 use App\Enums\MemoryType;
@@ -11,6 +12,8 @@ use App\Enums\ValidationStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Memory extends Model
@@ -24,10 +27,15 @@ class Memory extends Model
         'type',
         'stack',
         'scope',
+        'maturity',
+        'embedding',
+        'embedding_model',
+        'embedding_hash',
         'validation_status',
         'doc_validation_status',
         'doc_validation_report',
         'doc_validated_at',
+        'reanalyzed_by_ai',
         'official_reference',
         'recurrence_count',
         // Extended fields
@@ -44,18 +52,42 @@ class Memory extends Model
     protected $casts = [
         'type' => MemoryType::class,
         'scope' => MemoryScope::class,
+        'maturity' => MemoryMaturity::class,
+        'embedding' => 'array',
         'validation_status' => ValidationStatus::class,
         'doc_validation_status' => DocumentationValidationStatus::class,
         'doc_validation_report' => 'array',
         'doc_validated_at' => 'datetime',
+        'reanalyzed_by_ai' => 'boolean',
         'source_system' => MemorySource::class,
         'severity' => Severity::class,
         'recurrence_count' => 'integer',
         'validated_at' => 'datetime',
     ];
 
+    public function scopeByMaturity($query, $maturity)
+    {
+        return $query->where('maturity', $maturity);
+    }
+
+    public function scopeWithEmbedding($query)
+    {
+        return $query->whereNotNull('embedding');
+    }
+
     public function scopeFilter($query, array $filters)
     {
+        if (($filters['visible_project_id'] ?? null) !== null) {
+            $projectId = $filters['visible_project_id'];
+            $query->where(function ($query) use ($projectId) {
+                $query->where('scope', MemoryScope::GLOBAL)
+                    ->orWhere(function ($query) use ($projectId) {
+                        $query->where('scope', MemoryScope::PROJECT)
+                            ->where('project_id', $projectId);
+                    });
+            });
+        }
+
         $query->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type)
         );
         $query->when($filters['stack'] ?? null, fn ($q, $stack) => $q->where('stack', 'like', "%{$stack}%")
@@ -106,5 +138,15 @@ class Memory extends Model
     public function skillGroups()
     {
         return $this->belongsToMany(SkillGroup::class);
+    }
+
+    public function memoryProject(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    public function knowledgeNode(): HasOne
+    {
+        return $this->hasOne(KnowledgeNode::class);
     }
 }

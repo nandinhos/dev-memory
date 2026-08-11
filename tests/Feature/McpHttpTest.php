@@ -45,7 +45,9 @@ class McpHttpTest extends TestCase
 
         $this->rpc($token, ['jsonrpc' => '2.0', 'method' => 'initialize', 'id' => 1])
             ->assertOk()
-            ->assertJsonPath('result.serverInfo.name', 'dev-memory-mcp');
+            ->assertJsonPath('result.serverInfo.name', 'dev-memory-mcp')
+            ->assertJsonPath('result.capabilities.tools.listChanged', false)
+            ->assertJsonPath('result.capabilities.resources.listChanged', false);
     }
 
     public function test_tools_list_exposes_the_expected_tools(): void
@@ -57,9 +59,15 @@ class McpHttpTest extends TestCase
 
         $tools = collect($response->json('result.tools'))->pluck('name');
 
-        foreach (['memory_list', 'memory_search', 'memory_get', 'memory_create', 'memory_stats', 'hub_briefing', 'memory_ingest'] as $expected) {
+        foreach (['memory_list', 'memory_search', 'memory_get', 'memory_related', 'memory_create', 'memory_stats', 'hub_briefing', 'memory_ingest'] as $expected) {
             $this->assertContains($expected, $tools);
         }
+
+        $payload = json_decode($response->getContent());
+        $toolsByName = collect($payload->result->tools)->keyBy('name');
+
+        $this->assertInstanceOf(\stdClass::class, $toolsByName['memory_stats']->inputSchema->properties);
+        $this->assertInstanceOf(\stdClass::class, $toolsByName['harness_list']->inputSchema->properties);
     }
 
     public function test_tools_call_stats_executes(): void

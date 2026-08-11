@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HarnessInstallerController;
 use App\Livewire\Admin\ApiTokens;
 use App\Livewire\Admin\CapturesInbox;
 use App\Livewire\Admin\HarnessProfiles;
@@ -28,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/memories/{memory}/edit', MemoryForm::class)->name('memories.edit');
 
     Route::middleware('admin')->group(function () {
+        Route::get('/install/harness/{harness}/{name?}', [HarnessInstallerController::class, 'download'])->name('harness.installer');
         Route::get('/admin/captures', CapturesInbox::class)->name('admin.captures');
         Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
         Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');

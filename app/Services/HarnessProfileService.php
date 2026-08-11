@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\HarnessType;
 use App\Models\HarnessProfile;
+use App\Models\User;
 use App\Services\Curation\CaptureSanitizer;
 use InvalidArgumentException;
 
@@ -53,19 +54,29 @@ class HarnessProfileService
             return false;
         }
 
-        $allowedPrefixes = ['~/.claude/', '.claude/', '~/.codex/', '.codex/', '~/.config/', '~/.serena/', '.serena/', '.agent/', '.devorq/'];
+        $allowedPrefixes = [
+            '~/.claude/', '.claude/',
+            '~/.codex/', '.codex/',
+            '~/.gemini/', '.gemini/', '.agents/',
+            '~/.hermes/', '.hermes/',
+            '~/.config/', '~/.serena/', '.serena/', '.agent/', '.devorq/',
+        ];
         foreach ($allowedPrefixes as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return true;
             }
         }
 
-        $allowedNames = ['.mcp.json', 'CLAUDE.md', 'AGENTS.md', 'settings.json', 'settings.local.json', 'keybindings.json'];
+        $allowedNames = [
+            '.mcp.json', 'mcp_config.json', 'CLAUDE.md', 'AGENTS.md',
+            'settings.json', 'settings.local.json', 'keybindings.json',
+            'config.toml', 'config.json',
+        ];
 
         return in_array($basename, $allowedNames, true);
     }
 
-    public function capture(HarnessType $harness, array $files, string $name = 'default', ?string $description = null): HarnessProfile
+    public function capture(HarnessType $harness, array $files, string $name = 'default', ?string $description = null, ?User $owner = null): HarnessProfile
     {
         $stored = [];
 
@@ -88,10 +99,11 @@ class HarnessProfileService
             ];
         }
 
-        $existing = HarnessProfile::where('harness', $harness->value)->where('name', $name)->first();
+        $identity = ['user_id' => $owner?->id, 'harness' => $harness->value, 'name' => $name];
+        $existing = HarnessProfile::where($identity)->first();
 
         return HarnessProfile::updateOrCreate(
-            ['harness' => $harness->value, 'name' => $name],
+            $identity,
             [
                 'files' => $stored,
                 'description' => $description ?? $existing?->description,

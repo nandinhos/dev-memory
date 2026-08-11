@@ -25,6 +25,7 @@ class AuthenticateMcpToken
 
         $token->forceFill(['last_used_at' => now()])->save();
         $request->setUserResolver(fn () => $token->user);
+        $request->attributes->set('mcp_token', $token);
 
         return $next($request);
     }

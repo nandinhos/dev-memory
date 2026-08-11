@@ -24,3 +24,9 @@ Homestead.yaml
 Thumbs.db
 
 /.playwright-mcp
+.env.dev
+.playwright-mcp/
+graphify-out/
+.agents/
+boost.json
+.codex/

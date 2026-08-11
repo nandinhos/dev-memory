@@ -73,9 +73,9 @@ class CanonicalizationAdvisorTest extends TestCase
             ->assertSet('canonAssessment.recommendation', 'keep');
     }
 
-    public function test_analise_nao_roda_para_memoria_nao_contradita(): void
+    public function test_analise_nao_roda_para_memoria_nao_negativa(): void
     {
-        // Guard: sem HTTP fake — se chamasse o motor, o teste falharia.
+        // Guard: sem HTTP fake — só contradicted/inconclusive analisam; parcial não.
         $memory = Memory::factory()->create([
             'doc_validation_status' => DocumentationValidationStatus::PARTIALLY_CONFIRMED,
         ]);
@@ -83,6 +83,29 @@ class CanonicalizationAdvisorTest extends TestCase
         Livewire::test(MemoryDetail::class, ['memory' => $memory])
             ->call('analyzeContradiction')
             ->assertSet('canonAssessment', []);
+    }
+
+    public function test_analise_roda_para_memoria_inconclusive_e_sugere_biblioteca(): void
+    {
+        Http::fake(['*' => Http::response($this->engineResponse([
+            'assessment' => 'false_negative',
+            'reasoning' => 'O Context7 resolveu um plugin tangente, mas existe a lib oficial.',
+            'recommendation' => 'keep',
+            'suggested_context7_query' => 'livewire/livewire',
+            'confidence' => 0.85,
+        ]))]);
+
+        $memory = Memory::factory()->create([
+            'stack' => 'Livewire',
+            'validation_status' => ValidationStatus::PENDING,
+            'doc_validation_status' => DocumentationValidationStatus::INCONCLUSIVE,
+            'doc_validation_report' => ['library' => '/tangente/plugin', 'verdict' => ['claims' => []], 'sources' => []],
+        ]);
+
+        Livewire::test(MemoryDetail::class, ['memory' => $memory])
+            ->call('analyzeContradiction')
+            ->assertSet('canonAssessment.assessment', 'false_negative')
+            ->assertSet('canonAssessment.suggested_context7_query', 'livewire/livewire');
     }
 
     public function test_manter_valida_a_memoria(): void
@@ -139,5 +162,61 @@ class CanonicalizationAdvisorTest extends TestCase
             ->call('rejectMemory');
 
         $this->assertSame(ValidationStatus::REJECTED, $memory->fresh()->validation_status);
+    }
+
+    public function test_reanalise_usa_a_biblioteca_sugerida_preserva_historico_e_nao_auto_valida(): void
+    {
+        config([
+            'services.context7.base_url' => 'https://context7.test/api/v1',
+            'services.context7.api_key' => null,
+        ]);
+
+        Http::fake([
+            // Context7 resolve para a lib CORRETA sugerida pela IA + devolve trechos.
+            'context7.test/api/v1/search*' => Http::response(['results' => [['id' => '/laravel/docs']]]),
+            'context7.test/api/v1/laravel/docs*' => Http::response(
+                '### Validação\nFormRequest concentra regras de validação.\nSource: https://laravel.com/docs/validation'
+            ),
+            // O motor devolve o veredito ancorado nos trechos.
+            'fake.minimax.test/*' => Http::response($this->engineResponse([
+                'status' => 'confirmed',
+                'claims' => [['claim' => 'FormRequest valida', 'verdict' => 'supported', 'notes' => null]],
+                'version_constraints' => [],
+                'confidence' => 0.9,
+            ])),
+        ]);
+
+        $memory = $this->contradictedMemory();
+
+        Livewire::test(MemoryDetail::class, ['memory' => $memory])
+            // Simula o assessment já feito, com a biblioteca correta apontada pela IA.
+            ->set('canonAssessment', [
+                'assessment' => 'false_negative',
+                'recommendation' => 'keep',
+                'suggested_context7_query' => 'laravel/framework',
+            ])
+            ->call('reanalyzeInContext7')
+            ->assertSet('reanalysisResult.status', 'confirmed');
+
+        $memory->refresh();
+        $this->assertTrue($memory->reanalyzed_by_ai);
+        $this->assertSame(DocumentationValidationStatus::CONFIRMED, $memory->doc_validation_status);
+        // Trilha de auditoria: o resultado original foi preservado.
+        $this->assertArrayHasKey('previous_report', $memory->doc_validation_report);
+        $this->assertSame('/tdd-guard/docs', $memory->doc_validation_report['previous_report']['library']);
+        // Escolha do usuário: reanálise guiada por IA NUNCA auto-valida.
+        $this->assertSame(ValidationStatus::PENDING, $memory->validation_status);
+    }
+
+    public function test_reanalise_nao_repete_se_ja_reanalisada(): void
+    {
+        $memory = $this->contradictedMemory();
+        $memory->update(['reanalyzed_by_ai' => true]);
+
+        // Sem HTTP fake: se tentasse validar de novo, o teste falharia.
+        Livewire::test(MemoryDetail::class, ['memory' => $memory])
+            ->set('canonAssessment', ['suggested_context7_query' => 'laravel/framework'])
+            ->call('reanalyzeInContext7')
+            ->assertDispatched('show-toast', type: 'aviso');
     }
 }

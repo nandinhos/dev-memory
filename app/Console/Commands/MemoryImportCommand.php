@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Memory;
 use App\Services\MemoryNormalizer;
+use App\Services\MemoryService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -112,7 +113,7 @@ class MemoryImportCommand extends Command
                 return;
             }
 
-            $memory = Memory::create($data->toArray());
+            $memory = app(MemoryService::class)->create($data->toArray());
             $this->imported[] = $memory->id;
             $this->info("Imported: {$memory->title}");
 

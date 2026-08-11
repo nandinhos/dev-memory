@@ -27,7 +27,7 @@ class CanonicalizationAdvisor
     private function systemPrompt(): string
     {
         return <<<'PROMPT'
-Você é um curador sênior de conhecimento técnico. Uma memória foi marcada como CONTRADITA por uma checagem automática contra documentação oficial (via Context7). Sua tarefa é AVALIAR CRITICAMENTE se a contradição é REAL antes de qualquer correção.
+Você é um curador sênior de conhecimento técnico. Uma memória teve um resultado NEGATIVO — CONTRADITA ou INCONCLUSIVA — numa checagem automática contra documentação oficial (via Context7). Sua tarefa é AVALIAR CRITICAMENTE o que aconteceu antes de qualquer ação.
 
 CONTEXTO CRÍTICO — leia com atenção:
 A checagem automática erra com frequência por RESOLVER A BIBLIOTECA ERRADA. Exemplo real: "TDD" (a metodologia) foi resolvido para "TDD Guard" (uma ferramenta CLI), então a memória foi comparada com documentação irrelevante e marcada como contradita à toa. Reescrever uma memória BOA para casar com a documentação ERRADA corrompe a base de conhecimento — é o pior resultado possível. Por isso, na dúvida, MANTENHA.
@@ -37,6 +37,7 @@ Classifique em "assessment":
 - "not_library_documentable": o assunto é uma metodologia, prática, convenção ou princípio (ex.: TDD, Conventional Commits, SOLID, Clean Architecture, DDD) que NÃO tem documentação oficial de biblioteca. Uma "contradição" do Context7 aqui é um erro de categoria.
 - "real_contradiction": a documentação oficial CORRETA e RELEVANTE de fato contradiz a memória (ex.: uso incorreto de uma API, comportamento mal descrito).
 - "outdated": a memória era correta em uma versão antiga, mas a documentação atual mudou.
+- "genuinely_inconclusive": a biblioteca CERTA foi consultada, mas a documentação simplesmente não cobre a afirmação específica da memória. O inconclusivo é legítimo — manter, julgado por recorrência/humano.
 
 Escolha "recommendation":
 - "keep": manter a memória como está. USE para "false_negative" e "not_library_documentable".
@@ -47,7 +48,8 @@ REGRAS INEGOCIÁVEIS:
 1. Só use "correct" quando a contradição for REAL e fundamentável nas notas da checagem. NUNCA invente suporte nem reescreva por padrão.
 2. Para "correct", forneça "suggested_title" e "suggested_description" — a versão canônica corrigida, preservando o valor da lição e ajustando só o que a documentação exige.
 3. Para "keep" e "reject", "suggested_title" e "suggested_description" DEVEM ser null.
-4. Responda APENAS com o objeto JSON. Sem markdown, sem texto antes ou depois.
+4. "suggested_context7_query": se a checagem resolveu a biblioteca ERRADA e EXISTE uma biblioteca/framework oficial correto para o assunto (ex.: a memória é sobre "Livewire" mas resolveu um plugin tangente → sugira "livewire/livewire"), preencha com o nome/termo a re-buscar no Context7. Se o assunto for uma METODOLOGIA/PRÁTICA/OPINIÃO sem documentação de biblioteca (TDD, SOLID, Conventional Commits), preencha com null — re-buscar seria fútil. Sugira SÓ o alvo da busca; você NÃO decide o veredito da re-busca.
+5. Responda APENAS com o objeto JSON. Sem markdown, sem texto antes ou depois.
 
 CONTRATO (todos os campos obrigatórios):
 {
@@ -56,6 +58,7 @@ CONTRATO (todos os campos obrigatórios):
   "recommendation": "keep" | "correct" | "reject",
   "suggested_title": string ou null,
   "suggested_description": string ou null,
+  "suggested_context7_query": string ou null,
   "confidence": número entre 0 e 1
 }
 PROMPT;
@@ -81,11 +84,13 @@ PROMPT;
 
         $sources = implode(', ', $report['sources'] ?? []) ?: '(nenhuma)';
 
+        $statusLabel = $memory->doc_validation_status?->value === 'inconclusive' ? 'INCONCLUSIVA' : 'CONTRADITA';
+
         return "MEMÓRIA AVALIADA:\n"
             ."Título: {$memory->title}\n"
             ."Stack declarada: {$memory->stack}\n"
             ."Conteúdo:\n{$memory->description}\n\n"
-            ."RESULTADO DA CHECAGEM AUTOMÁTICA (Context7):\n"
+            ."RESULTADO DA CHECAGEM AUTOMÁTICA (Context7): {$statusLabel}\n"
             ."Biblioteca consultada pelo Context7: {$library}\n"
             ."Afirmações e vereditos por afirmação:\n{$claims}\n"
             ."Fontes recuperadas: {$sources}\n\n"

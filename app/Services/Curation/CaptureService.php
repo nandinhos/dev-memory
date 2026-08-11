@@ -23,8 +23,9 @@ class CaptureService
         ?string $triggerEvent = null,
         ?string $sourceProject = null,
         array $metadata = [],
+        ?string $projectId = null,
     ): Capture {
-        $key = $this->idempotencyKey($rawContent, $sourceSystem, $sourceProject, $metadata);
+        $key = $this->idempotencyKey($rawContent, $sourceSystem, $sourceProject, $metadata, $projectId);
 
         $existing = Capture::where('idempotency_key', $key)->first();
 
@@ -36,6 +37,7 @@ class CaptureService
 
         try {
             return Capture::create([
+                'project_id' => $projectId,
                 'source_system' => $sourceSystem,
                 'trigger_event' => $triggerEvent,
                 'source_project' => $sourceProject,
@@ -57,12 +59,14 @@ class CaptureService
         string $sourceSystem,
         ?string $sourceProject,
         array $metadata = [],
+        ?string $projectId = null,
     ): string {
         $normalized = mb_strtolower(preg_replace('/\s+/', ' ', trim($rawContent)));
 
         return hash('sha256', implode('|', [
             $sourceSystem,
             $sourceProject ?? '',
+            $projectId ?? '',
             $normalized,
             $metadata['commit'] ?? '',
         ]));

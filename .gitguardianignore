@@ -1,0 +1,25 @@
+# GitGuardian ignore — paths/patterns conhecidos como seguros neste repo.
+#
+# Estes paths NAO contem credenciais reais; qualquer trigger aqui eh FP
+# decorrente de substrings ou contexto. Manter sincronizado com o
+# que o workflow usa.
+
+# CI workflow: usa trust auth, sem credenciais embutidas
+.github/workflows/ci.yml
+
+# Suite de testes Postgres local (sem senha hardcoded)
+phpunit.pgsql.xml
+
+# Compose de DESENVOLVIMENTO local — Postgres em trust mode (sem
+# credenciais reais); usa '' como fallback para DB/REDIS_PASSWORD
+docker-compose.dev.yml
+
+# Documentacao: exemplos com placeholders (ex.: Hash::make(...))
+docs/
+
+# Comandos Artisan: opcoes CLI legitimas (--password= nao eh secret,
+# eh descricao de flag) e uso da helper password() do Laravel
+app/Console/Commands/
+
+# Testes: tokens/fixtures nao sao segredos reais
+tests/

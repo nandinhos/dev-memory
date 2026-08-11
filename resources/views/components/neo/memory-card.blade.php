@@ -49,6 +49,10 @@ $ss = $statusStyles[$memoria->validation_status->value] ?? $statusStyles['reject
                     {{ $memoria->doc_validation_status->shortLabel() }}
                 </span>
             @endif
+            @if($memoria->reanalyzed_by_ai)
+                {{-- Modificador: a checagem do Context7 foi refeita pela IA (biblioteca correta). --}}
+                <span class="bg-neo-purple text-white border-2 border-black px-1.5 py-0.5 text-[10px] font-black" title="Reanalisado por IA (Context7 refeito na biblioteca correta)">IA</span>
+            @endif
         </div>
     </div>
 

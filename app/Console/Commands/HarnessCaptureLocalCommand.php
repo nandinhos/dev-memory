@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\HarnessType;
+use App\Models\User;
 use App\Services\HarnessProfileService;
 use Illuminate\Console\Command;
 
@@ -10,7 +11,8 @@ class HarnessCaptureLocalCommand extends Command
 {
     protected $signature = 'harness:capture-local
                             {harness=claude-code : Harness a capturar}
-                            {--name=default : Nome do perfil}';
+                            {--name=default : Nome do perfil}
+                            {--user= : E-mail do administrador dono do perfil}';
 
     protected $description = 'Captura a configuração local de um harness para o hub (segredos redigidos)';
 
@@ -45,7 +47,13 @@ class HarnessCaptureLocalCommand extends Command
             return self::FAILURE;
         }
 
-        $profile = $service->capture($harness, $files, $this->option('name'));
+        $owner = $this->resolveOwner();
+
+        if ($owner === null) {
+            return self::FAILURE;
+        }
+
+        $profile = $service->capture($harness, $files, $this->option('name'), owner: $owner);
 
         $this->newLine();
         $this->info("Perfil salvo: {$harness->value}/{$profile->name} v{$profile->version} — ".count($profile->files).' arquivo(s)');
@@ -67,5 +75,30 @@ class HarnessCaptureLocalCommand extends Command
         }
 
         return base_path($path);
+    }
+
+    private function resolveOwner(): ?User
+    {
+        $email = $this->option('user');
+
+        if (is_string($email) && $email !== '') {
+            $user = User::where('email', $email)->where('is_admin', true)->first();
+
+            if ($user === null) {
+                $this->error("Administrador não encontrado: {$email}");
+            }
+
+            return $user;
+        }
+
+        $owners = User::where('is_admin', true)->limit(2)->get();
+
+        if ($owners->count() === 1) {
+            return $owners->first();
+        }
+
+        $this->error('Informe --user=<email-do-administrador> para definir o dono do perfil.');
+
+        return null;
     }
 }

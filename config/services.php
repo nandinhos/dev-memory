@@ -41,6 +41,19 @@ return [
         'model' => env('MINIMAX_MODEL', 'MiniMax-M2.5'),
     ],
 
+    'embeddings' => [
+        'provider' => env('EMBEDDING_PROVIDER', 'minimax'),
+        'dimensions' => (int) env('EMBEDDING_DIMENSIONS', 1536),
+        'ollama' => [
+            'host' => env('OLLAMA_HOST', 'http://host.docker.internal:11434'),
+            'model' => env('OLLAMA_EMBED_MODEL', 'nomic-embed-text'),
+        ],
+        'minimax' => [
+            'base_url' => env('MINIMAX_EMBED_BASE_URL', 'https://api.minimax.io/v1'),
+            'model' => env('MINIMAX_EMBED_MODEL', 'embo-01'),
+        ],
+    ],
+
     'context7' => [
         'base_url' => env('CONTEXT7_BASE_URL', 'https://context7.com/api/v1'),
         'api_key' => env('CONTEXT7_API_KEY'),

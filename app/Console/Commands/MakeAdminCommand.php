@@ -14,7 +14,8 @@ class MakeAdminCommand extends Command
 {
     protected $signature = 'memory:make-admin
                             {--email= : E-mail do admin}
-                            {--name= : Nome do admin}';
+                            {--name= : Nome do admin}
+                            {--password= : Senha do admin}';
 
     protected $description = 'Cria ou redefine o usuário administrador do hub (login de acesso)';
 
@@ -22,7 +23,7 @@ class MakeAdminCommand extends Command
     {
         $email = $this->option('email') ?: text('E-mail', required: true);
         $name = $this->option('name') ?: text('Nome', default: 'Admin');
-        $plain = password('Senha (mínimo 8 caracteres)', required: true);
+        $plain = $this->option('password') ?: password('Senha (mínimo 8 caracteres)', required: true);
 
         $validator = Validator::make(
             ['email' => $email, 'name' => $name, 'password' => $plain],

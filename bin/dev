@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Atalhos do ambiente de DESENVOLVIMENTO em Docker.
+#   bin/dev up | down | test | artisan ... | composer ... | npm ... | shell | logs | psql
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# UID é readonly em alguns shells (bash interativo); usar nomes próprios evita o erro.
+export DEV_UID="$(id -u)"
+export DEV_GID="$(id -g)"
+DC=(docker compose -f docker-compose.dev.yml)
+
+# O PHPUnit 12 NÃO sobrescreve variável de ambiente REAL com o <env> do phpunit.xml
+# (o atributo `force` saiu na v10). Como o compose exporta APP_ENV=local etc. para o
+# app rodar em modo dev, a suíte herdava esses valores e rodava FORA do modo de teste:
+# macros do Livewire não registravam e o CSRF barrava POSTs com 419 — 3 falhas que só
+# apareciam dentro do container. Explicitar aqui mantém o teste igual em host e container.
+TEST_ENV=(-e APP_ENV=testing -e CACHE_STORE=array -e SESSION_DRIVER=array
+          -e QUEUE_CONNECTION=sync -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory:)
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  up)       "${DC[@]}" up -d "$@" ;;
+  down)     "${DC[@]}" down "$@" ;;
+  test)     "${DC[@]}" exec -T "${TEST_ENV[@]}" app php artisan test "$@" ;;
+  artisan)  "${DC[@]}" exec -T app php artisan "$@" ;;
+  composer) "${DC[@]}" exec -T app composer "$@" ;;
+  npm)      "${DC[@]}" exec -T vite npm "$@" ;;
+  shell)    "${DC[@]}" exec app bash ;;
+  logs)     "${DC[@]}" logs -f "${@:-app}" ;;
+  psql)     "${DC[@]}" exec postgres psql -U "${DB_USERNAME:-dev_memory}" -d "${DB_DATABASE:-dev_memory}" ;;
+  pint)     "${DC[@]}" exec -T app ./vendor/bin/pint "$@" ;;
+  *)
+    echo "uso: bin/dev {up|down|test|artisan|composer|npm|shell|logs|psql|pint} [args]"
+    exit 1 ;;
+esac

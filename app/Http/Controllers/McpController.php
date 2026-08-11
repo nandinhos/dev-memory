@@ -17,13 +17,12 @@ class McpController extends Controller
     public function handle(Request $request, MemoryMcpServer $server): JsonResponse|Response
     {
         $payload = $request->json()->all();
-        $method = $payload['method'] ?? null;
+        $response = $server->handle($payload, $request->attributes->get('mcp_token'));
 
-        // Notificações MCP (ex.: notifications/initialized) não esperam resposta.
-        if (is_string($method) && str_starts_with($method, 'notifications/')) {
+        if ($response === null) {
             return response()->noContent();
         }
 
-        return response()->json($server->handle($payload));
+        return response()->json($response);
     }
 }

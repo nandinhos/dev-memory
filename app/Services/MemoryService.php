@@ -2,31 +2,38 @@
 
 namespace App\Services;
 
+use App\Enums\MemoryMaturity;
 use App\Enums\MemoryScope;
 use App\Enums\ValidationStatus;
+use App\Jobs\GenerateMemoryEmbeddingJob;
+use App\Jobs\ProjectMemoryKnowledgeGraphJob;
 use App\Models\Memory;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\User;
+use App\Services\Search\MemorySearchService;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class MemoryService
 {
+    public function __construct(
+        private MemorySearchService $searchService,
+        private MaturityPolicy $maturityPolicy,
+    ) {}
+
     public function list(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        return Memory::query()
-            ->filter($filters)
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        $query = Memory::query()
+            ->filter($filters);
+
+        if (! empty($filters['maturity'])) {
+            $query->where('maturity', $filters['maturity']);
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
-    public function search(string $query): Collection
+    public function search(string $query, array $filters = []): array
     {
-        return Memory::query()
-            ->where(fn ($q) => $q->where('title', 'like', "%{$query}%")
-                ->orWhere('description', 'like', "%{$query}%")
-            )
-            ->orderBy('recurrence_count', 'desc')
-            ->limit(20)
-            ->get();
+        return $this->searchService->search($query, $filters);
     }
 
     public function findById(string $id): ?Memory
@@ -36,18 +43,31 @@ class MemoryService
 
     public function create(array $data): Memory
     {
-        return Memory::create($data);
+        $memory = Memory::create($data);
+        $this->refreshDerivedState($memory, regenerateEmbedding: true);
+
+        return $memory;
     }
 
     public function update(Memory $memory, array $data): Memory
     {
         $memory->update($data);
+        $this->refreshDerivedState($memory, regenerateEmbedding: true);
 
         return $memory->fresh();
     }
 
+    public function promoteMaturity(Memory $memory, MemoryMaturity $target, ?User $user = null): Memory
+    {
+        $memory = $this->maturityPolicy->transition($memory, $target, $user);
+        $this->refreshDerivedState($memory);
+
+        return $memory;
+    }
+
     public function delete(Memory $memory): void
     {
+        $memory->knowledgeNode()->update(['status' => 'inactive']);
         $memory->delete();
     }
 
@@ -86,6 +106,7 @@ class MemoryService
     public function validate(Memory $memory): Memory
     {
         $memory->update(['validation_status' => ValidationStatus::VALIDATED]);
+        $this->refreshDerivedState($memory);
 
         return $memory->fresh();
     }
@@ -93,6 +114,7 @@ class MemoryService
     public function reject(Memory $memory): Memory
     {
         $memory->update(['validation_status' => ValidationStatus::REJECTED]);
+        $this->refreshDerivedState($memory);
 
         return $memory->fresh();
     }
@@ -104,6 +126,7 @@ class MemoryService
         }
 
         $memory->update(['scope' => MemoryScope::GLOBAL]);
+        $this->refreshDerivedState($memory);
 
         return $memory->fresh();
     }
@@ -132,5 +155,14 @@ class MemoryService
                 ->limit(5)
                 ->get(),
         ];
+    }
+
+    private function refreshDerivedState(Memory $memory, bool $regenerateEmbedding = false): void
+    {
+        if ($regenerateEmbedding) {
+            GenerateMemoryEmbeddingJob::dispatch($memory)->afterCommit();
+        }
+
+        ProjectMemoryKnowledgeGraphJob::dispatch($memory->id)->afterCommit();
     }
 }

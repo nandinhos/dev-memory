@@ -125,6 +125,17 @@ em prod). Fase 2 intercala bem como itens avulsos entre blocos. Fases 4–5 são
 - Otimização de gatilho das skills locais (loop skill-creator).
 - Lows restantes do relatório da auditoria (cookie Secure já documentado no runbook, etc.).
 - `memory:curate` piloto hardcoda engine (achado #26, low).
+- 2ª fonte de conhecimento confiável além do Context7 (doc oficial via web p/ metodologias sem lib).
+
+## Backlog CRÍTICO (tratar com calma, decisão de segurança — 2026-07-20)
+- **Hub como cofre de segredos/configs via MCP.** Análise preliminar concluiu: **não servir segredos
+  via MCP** — o canal MCP→LLM vaza por design (segredo entra no contexto do agente → transcripts,
+  telemetria, echo acidental). Arquitetura recomendada: **hub = catálogo de configs com valores
+  REDIGIDOS** (evolução natural do harness provisioning, FASE 5) + **cofre dedicado** ao lado
+  (Infisical para env vars por projeto/ambiente, ou Vaultwarden) entregando valores localmente via
+  CLI — `${VAR}` resolvido no start do processo, nunca no contexto do LLM. Riscos mapeados: APP_KEY
+  como ponto único de falha, tokens MCP sem escopo, auto-deploy como vetor supply-chain, ausência de
+  auditoria/rotação, 2FA não cobre o caminho MCP. Hardening independente possível: 2FA no login web.
 
 ## Como retomar (checklist da 1ª mensagem da sessão futura)
 1. Ler este plano + `docs/reports/auditoria-2026-07-18.md`.
