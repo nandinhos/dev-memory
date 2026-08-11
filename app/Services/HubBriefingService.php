@@ -18,24 +18,24 @@ use Illuminate\Support\Collection;
  */
 class HubBriefingService
 {
-    public function briefing(?string $stack = null, ?string $description = null): array
+    public function briefing(?string $stack = null, ?string $description = null, ?string $visibleProjectId = null): array
     {
         $risks = $this->format(
-            $this->validated($stack)->where('type', MemoryType::ERROR)
+            $this->visible($this->validated($stack), $visibleProjectId)->where('type', MemoryType::ERROR)
                 ->orderByDesc('recurrence_count')->limit(8)->get()
         );
 
         $patterns = $this->format(
-            $this->validated($stack)->where('type', MemoryType::BEST_PRACTICE)
+            $this->visible($this->validated($stack), $visibleProjectId)->where('type', MemoryType::BEST_PRACTICE)
                 ->orderByDesc('recurrence_count')->limit(8)->get()
         );
 
         $lessons = $this->format(
-            $this->validated($stack)->where('type', MemoryType::LESSON)
+            $this->visible($this->validated($stack), $visibleProjectId)->where('type', MemoryType::LESSON)
                 ->orderByDesc('recurrence_count')->limit(8)->get()
         );
 
-        $related = $this->format($this->matchDescription($description));
+        $related = $this->format($this->matchDescription($description, $visibleProjectId));
 
         return [
             'context' => ['stack' => $stack, 'description' => $description],
@@ -43,7 +43,7 @@ class HubBriefingService
             'approved_patterns' => $patterns,
             'relevant_lessons' => $lessons,
             'related_to_description' => $related,
-            'skills' => $this->skills($stack),
+            'skills' => $visibleProjectId === null ? $this->skills($stack) : [],
             'summary' => sprintf(
                 '%d risco(s) conhecido(s), %d padrão(ões) aprovado(s), %d lição(ões) relevante(s)%s.',
                 count($risks),
@@ -61,7 +61,7 @@ class HubBriefingService
             ->when($stack, fn (Builder $q, string $s) => $q->where('stack', 'like', "%{$s}%"));
     }
 
-    private function matchDescription(?string $description): Collection
+    private function matchDescription(?string $description, ?string $visibleProjectId): Collection
     {
         if ($description === null || trim($description) === '') {
             return collect();
@@ -76,7 +76,7 @@ class HubBriefingService
             return collect();
         }
 
-        return Memory::query()
+        return $this->visible(Memory::query()
             ->where('validation_status', ValidationStatus::VALIDATED)
             ->where(function (Builder $q) use ($terms) {
                 foreach ($terms as $term) {
@@ -85,8 +85,20 @@ class HubBriefingService
                 }
             })
             ->orderByDesc('recurrence_count')
-            ->limit(8)
+            ->limit(8), $visibleProjectId)
             ->get();
+    }
+
+    private function visible(Builder $query, ?string $projectId): Builder
+    {
+        if ($projectId === null) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($projectId) {
+            $query->where('scope', 'global')
+                ->orWhere(fn (Builder $query) => $query->where('scope', 'project')->where('project_id', $projectId));
+        });
     }
 
     private function skills(?string $stack): array

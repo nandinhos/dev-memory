@@ -13,6 +13,7 @@ class Capture extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
+        'project_id',
         'source_system',
         'trigger_event',
         'source_project',
@@ -36,5 +37,10 @@ class Capture extends Model
     public function memory(): BelongsTo
     {
         return $this->belongsTo(Memory::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 }

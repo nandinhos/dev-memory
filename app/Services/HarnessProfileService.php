@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\HarnessType;
 use App\Models\HarnessProfile;
+use App\Models\User;
 use App\Services\Curation\CaptureSanitizer;
 use InvalidArgumentException;
 
@@ -75,7 +76,7 @@ class HarnessProfileService
         return in_array($basename, $allowedNames, true);
     }
 
-    public function capture(HarnessType $harness, array $files, string $name = 'default', ?string $description = null): HarnessProfile
+    public function capture(HarnessType $harness, array $files, string $name = 'default', ?string $description = null, ?User $owner = null): HarnessProfile
     {
         $stored = [];
 
@@ -98,10 +99,11 @@ class HarnessProfileService
             ];
         }
 
-        $existing = HarnessProfile::where('harness', $harness->value)->where('name', $name)->first();
+        $identity = ['user_id' => $owner?->id, 'harness' => $harness->value, 'name' => $name];
+        $existing = HarnessProfile::where($identity)->first();
 
         return HarnessProfile::updateOrCreate(
-            ['harness' => $harness->value, 'name' => $name],
+            $identity,
             [
                 'files' => $stored,
                 'description' => $description ?? $existing?->description,

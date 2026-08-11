@@ -6,6 +6,7 @@ use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
 use App\Models\Memory;
+use App\Services\MemoryService;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -74,9 +75,9 @@ class MemoryForm extends Component
 
         if ($this->memoryId) {
             $memory = Memory::findOrFail($this->memoryId);
-            $memory->update($data);
+            app(MemoryService::class)->update($memory, $data);
         } else {
-            Memory::create($data);
+            app(MemoryService::class)->create($data);
         }
 
         $this->dispatch('saved');

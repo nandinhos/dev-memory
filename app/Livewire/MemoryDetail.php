@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Enums\DocumentationValidationStatus;
-use App\Enums\MemoryScope;
 use App\Enums\ValidationStatus;
 use App\Jobs\ValidateMemoryDocumentationJob;
 use App\Models\Memory;
@@ -11,6 +10,7 @@ use App\Services\Curation\CanonicalizationAdvisor;
 use App\Services\Curation\CurationFailedException;
 use App\Services\Curation\DocumentationValidator;
 use App\Services\Curation\DocValidationOutcome;
+use App\Services\MemoryService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -33,14 +33,14 @@ class MemoryDetail extends Component
     public function delete(): void
     {
         $this->authorizeAdmin();
-        $this->memory->delete();
+        app(MemoryService::class)->delete($this->memory);
         session()->flash('success', 'Memória removida com sucesso!');
         $this->redirect('/memories', navigate: true);
     }
 
     public function incrementRecurrence(): void
     {
-        $this->memory->increment('recurrence_count');
+        app(MemoryService::class)->incrementRecurrence($this->memory);
         $this->memory->refresh();
         $this->dispatch('show-toast',
             message: '+1 ocorrência registrada',
@@ -51,7 +51,7 @@ class MemoryDetail extends Component
     public function markAsValidated(): void
     {
         $this->authorizeAdmin();
-        $this->memory->update(['validation_status' => ValidationStatus::VALIDATED]);
+        app(MemoryService::class)->validate($this->memory);
         $this->memory->refresh();
         $this->dispatch('show-toast',
             message: 'Memória validada com sucesso!',
@@ -62,7 +62,7 @@ class MemoryDetail extends Component
     public function promoteToGlobal(): void
     {
         $this->authorizeAdmin();
-        $this->memory->update(['scope' => MemoryScope::GLOBAL]);
+        app(MemoryService::class)->promoteToGlobal($this->memory);
         $this->memory->refresh();
         $this->dispatch('show-toast',
             message: 'Memória promovida a Global!',
@@ -130,7 +130,7 @@ class MemoryDetail extends Component
         $report['reanalysis'] = ['query' => $query, 'previous_library' => $previousReport['library'] ?? null, 'previous_status' => $previousStatus];
         $report['previous_report'] = $previousReport;
 
-        $this->memory->update([
+        app(MemoryService::class)->update($this->memory, [
             'doc_validation_status' => $outcome->status,
             'doc_validation_report' => $report,
             'reanalyzed_by_ai' => true,
@@ -156,7 +156,7 @@ class MemoryDetail extends Component
             return;
         }
 
-        $this->memory->update([
+        app(MemoryService::class)->update($this->memory, [
             'title' => $this->canonAssessment['suggested_title'],
             'description' => $this->canonAssessment['suggested_description'],
             'validated_by' => 'IA-assistida (canonização)',
@@ -174,7 +174,7 @@ class MemoryDetail extends Component
         $this->authorizeAdmin();
 
         // Falso-negativo / não-documentável: o humano confirma a memória sobre o Context7.
-        $this->memory->update([
+        app(MemoryService::class)->update($this->memory, [
             'validation_status' => ValidationStatus::VALIDATED,
             'validated_by' => 'humano (revisão sobre Context7)',
         ]);
@@ -188,7 +188,7 @@ class MemoryDetail extends Component
     {
         $this->authorizeAdmin();
 
-        $this->memory->update(['validation_status' => ValidationStatus::REJECTED]);
+        app(MemoryService::class)->reject($this->memory);
         $this->memory->refresh();
 
         $this->canonAssessment = [];

@@ -5,12 +5,12 @@ namespace App\Services\Embeddings;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 class EmbeddingGeneratorService
 {
     /**
-     * Gera o vetor de embedding para o texto fornecido.
-     * Tenta primeiro Ollama (local/gratuito), com fallback para MiniMax.
+     * Gera o vetor no espaço canônico configurado para este ambiente.
      *
      * @return array{embedding: array<float>, model: string, hash: string}|null
      */
@@ -22,37 +22,60 @@ class EmbeddingGeneratorService
             return null;
         }
 
-        $hash = hash('sha256', $text);
+        $provider = $this->provider();
+        $result = match ($provider) {
+            'ollama' => $this->generateViaOllama($text),
+            'minimax' => $this->generateViaMiniMax($text),
+            default => throw new InvalidArgumentException("Provedor de embedding não suportado: {$provider}"),
+        };
 
-        // 1. Tentar Ollama local
-        $ollamaResult = $this->generateViaOllama($text);
-        if ($ollamaResult !== null) {
-            return [
-                'embedding' => $ollamaResult['embedding'],
-                'model' => 'ollama/'.$ollamaResult['model'],
-                'hash' => $hash,
-            ];
+        if ($result !== null) {
+            $embedding = $this->validateDimensions($result['embedding']);
+
+            if ($embedding !== null) {
+                return [
+                    'embedding' => $embedding,
+                    'model' => $this->space(),
+                    'hash' => $this->contentHash($text),
+                ];
+            }
         }
 
-        // 2. Fallback para MiniMax
-        $minimaxResult = $this->generateViaMiniMax($text);
-        if ($minimaxResult !== null) {
-            return [
-                'embedding' => $minimaxResult['embedding'],
-                'model' => 'minimax/embo-01',
-                'hash' => $hash,
-            ];
-        }
-
-        Log::warning('EmbeddingGeneratorService: Falha ao gerar embedding em todos os provedores (Ollama e MiniMax).');
+        Log::warning("EmbeddingGeneratorService: Falha ao gerar embedding no espaço canônico [{$this->space()}].");
 
         return null;
     }
 
+    public function space(): string
+    {
+        $provider = $this->provider();
+        $model = match ($provider) {
+            'ollama' => (string) config('services.embeddings.ollama.model'),
+            'minimax' => (string) config('services.embeddings.minimax.model'),
+            default => throw new InvalidArgumentException("Provedor de embedding não suportado: {$provider}"),
+        };
+
+        if ($model === '') {
+            throw new InvalidArgumentException("Modelo de embedding não configurado para [{$provider}].");
+        }
+
+        return "{$provider}/{$model}";
+    }
+
+    public function contentHash(string $text): string
+    {
+        return hash('sha256', $this->space().'|'.trim($text));
+    }
+
+    private function provider(): string
+    {
+        return mb_strtolower(trim((string) config('services.embeddings.provider', 'minimax')));
+    }
+
     private function generateViaOllama(string $text): ?array
     {
-        $host = config('services.ollama.host', env('OLLAMA_HOST', 'http://localhost:11434'));
-        $model = config('services.ollama.embedding_model', env('OLLAMA_EMBED_MODEL', 'nomic-embed-text'));
+        $host = rtrim((string) config('services.embeddings.ollama.host'), '/');
+        $model = (string) config('services.embeddings.ollama.model');
 
         try {
             $response = Http::timeout(5)->post("{$host}/api/embeddings", [
@@ -64,7 +87,7 @@ class EmbeddingGeneratorService
                 $vector = $response->json('embedding');
 
                 return [
-                    'embedding' => $this->normalizeVectorDimensions($vector, 1536),
+                    'embedding' => $vector,
                     'model' => $model,
                 ];
             }
@@ -77,29 +100,40 @@ class EmbeddingGeneratorService
 
     private function generateViaMiniMax(string $text): ?array
     {
-        $apiKey = config('services.minimax.api_key', env('MINIMAX_API_KEY'));
+        $apiKey = config('services.minimax.api_key');
 
         if (! $apiKey) {
             return null;
         }
 
         try {
+            $baseUrl = rtrim((string) config('services.embeddings.minimax.base_url'), '/');
+            $model = (string) config('services.embeddings.minimax.model');
+
             $response = Http::timeout(8)
                 ->withToken($apiKey)
-                ->post('https://api.minimaxi.chat/v1/embeddings', [
-                    'model' => 'embo-01',
+                ->post("{$baseUrl}/embeddings", [
+                    'model' => $model,
                     'texts' => [$text],
                     'type' => 'db',
                 ]);
 
-            if ($response->successful() && is_array($response->json('vectors.0'))) {
+            $providerStatus = (int) $response->json('base_resp.status_code', 0);
+
+            if ($response->successful() && $providerStatus === 0 && is_array($response->json('vectors.0'))) {
                 $vector = $response->json('vectors.0');
 
                 return [
-                    'embedding' => $this->normalizeVectorDimensions($vector, 1536),
-                    'model' => 'embo-01',
+                    'embedding' => $vector,
+                    'model' => $model,
                 ];
             }
+
+            Log::warning('Embedding via MiniMax rejeitado pelo provedor.', [
+                'http_status' => $response->status(),
+                'provider_status' => $providerStatus,
+                'provider_message' => (string) $response->json('base_resp.status_msg', 'resposta sem vetor'),
+            ]);
         } catch (Exception $e) {
             Log::error('Embedding via MiniMax falhou: '.$e->getMessage());
         }
@@ -108,26 +142,27 @@ class EmbeddingGeneratorService
     }
 
     /**
-     * Ajusta a dimensão do vetor para exatamente $targetDim (pad com zeros ou truncamento se necessário).
+     * Rejeita vetores fora do contrato. Padding/truncamento altera o espaço
+     * semântico e não torna modelos diferentes compatíveis.
      *
      * @param  array<float>  $vector
      * @return array<float>
      */
-    private function normalizeVectorDimensions(array $vector, int $targetDim = 1536): array
+    private function validateDimensions(array $vector): ?array
     {
-        $count = count($vector);
+        $expected = (int) config('services.embeddings.dimensions', 1536);
+        $actual = count($vector);
 
-        if ($count === $targetDim) {
-            return array_map('floatval', $vector);
+        if ($expected <= 0) {
+            throw new InvalidArgumentException('EMBEDDING_DIMENSIONS deve ser maior que zero.');
         }
 
-        if ($count > $targetDim) {
-            return array_map('floatval', array_slice($vector, 0, $targetDim));
+        if ($actual !== $expected) {
+            Log::error("Embedding incompatível com [{$this->space()}]: esperado {$expected}, recebido {$actual}.");
+
+            return null;
         }
 
-        // Truncado/padded se menor
-        $padded = array_pad($vector, $targetDim, 0.0);
-
-        return array_map('floatval', $padded);
+        return array_map('floatval', $vector);
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Livewire;
 
-use App\Enums\MemoryScope;
 use App\Models\Memory;
+use App\Services\MemoryService;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -85,7 +85,7 @@ class MemoryList extends Component
         abort_unless(auth()->user()?->is_admin === true, 403);
 
         $memory = Memory::findOrFail($id);
-        $memory->update(['scope' => MemoryScope::GLOBAL]);
+        app(MemoryService::class)->promoteToGlobal($memory);
 
         $this->dispatch('show-toast', message: 'Memória promovida a Global!', type: 'sucesso');
     }

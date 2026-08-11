@@ -12,6 +12,8 @@ use App\Enums\ValidationStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Memory extends Model
@@ -75,6 +77,17 @@ class Memory extends Model
 
     public function scopeFilter($query, array $filters)
     {
+        if (($filters['visible_project_id'] ?? null) !== null) {
+            $projectId = $filters['visible_project_id'];
+            $query->where(function ($query) use ($projectId) {
+                $query->where('scope', MemoryScope::GLOBAL)
+                    ->orWhere(function ($query) use ($projectId) {
+                        $query->where('scope', MemoryScope::PROJECT)
+                            ->where('project_id', $projectId);
+                    });
+            });
+        }
+
         $query->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type)
         );
         $query->when($filters['stack'] ?? null, fn ($q, $stack) => $q->where('stack', 'like', "%{$stack}%")
@@ -125,5 +138,15 @@ class Memory extends Model
     public function skillGroups()
     {
         return $this->belongsToMany(SkillGroup::class);
+    }
+
+    public function memoryProject(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    public function knowledgeNode(): HasOne
+    {
+        return $this->hasOne(KnowledgeNode::class);
     }
 }

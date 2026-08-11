@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\GenerateMemoryEmbeddingJob;
 use App\Models\Memory;
+use App\Services\Embeddings\EmbeddingGeneratorService;
 use Illuminate\Console\Command;
 
 class MemoryEmbeddingsBackfillCommand extends Command
@@ -12,12 +13,16 @@ class MemoryEmbeddingsBackfillCommand extends Command
 
     protected $description = 'Gera embeddings vetoriais para todas as memórias existentes no banco de dados.';
 
-    public function handle(): int
+    public function handle(EmbeddingGeneratorService $generator): int
     {
         $query = Memory::query();
 
         if (! $this->option('force')) {
-            $query->whereNull('embedding');
+            $query->where(function ($query) use ($generator) {
+                $query->whereNull('embedding')
+                    ->orWhere('embedding_model', '!=', $generator->space())
+                    ->orWhereNull('embedding_model');
+            });
         }
 
         $count = $query->count();
