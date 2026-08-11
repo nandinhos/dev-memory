@@ -1,0 +1,12 @@
+# GitGuardian ignore — paths/patterns conhecidos como seguros neste repo.
+#
+# Estes paths NAO contem credenciais reais; qualquer trigger aqui eh FP
+# decorrente de substrings ou contexto (ex.: "postgres" como username,
+# termos como "auth method" em comentarios). Manter sincronizado com o
+# que o workflow usa.
+
+# CI workflow: usa trust auth, sem credenciais embutidas
+.github/workflows/ci.yml
+
+# Suite de testes Postgres local (sem senha hardcoded)
+phpunit.pgsql.xml
