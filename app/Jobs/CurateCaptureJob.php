@@ -85,6 +85,7 @@ class CurateCaptureJob implements ShouldQueue
                 'type' => $draft->category,
                 'stack' => $this->buildStack($draft),
                 'scope' => MemoryScope::PROJECT,
+                'project_id' => $this->capture->project_id,
                 'validation_status' => ValidationStatus::PENDING,
                 'source_system' => MemorySource::CAPTURE,
                 'source_project' => $this->capture->source_project,

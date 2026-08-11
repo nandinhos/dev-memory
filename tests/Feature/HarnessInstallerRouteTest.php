@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\HarnessType;
+use App\Models\User;
 use App\Services\HarnessProfileService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -24,7 +25,8 @@ class HarnessInstallerRouteTest extends TestCase
             name: 'default',
         );
 
-        $response = $this->get('/install/harness/antigravity/default');
+        $response = $this->actingAs(User::factory()->create(['is_admin' => true]))
+            ->get('/install/harness/antigravity/default');
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -32,9 +34,19 @@ class HarnessInstallerRouteTest extends TestCase
         $response->assertSee('# Global Rules');
     }
 
-    public function test_returns_404_on_unknown_harness_or_profile(): void
+    public function test_installer_requires_an_authenticated_administrator(): void
     {
-        $response = $this->get('/install/harness/unknown/default');
-        $response->assertStatus(404);
+        $this->get('/install/harness/unknown/default')->assertRedirect('/login');
+
+        $this->actingAs(User::factory()->create(['is_admin' => false]))
+            ->get('/install/harness/unknown/default')
+            ->assertForbidden();
+    }
+
+    public function test_returns_404_on_unknown_harness_for_an_administrator(): void
+    {
+        $this->actingAs(User::factory()->create(['is_admin' => true]))
+            ->get('/install/harness/unknown/default')
+            ->assertStatus(404);
     }
 }

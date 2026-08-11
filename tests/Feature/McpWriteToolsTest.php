@@ -17,10 +17,13 @@ class McpWriteToolsTest extends TestCase
 
     private string $token;
 
+    private string $projectId;
+
     protected function setUp(): void
     {
         parent::setUp();
-        [, $this->token] = ApiToken::issue(User::factory()->create(), 'writer');
+        [$token, $this->token] = ApiToken::issue(User::factory()->create(), 'writer');
+        $this->projectId = $token->project_id;
     }
 
     private function callTool(string $tool, array $args = [], int $id = 1)
@@ -47,6 +50,7 @@ class McpWriteToolsTest extends TestCase
             'type' => MemoryType::LESSON,
             'validation_status' => ValidationStatus::PENDING,
             'scope' => MemoryScope::PROJECT,
+            'project_id' => $this->projectId,
         ], $overrides));
     }
 
@@ -87,6 +91,7 @@ class McpWriteToolsTest extends TestCase
 
     public function test_memory_promote_succeeds_when_validated(): void
     {
+        [, $this->token] = ApiToken::issue(User::factory()->create(['is_admin' => true]), 'operador-global', global: true);
         $memory = $this->makeMemory(['validation_status' => ValidationStatus::VALIDATED]);
 
         $result = $this->resultOf($this->callTool('memory_promote', ['id' => $memory->id]));

@@ -39,6 +39,10 @@ class McpServeCommand extends Command
                 $response = $server->handle($request);
             }
 
+            if ($response === null) {
+                continue;
+            }
+
             fwrite($stdout, json_encode($response)."\n");
             fflush($stdout);
         }

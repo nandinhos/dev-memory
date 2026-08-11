@@ -15,6 +15,8 @@ class HarnessInstallerController extends Controller
 
     public function download(string $harness, string $name = 'default'): Response
     {
+        abort_unless(auth()->user()?->is_admin === true, 403);
+
         $harnessEnum = HarnessType::tryFrom($harness);
 
         if (! $harnessEnum) {

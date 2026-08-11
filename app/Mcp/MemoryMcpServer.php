@@ -6,7 +6,7 @@ use App\Enums\HarnessType;
 use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Jobs\CurateCaptureJob;
-use App\Models\HarnessProfile;
+use App\Models\ApiToken;
 use App\Models\Memory;
 use App\Services\ConfirmationGuard;
 use App\Services\Curation\CaptureService;
@@ -14,14 +14,19 @@ use App\Services\HarnessHookGenerator;
 use App\Services\HarnessInstallerGenerator;
 use App\Services\HarnessProfileService;
 use App\Services\HubBriefingService;
+use App\Services\KnowledgeGraph\KnowledgeGraphQueryService;
+use App\Services\McpAccessPolicy;
 use App\Services\MemoryService;
 use App\Services\Search\MemorySearchService;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class MemoryMcpServer
 {
     private array $tools = [];
 
     private array $resources = [];
+
+    private ?ApiToken $token = null;
 
     public function __construct()
     {
@@ -47,7 +52,7 @@ class MemoryMcpServer
             ],
             'memory_search' => [
                 'name' => 'memory_search',
-                'description' => 'Busca memórias por texto livre (busca em título e descrição)',
+                'description' => 'Busca memórias por texto livre combinando relevância lexical e semântica',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -64,6 +69,19 @@ class MemoryMcpServer
                     'type' => 'object',
                     'properties' => [
                         'id' => ['type' => 'string', 'description' => 'UUID da memória'],
+                    ],
+                    'required' => ['id'],
+                ],
+            ],
+            'memory_related' => [
+                'name' => 'memory_related',
+                'description' => 'Retorna memórias relacionadas pelo knowledge graph, incluindo o caminho e as evidências de cada relação',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'id' => ['type' => 'string', 'description' => 'UUID da memória de origem'],
+                        'depth' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3, 'default' => 2],
+                        'limit' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20],
                     ],
                     'required' => ['id'],
                 ],
@@ -88,7 +106,7 @@ class MemoryMcpServer
                 'description' => 'Retorna estatísticas das memórias (total, por tipo, por escopo, top stacks)',
                 'inputSchema' => [
                     'type' => 'object',
-                    'properties' => [],
+                    'properties' => (object) [],
                 ],
             ],
             'memory_update' => [
@@ -204,7 +222,7 @@ class MemoryMcpServer
             'harness_list' => [
                 'name' => 'harness_list',
                 'description' => 'Lista os perfis de harness salvos no hub',
-                'inputSchema' => ['type' => 'object', 'properties' => []],
+                'inputSchema' => ['type' => 'object', 'properties' => (object) []],
             ],
             'harness_provision' => [
                 'name' => 'harness_provision',
@@ -257,10 +275,20 @@ class MemoryMcpServer
         ];
     }
 
-    public function handle(array $request): array
+    public function handle(array $request, ?ApiToken $token = null): ?array
     {
+        $this->token = $token;
         $method = $request['method'] ?? null;
+
+        if (! array_key_exists('id', $request)) {
+            return null;
+        }
+
         $id = $request['id'] ?? null;
+
+        if ($id !== null && ! is_int($id) && ! is_string($id)) {
+            return $this->errorResponse(null, 'Invalid Request', -32600);
+        }
 
         return match ($method) {
             'initialize' => $this->handleInitialize($id),
@@ -272,13 +300,13 @@ class MemoryMcpServer
         };
     }
 
-    private function handleInitialize(?string $id): array
+    private function handleInitialize(int|string|null $id): array
     {
         return $this->response($id, [
             'protocolVersion' => '2024-11-05',
             'capabilities' => [
-                'tools' => true,
-                'resources' => true,
+                'tools' => ['listChanged' => false],
+                'resources' => ['listChanged' => false],
             ],
             'serverInfo' => [
                 'name' => 'dev-memory-mcp',
@@ -287,38 +315,43 @@ class MemoryMcpServer
         ]);
     }
 
-    private function handleToolsList(?string $id): array
+    private function handleToolsList(int|string|null $id): array
     {
         return $this->response($id, [
             'tools' => array_values($this->tools),
         ]);
     }
 
-    private function handleToolsCall(array $params, ?string $id): array
+    private function handleToolsCall(array $params, int|string|null $id): array
     {
         $toolName = $params['name'] ?? null;
         $args = $params['arguments'] ?? [];
 
-        $result = match ($toolName) {
-            'memory_list' => $this->toolMemoryList($args),
-            'memory_search' => $this->toolMemorySearch($args),
-            'memory_get' => $this->toolMemoryGet($args),
-            'memory_create' => $this->toolMemoryCreate($args),
-            'memory_stats' => $this->toolMemoryStats(),
-            'memory_update' => $this->toolMemoryUpdate($args),
-            'memory_validate' => $this->toolMemoryValidate($args),
-            'memory_promote' => $this->toolMemoryPromote($args),
-            'memory_delete' => $this->toolMemoryDelete($args),
-            'hub_briefing' => $this->toolHubBriefing($args),
-            'memory_ingest' => $this->toolMemoryIngest($args),
-            'harness_paths' => $this->toolHarnessPaths($args),
-            'harness_capture' => $this->toolHarnessCapture($args),
-            'harness_list' => $this->toolHarnessList(),
-            'harness_provision' => $this->toolHarnessProvision($args),
-            'harness_installer_script' => $this->toolHarnessInstallerScript($args),
-            'harness_hook_script' => $this->toolHarnessHookScript($args),
-            default => null,
-        };
+        try {
+            $result = match ($toolName) {
+                'memory_list' => $this->toolMemoryList($args),
+                'memory_search' => $this->toolMemorySearch($args),
+                'memory_get' => $this->toolMemoryGet($args),
+                'memory_related' => $this->toolMemoryRelated($args),
+                'memory_create' => $this->toolMemoryCreate($args),
+                'memory_stats' => $this->toolMemoryStats(),
+                'memory_update' => $this->toolMemoryUpdate($args),
+                'memory_validate' => $this->toolMemoryValidate($args),
+                'memory_promote' => $this->toolMemoryPromote($args),
+                'memory_delete' => $this->toolMemoryDelete($args),
+                'hub_briefing' => $this->toolHubBriefing($args),
+                'memory_ingest' => $this->toolMemoryIngest($args),
+                'harness_paths' => $this->toolHarnessPaths($args),
+                'harness_capture' => $this->toolHarnessCapture($args),
+                'harness_list' => $this->toolHarnessList(),
+                'harness_provision' => $this->toolHarnessProvision($args),
+                'harness_installer_script' => $this->toolHarnessInstallerScript($args),
+                'harness_hook_script' => $this->toolHarnessHookScript($args),
+                default => null,
+            };
+        } catch (AuthorizationException $exception) {
+            $result = ['error' => $exception->getMessage()];
+        }
 
         if ($result === null) {
             return $this->errorResponse($id, "Tool not found: {$toolName}", -32602);
@@ -334,18 +367,21 @@ class MemoryMcpServer
         ]);
     }
 
-    private function handleResourcesList(?string $id): array
+    private function handleResourcesList(int|string|null $id): array
     {
         return $this->response($id, [
             'resources' => array_values($this->resources),
         ]);
     }
 
-    private function handleResourcesRead(array $params, ?string $id): array
+    private function handleResourcesRead(array $params, int|string|null $id): array
     {
         $uri = $params['uri'] ?? null;
 
-        $memories = Memory::orderBy('created_at', 'desc')->limit(100)->get(['id', 'title', 'type', 'stack', 'scope', 'created_at']);
+        $memories = $this->access()->memories($this->token)
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get(['id', 'title', 'type', 'stack', 'scope', 'created_at']);
 
         return $this->response($id, [
             'contents' => [
@@ -360,7 +396,7 @@ class MemoryMcpServer
 
     private function toolMemoryList(array $args): array
     {
-        $query = Memory::query()
+        $query = $this->access()->memories($this->token)
             ->when($args['type'] ?? null, fn ($q, $t) => $q->where('type', $t))
             ->when($args['scope'] ?? null, fn ($q, $s) => $q->where('scope', $s))
             ->when($args['stack'] ?? null, fn ($q, $s) => $q->where('stack', 'like', "%{$s}%"))
@@ -388,7 +424,7 @@ class MemoryMcpServer
 
         /** @var MemorySearchService $searchService */
         $searchService = app(MemorySearchService::class);
-        $searchResult = $searchService->search($query, [], $limit);
+        $searchResult = $searchService->search($query, $this->visibilityFilters(), $limit);
 
         $results = $searchResult['results'];
 
@@ -400,6 +436,7 @@ class MemoryMcpServer
                 /** @var Memory $m */
                 $m = $item['memory'] ?? $item;
                 $similarity = $item['similarity'] ?? 0.0;
+                $rankScore = $item['rank_score'] ?? 0.0;
 
                 return [
                     'id' => $m->id,
@@ -408,6 +445,7 @@ class MemoryMcpServer
                     'type' => $m->type->value,
                     'maturity' => $m->maturity?->value ?? 'provisional',
                     'similarity' => round($similarity, 4),
+                    'rank_score' => round($rankScore, 6),
                     'score' => $m->recurrence_count,
                 ];
             })->toArray(),
@@ -416,7 +454,7 @@ class MemoryMcpServer
 
     private function toolMemoryGet(array $args): array
     {
-        $memory = Memory::find($args['id'] ?? '');
+        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
@@ -434,6 +472,35 @@ class MemoryMcpServer
             'recurrence_count' => $memory->recurrence_count,
             'created_at' => $memory->created_at->toIso8601String(),
             'updated_at' => $memory->updated_at->toIso8601String(),
+        ];
+    }
+
+    private function toolMemoryRelated(array $args): array
+    {
+        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
+
+        if ($memory === null) {
+            return ['error' => 'Memória não encontrada'];
+        }
+
+        $results = app(KnowledgeGraphQueryService::class)->relatedTo(
+            $memory,
+            (int) ($args['depth'] ?? 2),
+            (int) ($args['limit'] ?? 20),
+        );
+
+        return [
+            'memory_id' => $memory->id,
+            'total' => count($results),
+            'results' => collect($results)->map(fn (array $result) => [
+                'id' => $result['memory']->id,
+                'title' => $result['memory']->title,
+                'type' => $result['memory']->type->value,
+                'stack' => $result['memory']->stack,
+                'scope' => $result['memory']->scope->value,
+                'depth' => $result['depth'],
+                'path' => $result['path'],
+            ])->all(),
         ];
     }
 
@@ -457,12 +524,19 @@ class MemoryMcpServer
             return ['error' => 'Escopo inválido. Valores permitidos: '.implode(', ', $allowedScopes)];
         }
 
-        $memory = Memory::create([
+        if ($scope === MemoryScope::GLOBAL->value && ! $this->access()->canPublishGlobal($this->token)) {
+            return ['error' => 'Apenas administradores podem criar memórias globais.'];
+        }
+
+        $memory = app(MemoryService::class)->create([
             'title' => $args['title'],
             'description' => $args['description'],
             'type' => $type,
             'stack' => $args['stack'] ?? null,
             'scope' => $scope,
+            'project_id' => $scope === MemoryScope::PROJECT->value && ! $this->access()->canPublishGlobal($this->token)
+                ? $this->access()->projectId($this->token)
+                : null,
         ]);
 
         return [
@@ -474,18 +548,20 @@ class MemoryMcpServer
 
     private function toolMemoryStats(): array
     {
+        $memories = $this->access()->memories($this->token);
+
         return [
-            'total' => Memory::count(),
+            'total' => (clone $memories)->count(),
             'by_type' => [
-                'error' => Memory::where('type', 'error')->count(),
-                'lesson' => Memory::where('type', 'lesson')->count(),
-                'best_practice' => Memory::where('type', 'best_practice')->count(),
+                'error' => (clone $memories)->where('type', 'error')->count(),
+                'lesson' => (clone $memories)->where('type', 'lesson')->count(),
+                'best_practice' => (clone $memories)->where('type', 'best_practice')->count(),
             ],
             'by_scope' => [
-                'project' => Memory::where('scope', 'project')->count(),
-                'global' => Memory::where('scope', 'global')->count(),
+                'project' => (clone $memories)->where('scope', 'project')->count(),
+                'global' => (clone $memories)->where('scope', 'global')->count(),
             ],
-            'top_stacks' => Memory::selectRaw('stack, COUNT(*) as count')
+            'top_stacks' => (clone $memories)->selectRaw('stack, COUNT(*) as count')
                 ->whereNotNull('stack')
                 ->groupBy('stack')
                 ->orderByDesc('count')
@@ -497,7 +573,7 @@ class MemoryMcpServer
 
     private function toolMemoryUpdate(array $args): array
     {
-        $memory = Memory::find($args['id'] ?? '');
+        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
@@ -522,6 +598,9 @@ class MemoryMcpServer
             if (! in_array($args['scope'], array_column(MemoryScope::cases(), 'value'), true)) {
                 return ['error' => 'Escopo inválido'];
             }
+            if ($args['scope'] === MemoryScope::GLOBAL->value && ! $this->access()->canPublishGlobal($this->token)) {
+                return ['error' => 'Apenas administradores podem promover memórias para o escopo global.'];
+            }
             $data['scope'] = $args['scope'];
         }
 
@@ -536,7 +615,7 @@ class MemoryMcpServer
 
     private function toolMemoryValidate(array $args): array
     {
-        $memory = Memory::find($args['id'] ?? '');
+        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
@@ -549,10 +628,14 @@ class MemoryMcpServer
 
     private function toolMemoryPromote(array $args): array
     {
-        $memory = Memory::find($args['id'] ?? '');
+        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
+        }
+
+        if (! $this->access()->canPublishGlobal($this->token)) {
+            return ['error' => 'Apenas administradores podem promover memórias para o escopo global.'];
         }
 
         try {
@@ -566,7 +649,7 @@ class MemoryMcpServer
 
     private function toolMemoryDelete(array $args): array
     {
-        $memory = Memory::find($args['id'] ?? '');
+        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
@@ -596,9 +679,14 @@ class MemoryMcpServer
 
     private function toolHubBriefing(array $args): array
     {
+        $projectId = $this->access()->isOperator($this->token)
+            ? null
+            : $this->access()->projectId($this->token);
+
         return app(HubBriefingService::class)->briefing(
             $args['stack'] ?? null,
             $args['description'] ?? null,
+            $projectId,
         );
     }
 
@@ -642,6 +730,7 @@ class MemoryMcpServer
                 files: $files,
                 name: $args['name'] ?? 'default',
                 description: $args['description'] ?? null,
+                owner: $this->token?->user,
             );
         } catch (\InvalidArgumentException $e) {
             return ['error' => $e->getMessage()];
@@ -667,7 +756,7 @@ class MemoryMcpServer
     private function toolHarnessList(): array
     {
         return [
-            'profiles' => HarnessProfile::orderBy('harness')->orderBy('name')
+            'profiles' => $this->access()->harnessProfiles($this->token)->orderBy('harness')->orderBy('name')
                 ->get()
                 ->map(fn ($p) => [
                     'harness' => $p->harness->value,
@@ -687,7 +776,7 @@ class MemoryMcpServer
             return ['error' => 'Harness inválido'];
         }
 
-        $profile = HarnessProfile::where('harness', $harness->value)
+        $profile = $this->access()->harnessProfiles($this->token)->where('harness', $harness->value)
             ->where('name', $args['name'] ?? 'default')
             ->first();
 
@@ -706,7 +795,7 @@ class MemoryMcpServer
             return ['error' => 'Harness inválido'];
         }
 
-        $profile = HarnessProfile::where('harness', $harness->value)
+        $profile = $this->access()->harnessProfiles($this->token)->where('harness', $harness->value)
             ->where('name', $args['name'] ?? 'default')
             ->first();
 
@@ -755,6 +844,7 @@ class MemoryMcpServer
             sourceSystem: $args['source'] ?? 'mcp',
             triggerEvent: $args['trigger'] ?? null,
             sourceProject: $args['project'] ?? null,
+            projectId: $this->access()->isOperator($this->token) ? null : $this->access()->projectId($this->token),
         );
 
         if ($capture->wasRecentlyCreated) {
@@ -771,7 +861,7 @@ class MemoryMcpServer
         ];
     }
 
-    private function response(?string $id, array $result): array
+    private function response(int|string|null $id, array $result): array
     {
         return [
             'jsonrpc' => '2.0',
@@ -780,7 +870,7 @@ class MemoryMcpServer
         ];
     }
 
-    private function errorResponse(?string $id, string $message, int $code): array
+    private function errorResponse(int|string|null $id, string $message, int $code): array
     {
         return [
             'jsonrpc' => '2.0',
@@ -790,5 +880,19 @@ class MemoryMcpServer
                 'message' => $message,
             ],
         ];
+    }
+
+    private function access(): McpAccessPolicy
+    {
+        return app(McpAccessPolicy::class);
+    }
+
+    private function visibilityFilters(): array
+    {
+        if ($this->access()->isOperator($this->token)) {
+            return [];
+        }
+
+        return ['visible_project_id' => $this->access()->projectId($this->token)];
     }
 }

@@ -14,6 +14,8 @@ class GenerateMemoryEmbeddingJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+
     public function __construct(
         public Memory $memory,
     ) {}
@@ -22,21 +24,33 @@ class GenerateMemoryEmbeddingJob implements ShouldQueue
     {
         $textToEmbed = trim("{$this->memory->title}\n{$this->memory->description}\nStack: {$this->memory->stack}");
 
-        $hash = hash('sha256', $textToEmbed);
+        $embeddingModel = $generator->space();
+        $hash = $generator->contentHash($textToEmbed);
 
-        // Não re-gerar se o conteúdo não mudou
-        if ($this->memory->embedding !== null && $this->memory->embedding_hash === $hash) {
+        // Não re-gerar se conteúdo e espaço vetorial não mudaram.
+        if (
+            $this->memory->embedding !== null
+            && $this->memory->embedding_model === $embeddingModel
+            && $this->memory->embedding_hash === $hash
+        ) {
             return;
         }
 
         $result = $generator->generate($textToEmbed);
 
-        if ($result !== null) {
-            $this->memory->updateQuietly([
-                'embedding' => $result['embedding'],
-                'embedding_model' => $result['model'],
-                'embedding_hash' => $result['hash'],
+        if ($result === null) {
+            logger()->warning('Embedding não gerado; a busca lexical continuará disponível.', [
+                'memory_id' => $this->memory->id,
+                'embedding_model' => $embeddingModel,
             ]);
+
+            return;
         }
+
+        $this->memory->updateQuietly([
+            'embedding' => $result['embedding'],
+            'embedding_model' => $result['model'],
+            'embedding_hash' => $result['hash'],
+        ]);
     }
 }
