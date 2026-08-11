@@ -78,7 +78,9 @@ class EmbeddingGeneratorService
         $model = (string) config('services.embeddings.ollama.model');
 
         try {
-            $response = Http::timeout(5)->post("{$host}/api/embeddings", [
+            // CPU Ollama pode levar 10s+ em textos longos; timeout generoso
+            // (60s) cobre o caso real. Cloud Ollama responde em <1s.
+            $response = Http::timeout(60)->post("{$host}/api/embeddings", [
                 'model' => $model,
                 'prompt' => $text,
             ]);
