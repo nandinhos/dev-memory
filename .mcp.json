@@ -9,10 +9,34 @@
     },
     "dev-memory-docker": {
       "command": "docker",
-      "args": ["compose", "exec", "-T", "app", "php", "artisan", "mcp:serve"],
+      "args": [
+        "compose",
+        "-f",
+        "docker-compose.dev.yml",
+        "exec",
+        "-T",
+        "app",
+        "php",
+        "artisan",
+        "mcp:serve"
+      ],
       "env": {
         "APP_ENV": "local"
       }
+    },
+    "laravel-boost": {
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "docker-compose.dev.yml",
+        "exec",
+        "-T",
+        "app",
+        "php",
+        "artisan",
+        "boost:mcp"
+      ]
     }
   },
   "description": "Dev Memory - Sistema de Memória Técnica",

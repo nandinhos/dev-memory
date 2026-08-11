@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         WWWGROUP: '${WWWGROUP:-1000}'
-        NODE_VERSION: '20'
+        NODE_VERSION: '22'
     image: dev-memory:latest
     container_name: dev-memory-app
     restart: unless-stopped
@@ -26,11 +26,20 @@ services:
       QUEUE_CONNECTION: redis
       SESSION_DRIVER: redis
       REDIS_HOST: redis
+      MINIMAX_API_KEY: '${MINIMAX_API_KEY:-}'
+      EMBEDDING_PROVIDER: '${EMBEDDING_PROVIDER:-minimax}'
+      EMBEDDING_DIMENSIONS: '${EMBEDDING_DIMENSIONS:-1536}'
+      MINIMAX_EMBED_BASE_URL: '${MINIMAX_EMBED_BASE_URL:-https://api.minimax.io/v1}'
+      MINIMAX_EMBED_MODEL: '${MINIMAX_EMBED_MODEL:-embo-01}'
+      OLLAMA_HOST: '${OLLAMA_HOST:-http://host.docker.internal:11434}'
+      OLLAMA_EMBED_MODEL: '${OLLAMA_EMBED_MODEL:-nomic-embed-text}'
     volumes:
       - ./storage:/var/www/html/storage:delegated
     depends_on:
       - postgres
       - redis
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     networks:
       - dev-memory
 

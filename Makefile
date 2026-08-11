@@ -44,14 +44,14 @@ migrate-fresh: ## Fresh migrate with seed
 seed: ## Seed database
 	docker compose exec app php artisan db:seed
 
-test: ## Run tests
-	docker compose exec app php artisan test
+test: ## Run the test suite in the development image
+	bin/dev test
 
-test-unit: ## Run unit tests
-	docker compose exec app ./vendor/bin/phpunit --testsuite=Unit
+test-unit: ## Run unit tests in the development image
+	bin/dev test --testsuite=Unit
 
-test-feature: ## Run feature tests
-	docker compose exec app ./vendor/bin/phpunit --testsuite=Feature
+test-feature: ## Run feature tests in the development image
+	bin/dev test --testsuite=Feature
 
 cache-clear: ## Clear all caches
 	docker compose exec app php artisan optimize:clear

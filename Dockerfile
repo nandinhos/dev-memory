@@ -1,10 +1,10 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 LABEL maintainer="Nando Dev <nandinhos@gmail.com>"
 
 # Arguments
 ARG WWWGROUP
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -39,7 +39,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install dependencies
-RUN composer update --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Build assets
 RUN npm ci \
