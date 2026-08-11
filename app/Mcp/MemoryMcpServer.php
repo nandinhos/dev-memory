@@ -573,7 +573,7 @@ class MemoryMcpServer
 
     private function toolMemoryUpdate(array $args): array
     {
-        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
+        $memory = $this->access()->writableMemory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
@@ -615,7 +615,7 @@ class MemoryMcpServer
 
     private function toolMemoryValidate(array $args): array
     {
-        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
+        $memory = $this->access()->writableMemory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];
@@ -649,7 +649,7 @@ class MemoryMcpServer
 
     private function toolMemoryDelete(array $args): array
     {
-        $memory = $this->access()->memory($this->token, $args['id'] ?? '');
+        $memory = $this->access()->writableMemory($this->token, $args['id'] ?? '');
 
         if (! $memory) {
             return ['error' => 'Memória não encontrada'];

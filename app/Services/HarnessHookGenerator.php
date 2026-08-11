@@ -13,6 +13,7 @@ class HarnessHookGenerator
     {
         $harnessLabel = $harness->label();
         $tokenHeader = $apiToken ? "Authorization: Bearer {$apiToken}" : 'Authorization: Bearer YOUR_API_TOKEN';
+        $harnessSlug = $harness->value;
 
         $script = [];
         $script[] = '#!/usr/bin/env bash';
@@ -33,24 +34,15 @@ class HarnessHookGenerator
         $script[] = '    exit 0';
         $script[] = 'fi';
         $script[] = '';
-        $script[] = '# Monta o payload JSON-RPC para o endpoint MCP /api/mcp (memory_ingest)';
-        $script[] = 'PAYLOAD=$(cat <<EOF';
-        $script[] = '{';
-        $script[] = '  "jsonrpc": "2.0",';
-        $script[] = '  "method": "tools/call",';
-        $script[] = '  "params": {';
-        $script[] = '    "name": "memory_ingest",';
-        $script[] = '    "arguments": {';
-        $script[] = '      "content": "$CONTENT",';
-        $script[] = '      "source": "hook_'.$harness->value.'",';
-        $script[] = '      "trigger": "post_tool_use",';
-        $script[] = '      "project": "$PROJECT_NAME"';
-        $script[] = '    }';
-        $script[] = '  },';
-        $script[] = '  "id": 1';
-        $script[] = '}';
-        $script[] = 'EOF';
-        $script[] = ')';
+        $script[] = '# Monta o payload JSON-RPC para o endpoint MCP /api/mcp (memory_ingest).';
+        $script[] = '# Usa jq --arg para que newlines/aspas/barras em $CONTENT nao quebrem o JSON';
+        $script[] = '# (interpolacao raw em heredoc silenciosamente descartava o payload).';
+        $script[] = 'PAYLOAD=$(jq -n \\';
+        $script[] = '  --arg content "$CONTENT" \\';
+        $script[] = '  --arg source "hook_'.$harnessSlug.'" \\';
+        $script[] = '  --arg trigger "post_tool_use" \\';
+        $script[] = '  --arg project "$PROJECT_NAME" \\';
+        $script[] = '  \'{jsonrpc: "2.0", method: "tools/call", params: {name: "memory_ingest", arguments: {content: $content, source: $source, trigger: $trigger, project: $project}}, id: 1}\')';
         $script[] = '';
         $script[] = '# Dispara o envio via HTTP em background (não-bloqueante)';
         $script[] = 'curl -s -X POST "'.$mcpUrl.'" \\';

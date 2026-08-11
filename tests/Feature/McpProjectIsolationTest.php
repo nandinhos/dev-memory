@@ -91,4 +91,30 @@ class McpProjectIsolationTest extends TestCase
             $this->rpc($plain, 'memory_list'),
         );
     }
+
+    public function test_project_token_cannot_mutate_global_memory(): void
+    {
+        [, $plain] = ApiToken::issue(User::factory()->create(['is_admin' => false]), 'projeto-a');
+
+        $global = Memory::factory()->create([
+            'title' => 'Conhecimento global',
+            'scope' => MemoryScope::GLOBAL,
+            'project_id' => null,
+        ]);
+
+        $update = $this->rpc($plain, 'memory_update', [
+            'id' => $global->id,
+            'title' => 'Sequestro de conhecimento',
+        ]);
+        $this->assertSame(['error' => 'Memória não encontrada'], $update);
+
+        $validate = $this->rpc($plain, 'memory_validate', ['id' => $global->id]);
+        $this->assertSame(['error' => 'Memória não encontrada'], $validate);
+
+        $delete = $this->rpc($plain, 'memory_delete', ['id' => $global->id]);
+        $this->assertSame(['error' => 'Memória não encontrada'], $delete);
+
+        $global->refresh();
+        $this->assertSame('Conhecimento global', $global->title);
+    }
 }

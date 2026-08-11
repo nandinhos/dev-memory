@@ -2,13 +2,14 @@
 <!--
   Suite de testes contra PostgreSQL local.
 
-  DB_PASSWORD NAO EH DEFINIDO AQUI propositalmente — qualquer valor hardcoded
-  neste arquivo eh flagado pelo GitGuardian como credencial exposta. Defina
-  no seu shell antes de rodar:
+  O valor de DB_PASSWORD NAO EH DEFINIDO AQUI propositalmente — qualquer valor
+  hardcoded neste arquivo eh flagado pelo GitGuardian como credencial exposta.
+  Defina no seu shell antes de rodar (exemplo abaixo; substitua pelo valor do
+  seu banco local) e em CI o workflow gera o valor dinamicamente em cada run.
 
-      DB_PASSWORD=postgres ./vendor/bin/phpunit -c phpunit.pgsql.xml
-
-  Em CI, o workflow define DB_PASSWORD dinamicamente em cada run.
+  Exemplo de uso local (NAO COMMITEAR valores reais):
+      export DB_PASSWORD='senha-do-seu-banco'
+      ./vendor/bin/phpunit -c phpunit.pgsql.xml
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"

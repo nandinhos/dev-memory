@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_DB: dev_memory_test
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ci-postgres-${{ github.run_id }}
+          POSTGRES_PASSWORD: ci-test-${{ github.run_id }}
         ports:
           - 5432:5432
         options: >-
@@ -77,5 +77,5 @@ jobs:
           DB_PORT: 5432
           DB_DATABASE: dev_memory_test
           DB_USERNAME: postgres
-          DB_PASSWORD: ci-postgres-${{ github.run_id }}
+          DB_PASSWORD: ci-test-${{ github.run_id }}
         run: ./vendor/bin/phpunit -c phpunit.pgsql.xml tests/Feature/PostgresNativeSearchTest.php --colors=never

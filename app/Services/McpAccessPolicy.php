@@ -41,6 +41,28 @@ class McpAccessPolicy
         return $this->memories($token)->find($id);
     }
 
+    /**
+     * Lookup usado por operações de mutação (update/validate/delete).
+     *
+     * Para operadores retorna tudo; para tokens de projeto retorna SÓ memórias
+     * do próprio projeto. Memórias globais continuam visíveis para leitura
+     * (`memories`/`memory`), mas não podem ser alteradas por quem não é admin —
+     * isso evita que um token de projeto vazado sequestre conhecimento global.
+     */
+    public function writableMemory(?ApiToken $token, string $id): ?Memory
+    {
+        if ($this->isOperator($token)) {
+            return Memory::query()->find($id);
+        }
+
+        $projectId = $this->projectId($token);
+
+        return Memory::query()
+            ->where('scope', MemoryScope::PROJECT->value)
+            ->where('project_id', $projectId)
+            ->find($id);
+    }
+
     public function canPublishGlobal(?ApiToken $token): bool
     {
         return $this->isOperator($token);

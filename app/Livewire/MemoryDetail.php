@@ -62,7 +62,15 @@ class MemoryDetail extends Component
     public function promoteToGlobal(): void
     {
         $this->authorizeAdmin();
-        app(MemoryService::class)->promoteToGlobal($this->memory);
+
+        try {
+            app(MemoryService::class)->promoteToGlobal($this->memory);
+        } catch (\InvalidArgumentException $e) {
+            $this->dispatch('show-toast', message: $e->getMessage(), type: 'erro');
+
+            return;
+        }
+
         $this->memory->refresh();
         $this->dispatch('show-toast',
             message: 'Memória promovida a Global!',

@@ -85,7 +85,14 @@ class MemoryList extends Component
         abort_unless(auth()->user()?->is_admin === true, 403);
 
         $memory = Memory::findOrFail($id);
-        app(MemoryService::class)->promoteToGlobal($memory);
+
+        try {
+            app(MemoryService::class)->promoteToGlobal($memory);
+        } catch (\InvalidArgumentException $e) {
+            $this->dispatch('show-toast', message: $e->getMessage(), type: 'erro');
+
+            return;
+        }
 
         $this->dispatch('show-toast', message: 'Memória promovida a Global!', type: 'sucesso');
     }
