@@ -37,10 +37,10 @@ services:
       DB_PORT: 5432
       DB_DATABASE: '${DB_DATABASE:-dev_memory}'
       DB_USERNAME: '${DB_USERNAME:-dev_memory}'
-      DB_PASSWORD: '${DB_PASSWORD:-secret}'
+      DB_PASSWORD: '${DB_PASSWORD:-}'
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: 'null'
+      REDIS_PASSWORD: ''
       CACHE_STORE: redis
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
@@ -76,10 +76,10 @@ services:
       DB_PORT: 5432
       DB_DATABASE: '${DB_DATABASE:-dev_memory}'
       DB_USERNAME: '${DB_USERNAME:-dev_memory}'
-      DB_PASSWORD: '${DB_PASSWORD:-secret}'
+      DB_PASSWORD: '${DB_PASSWORD:-}'
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: 'null'
+      REDIS_PASSWORD: ''
       CACHE_STORE: redis
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
@@ -107,7 +107,7 @@ services:
     environment:
       POSTGRES_DB: '${DB_DATABASE:-dev_memory}'
       POSTGRES_USER: '${DB_USERNAME:-dev_memory}'
-      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - '${DEV_DB_PORT:-25432}:5432'
     volumes:

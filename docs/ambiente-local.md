@@ -213,5 +213,5 @@ precisa de **TTY de verdade** — não funciona sob o `!` do agente:
 ```bash
 docker exec -it devmem-dev-app php artisan memory:make-admin --email=voce@exemplo.com --name="Voce"
 # ou, para script/sem prompt: reset via tinker
-docker exec devmem-dev-app php artisan tinker --execute="\$u=App\Models\User::firstWhere('email','voce@exemplo.com'); \$u->password=Hash::make('SUA_SENHA'); \$u->save();"
+docker exec devmem-dev-app php artisan tinker --execute="\$u=App\Models\User::firstWhere('email','voce@exemplo.com'); \$u->password=Hash::make(\$argv[1] ?? 'changeme'); \$u->save();" -- 'sua-senha-real-aqui'
 ```
