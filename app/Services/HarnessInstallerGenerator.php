@@ -12,6 +12,11 @@ class HarnessInstallerGenerator
 
     /**
      * Gera o script Bash idempotente para instalação de um perfil de harness.
+     *
+     * O script é seguro para uso em duas modalidades:
+     *  - Interativo (TTY): pergunta s/N antes de sobrescrever cada arquivo.
+     *  - Não-interativo (curl|bash): ABORTA ao tentar sobrescrever arquivo
+     *    existente, a menos que FORCE_OVERWRITE=1 ou --force seja passado.
      */
     public function generateScript(HarnessProfile $profile): string
     {
@@ -29,6 +34,13 @@ class HarnessInstallerGenerator
         $script[] = '';
         $script[] = 'set -euo pipefail';
         $script[] = '';
+        $script[] = '# Sinalizadores de sobrescrita explícita para modo não-interativo.';
+        $script[] = '#   curl ... | bash          -> ABORTA em arquivo existente (default seguro)';
+        $script[] = '#   curl ... | bash --force  -> sobrescreve sem perguntar';
+        $script[] = '#   FORCE_OVERWRITE=1 curl ... | bash  -> equivalente a --force';
+        $script[] = 'FORCE="${FORCE_OVERWRITE:-0}"';
+        $script[] = 'if [[ "${1:-}" == "--force" ]]; then FORCE=1; fi';
+        $script[] = '';
         $script[] = 'GREEN="\033[0;32m"';
         $script[] = 'YELLOW="\033[1;33m"';
         $script[] = 'RED="\033[0;31m"';
@@ -39,7 +51,7 @@ class HarnessInstallerGenerator
 
         foreach ($plan['steps'] as $step) {
             $path = $step['path'];
-            $content = $step['content'];
+            $content = rtrim($step['content'], "\n");
             $hadSecrets = $step['had_secrets'];
 
             // Converte caminhos com ~ para $HOME
@@ -52,20 +64,33 @@ class HarnessInstallerGenerator
             $script[] = 'DIR=$(dirname "$TARGET")';
             $script[] = 'mkdir -p "$DIR"';
 
-            // Verificação de sobrescrita com confirmação se interativo
+            // Política de sobrescrita:
+            //   - Arquivo NÃO existe: cria sem perguntar.
+            //   - Existe + TTY: pergunta s/N (default N).
+            //   - Existe + !TTY + FORCE=1: sobrescreve.
+            //   - Existe + !TTY + FORCE=0: ABORTA com mensagem clara.
             $script[] = 'if [ -f "$TARGET" ]; then';
             $script[] = '    echo -e "${YELLOW}  [AVISO] Arquivo já existe: $TARGET${NC}"';
-            $script[] = '    if [ -t 0 ]; then';
+            $script[] = '    if [ "$FORCE" = "1" ]; then';
+            $script[] = '        echo -e "${YELLOW}  Sobrescrevendo (FORCE_OVERWRITE=1)${NC}"';
+            $script[] = '    elif [ -t 0 ]; then';
             $script[] = '        read -p "  Deseja sobrescrever? (s/N): " -n 1 -r';
             $script[] = '        echo';
             $script[] = '        if [[ ! $REPLY =~ ^[Ss]$ ]]; then';
             $script[] = '            echo -e "${YELLOW}  Ignorado: $TARGET${NC}"';
             $script[] = '            continue';
             $script[] = '        fi';
+            $script[] = '    else';
+            $script[] = '        echo -e "${RED}  [ABORT] Arquivo existe e stdin não é TTY.${NC}" >&2';
+            $script[] = '        echo -e "${RED}  Reexecute com --force ou FORCE_OVERWRITE=1 para sobrescrever,${NC}" >&2';
+            $script[] = '        echo -e "${RED}  ou rode interativamente: bash install.sh${NC}" >&2';
+            $script[] = '        exit 2';
             $script[] = '    fi';
             $script[] = 'fi';
 
-            // Grava o arquivo usando EOF seguro
+            // Grava o arquivo usando heredoc seguro. rtrim do conteudo evita
+            // newline duplicado (POSIX exige um \n final; o delimitador do
+            // heredoc adiciona exatamente um).
             $escapedEof = 'EOF_HEREDOC_'.md5($path);
             $script[] = "cat <<'{$escapedEof}' > \"\$TARGET\"";
             $script[] = $content;
