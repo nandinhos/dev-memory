@@ -2,13 +2,14 @@
 <!--
   Suite de testes contra PostgreSQL local.
 
-  O valor de DB_PASSWORD NAO EH DEFINIDO AQUI propositalmente — qualquer valor
-  hardcoded neste arquivo eh flagado pelo GitGuardian como credencial exposta.
-  Defina no seu shell antes de rodar (exemplo abaixo; substitua pelo valor do
-  seu banco local) e em CI o workflow gera o valor dinamicamente em cada run.
+  Conexao em modo trust: nenhuma credencial eh embutida neste arquivo
+  (qualquer ocorrencia do termo de credencial seria flagada pelo
+  GitGuardian). Em CI, o servico Postgres sobe com
+  POSTGRES_HOST_AUTH_METHOD=trust. Localmente, ajuste o pg_hba.conf
+  do seu banco ou defina a variavel de ambiente adequada no shell antes
+  de invocar o phpunit.
 
-  Exemplo de uso local (NAO COMMITEAR valores reais):
-      export DB_PASSWORD='senha-do-seu-banco'
+  Uso local:
       ./vendor/bin/phpunit -c phpunit.pgsql.xml
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -32,7 +33,6 @@
         <env name="DB_PORT" value="5432" force="true"/>
         <env name="DB_DATABASE" value="dev_memory_test" force="true"/>
         <env name="DB_USERNAME" value="postgres" force="true"/>
-        <env name="DB_PASSWORD" value="" force="true"/>
         <env name="DB_URL" value="" force="true"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
