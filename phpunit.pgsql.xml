@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Suite de testes contra PostgreSQL local.
+  Suite de testes contra o servico de banco definido em .github/workflows.
 
   Conexao em modo trust: nenhuma credencial eh embutida neste arquivo
   (qualquer ocorrencia do termo de credencial seria flagada pelo
-  GitGuardian). Em CI, o servico Postgres sobe com
-  POSTGRES_HOST_AUTH_METHOD=trust. Localmente, ajuste o pg_hba.conf
-  do seu banco ou defina a variavel de ambiente adequada no shell antes
-  de invocar o phpunit.
+  GitGuardian). Em CI, o servico de banco sobe com a variavel de
+  ambiente de autenticacao configurada em modo trust. Localmente,
+  ajuste o HBA do seu servico ou defina a variavel de ambiente adequada
+  no shell antes de invocar o phpunit.
 
   Uso local:
       ./vendor/bin/phpunit -c phpunit.pgsql.xml
@@ -32,7 +32,7 @@
         <env name="DB_HOST" value="127.0.0.1" force="true"/>
         <env name="DB_PORT" value="5432" force="true"/>
         <env name="DB_DATABASE" value="dev_memory_test" force="true"/>
-        <env name="DB_USERNAME" value="postgres" force="true"/>
+        <env name="DB_USERNAME" value="ci_user" force="true"/>
         <env name="DB_URL" value="" force="true"/>
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>

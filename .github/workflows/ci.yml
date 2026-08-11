@@ -15,12 +15,12 @@ jobs:
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: dev_memory_test
-          POSTGRES_USER: postgres
+          POSTGRES_USER: ci_user
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d dev_memory_test"
+          --health-cmd "pg_isready -U ci_user -d dev_memory_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -76,5 +76,5 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
           DB_DATABASE: dev_memory_test
-          DB_USERNAME: postgres
+          DB_USERNAME: ci_user
         run: ./vendor/bin/phpunit -c phpunit.pgsql.xml tests/Feature/PostgresNativeSearchTest.php --colors=never
