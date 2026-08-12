@@ -38,11 +38,20 @@ shell: ## Shell into app container
 migrate: ## Run migrations
 	docker compose exec app php artisan migrate
 
-migrate-fresh: ## Fresh migrate with seed
-	docker compose exec app php artisan migrate:fresh --seed
-
 seed: ## Seed database
 	docker compose exec app php artisan db:seed
+
+# `migrate-fresh` foi removido por segurança — ver docs/incidents/2026-08-02-reset-acidental-do-postgres-local.md.
+# Para resetar o schema em dev: `bin/dev artisan migrate:fresh --seed` (dentro do container,
+# contra o banco definido em .env.dev), apenas após confirmar o alvo. Testes Always usam
+# `bin/dev test` (SQLite :memory: isolado) ou `DB_DATABASE=dev_memory_test ./vendor/bin/phpunit -c phpunit.pgsql.xml`.
+migrate-fresh: ## Removido — use `bin/dev artisan migrate:fresh --seed` explicitamente
+	@echo "ALVO REMOVIDO por segurança (incidente 2026-08-02)."
+	@echo "Para resetar o schema em dev, invoque explicitamente no container:"
+	@echo "  bin/dev artisan migrate:fresh --seed"
+	@echo "Para rodar testes (que usam SQLite :memory: isolado):"
+	@echo "  bin/dev test"
+	@exit 1
 
 test: ## Run the test suite in the development image
 	bin/dev test

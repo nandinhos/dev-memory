@@ -10,11 +10,13 @@ use App\Models\ApiToken;
 use App\Models\Memory;
 use App\Services\ConfirmationGuard;
 use App\Services\Curation\CaptureService;
+use App\Services\Curation\CurationFailedException;
 use App\Services\HarnessHookGenerator;
 use App\Services\HarnessInstallerGenerator;
 use App\Services\HarnessProfileService;
 use App\Services\HubBriefingService;
 use App\Services\KnowledgeGraph\KnowledgeGraphQueryService;
+use App\Services\KnowledgeGraph\RelationProposer;
 use App\Services\McpAccessPolicy;
 use App\Services\MemoryService;
 use App\Services\Search\MemorySearchService;
@@ -84,6 +86,23 @@ class MemoryMcpServer
                         'limit' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20],
                     ],
                     'required' => ['id'],
+                ],
+            ],
+            'relation_extract_propose' => [
+                'name' => 'relation_extract_propose',
+                'description' => 'Propõe uma relação semântica entre duas memórias via IA. A relação nasce `proposed` e só entra no knowledge graph após aprovação humana na UI de admin. Não muta o grafo público.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'source_memory_id' => ['type' => 'string', 'description' => 'UUID da memória de origem (visível ao token)'],
+                        'target_memory_id' => ['type' => 'string', 'description' => 'UUID da memória de destino (visível ao token)'],
+                        'relation_hint' => [
+                            'type' => 'string',
+                            'enum' => ['causes', 'resolves', 'prevents', 'supports', 'contradicts', 'supersedes', 'depends_on', 'derived_from', 'duplicates'],
+                            'description' => 'Opcional — dica de tipo de relação. Se omitido, a IA decide.',
+                        ],
+                    ],
+                    'required' => ['source_memory_id', 'target_memory_id'],
                 ],
             ],
             'memory_create' => [
@@ -333,6 +352,7 @@ class MemoryMcpServer
                 'memory_search' => $this->toolMemorySearch($args),
                 'memory_get' => $this->toolMemoryGet($args),
                 'memory_related' => $this->toolMemoryRelated($args),
+                'relation_extract_propose' => $this->toolRelationExtractPropose($args),
                 'memory_create' => $this->toolMemoryCreate($args),
                 'memory_stats' => $this->toolMemoryStats(),
                 'memory_update' => $this->toolMemoryUpdate($args),
@@ -501,6 +521,36 @@ class MemoryMcpServer
                 'depth' => $result['depth'],
                 'path' => $result['path'],
             ])->all(),
+        ];
+    }
+
+    private function toolRelationExtractPropose(array $args): array
+    {
+        $source = $this->access()->memory($this->token, (string) ($args['source_memory_id'] ?? ''));
+        $target = $this->access()->memory($this->token, (string) ($args['target_memory_id'] ?? ''));
+
+        if ($source === null) {
+            return ['error' => 'Memória de origem não encontrada (ou fora do escopo do token)'];
+        }
+        if ($target === null) {
+            return ['error' => 'Memória de destino não encontrada (ou fora do escopo do token)'];
+        }
+
+        $hint = isset($args['relation_hint']) ? (string) $args['relation_hint'] : null;
+
+        try {
+            $result = app(RelationProposer::class)
+                ->propose($source, $target, $hint);
+        } catch (CurationFailedException $e) {
+            return ['error' => 'Motor de curadoria indisponível: '.$e->getMessage()];
+        } catch (\InvalidArgumentException $e) {
+            return ['error' => $e->getMessage()];
+        }
+
+        return [
+            'success' => true,
+            ...$result,
+            'message' => 'Relação proposta criada com status "proposed". Revisão humana required antes de entrar no knowledge graph.',
         ];
     }
 

@@ -58,6 +58,11 @@
                 <span>GRUPOS DE SKILLS</span>
             </a>
 
+            <a href="{{ route('admin.relation-proposals') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.relation-proposals') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>PROPOSTAS DE RELAÇÃO</span>
+            </a>
+
             <a href="{{ route('admin.skills') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('admin.skills') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
                 <span>SKILLS</span>

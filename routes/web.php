@@ -4,6 +4,7 @@ use App\Http\Controllers\HarnessInstallerController;
 use App\Livewire\Admin\ApiTokens;
 use App\Livewire\Admin\CapturesInbox;
 use App\Livewire\Admin\HarnessProfiles;
+use App\Livewire\Admin\RelationProposalsReview;
 use App\Livewire\Admin\SkillGroupsReview;
 use App\Livewire\Admin\SkillsAdmin;
 use App\Livewire\Admin\SystemSettings;
@@ -32,6 +33,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/install/harness/{harness}/{name?}', [HarnessInstallerController::class, 'download'])->name('harness.installer');
         Route::get('/admin/captures', CapturesInbox::class)->name('admin.captures');
         Route::get('/admin/skill-groups', SkillGroupsReview::class)->name('admin.skill-groups');
+        Route::get('/admin/relation-proposals', RelationProposalsReview::class)->name('admin.relation-proposals');
         Route::get('/admin/skills', SkillsAdmin::class)->name('admin.skills');
         Route::get('/admin/tokens', ApiTokens::class)->name('admin.tokens');
         Route::get('/admin/harness', HarnessProfiles::class)->name('admin.harness');
