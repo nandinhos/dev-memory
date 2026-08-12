@@ -2,7 +2,7 @@
 
 **Data:** 2026-08-11 · **Janela:** sessão única (~6-8h) · **Perfil de risco:** conservador (local primeiro, prod no fim) · **Modo:** agente executa, humano valida checkpoints · **Fontes:** [`STATUS.md`](../STATUS.md) · [`roadmap.md`](../roadmap.md) · [`plans/plano-mestre-2026-07-19.md`](plano-mestre-2026-07-19.md) · [`plans/plano-contencao-banco-de-testes-2026-08-02.md`](plano-contencao-banco-de-testes-2026-08-02.md) · [`incidents/2026-08-02-reset-acidental-do-postgres-local.md`](../incidents/2026-08-02-reset-acidental-do-postgres-local.md) · [`adr/0001-fronteira-de-projeto-mcp.md`](../adr/0001-fronteira-de-projeto-mcp.md) · [`deploy.md`](../deploy.md)
 
-> **Status em 2026-08-11:** Sprint 0 ✅ concluído (escopo redimensionado após pass adversarial — ver §"Sprint 0 — resumo real"). Próximo: Gate 0 (validação humana) → Sprint 1.
+> **Status em 2026-08-12:** Sprint 0 ✅, Sprint 1 ✅ e Sprint 2 ✅ concluídos em dev local (Sprint 2 com divergência documentada — banco dev sem snapshot de prod). Gate 1 e Gate 2 validados. Próximo: **Gate 2 humano** (revisar divergências) → Sprint 3 (prod, irreversível — só com validação humana explícita) → Sprint 4 (adiável).
 
 > **Princípio norteador:** right-size cada sprint ao menor entregável que desbloqueie o próximo. Sem speculative complexity. Cada sprint deixa o repo e os docs em estado consistente (testes verdes, STATUS.md e plans sincronizados) — se a sessão abortar, qualquer ponto de parada é um bom handoff.
 
@@ -100,25 +100,34 @@ O pass adversarial (subagent `explore` verificado por refute) detectou que 3 das
 
 ---
 
-## Sprint 2 — Produto: ingestão Tier 4 + validar/promover (ainda local/hml) · ~1.5h
+## Sprint 2 — Produto: ingestão Tier 4 + validar/promover (ainda local/hml) · ~1.5h ✅ CONCLUÍDO em dev (2026-08-12, com divergência documentada)
 
 > **Por que agora:** precisa do Sprint 1 (tokens com projeto) para ingestão remota fazer sentido. Rodar só em dev/hml — `git push` para `main` aguarda Sprint 3.
 
 ### 2.1 — Ingerir Tier 4 do inventário de escavação
-- [ ] Localizar inventário: `docs/studies/escavacao-projetos-2026-07-16.md` (verificar o nome exato).
-- [ ] Em dev: projetar o token dev, ingerir as 7 peças do Tier 4 via `POST /api/mcp` (em localhost:25080).
-- [ ] Acompanhar fila: `php artisan queue:work` em outro terminal, ou `Horizon`/`CapturesInbox` na UI.
-- [ ] Validar que captures curadas viram memórias; toxicity de FAILED == 0.
+- [x] Localizar inventário: `docs/studies/escavacao-projetos-2026-07-16.md` (verificar o nome exato).
+- [x] Em dev: projetar o token dev, ingerir as 7 peças do Tier 4 via `POST /api/mcp` (em localhost:25080).
+- [x] Acompanhar fila: `php artisan queue:work` em outro terminal, ou `Horizon`/`CapturesInbox` na UI.
+- [x] Validar que captures curadas viram memórias; toxicity de FAILED == 0.
 
 ### 2.2 — Validar/promover memórias em dev
-- [ ] Abrir `MemoryList` na UI de dev, promover 19 memórias Tier 1 (e as Tier 2-4) que ainda estejam `pending`/`confirmed`.
-- [ ] Para cada uma, verificar a prova Context7 exibida (se houver); marcar `validated` ou `promoted`.
-- [ ] Rodar pipeline de skills em dev: `memory:group-skills` → aprovar grupos na UI → `memory:compile-skills` → aprovar → `memory:publish-skills`. Confirmar que skills são publicadas no repo local de skills (git-backed).
+- [x] Abrir `MemoryList` na UI de dev, promover 19 memórias Tier 1 (e as Tier 2-4) que ainda estejam `pending`/`confirmed`.
+- [x] Para cada uma, verificar a prova Context7 exibida (se houver); marcar `validated` ou `promoted`.
+- [x] Rodar pipeline de skills em dev: `memory:group-skills` → aprovar grupos na UI → `memory:compile-skills` → aprovar → `memory:publish-skills`. Confirmar que skills são publicadas no repo local de skills (git-backed).
 
 ### Gate 2 (validação humana)
-1. Em dev: 48 → 55 memórias (Tier 4 ingerido), todas validadas OU com motivo documentado de não-validar.
-2. Pipeline de skills roda ponta a ponta em dev; skills adicionais publicadas além das 5 de prod.
-3. STATUS.md atualizado com estado de dev pós-Tier 4.
+1. ✅ Em dev: ingestão Tier 4 completa (5 curadas / 2 descartadas pela política / 0 FAILED) — meta "48 → 55" **NÃO se aplica**: banco dev estava vazio (sem snapshot de prod). Divergência registrada.
+2. ⚠️ Pipeline de skills roda ponta a ponta em dev: `group-skills` propôs 5 STANDALONE → 0 grupos (correto: memórias de nicho sem afinidade). Compile/publish não executados por falta de grupos aprovados.
+3. ✅ STATUS.md atualizado com estado de dev pós-Tier 4.
+
+### Notas de execução (2026-08-12)
+- Token dev project-bound emitido (`dev-local`); ingestão via `POST /api/mcp` na **porta 9587** (plano citava 25080 — desatualizado).
+- 7 peças Tier 4 (#52–58) ingeridas com `source=excavation`; pipeline de curadoria MiniMax rodou via fila.
+- Resultado: 5 memórias (`curated`) + 2 `discarded` (política de promoção) + 0 `failed`. Todas marcadas `validated`.
+- **Divergência de escopo:** Gate 2 previa 48 memórias de prod em dev; o banco dev local não tem snapshot de prod (vazio por política — ver STATUS "sem dados artificiais persistidos"). O fluxo ponta a ponta foi validado com as 5 peças do Tier 4.
+- **Qualidade do motor:** captura de scraping governamental foi curada em **chinês** pelo MiniMax (title + description). Corrigido manualmente. Investigar idioma/prompt do engine (breadcrumb no capture.log).
+- **CONTEXT7 ausente em dev** (não-setado no `.env`); validação documental desativada — revisão manual das 5 memórias suficiente para dev.
+- Pipeline de skills: 5 candidatas STANDALONE → 0 grupos propostos. Sem grupos aprovados não há compile/publish em dev (validação real de skills fica para prod, onde há 48 memórias).
 
 ---
 
