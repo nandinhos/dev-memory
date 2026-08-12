@@ -194,7 +194,9 @@ php artisan serve
 # Migrar banco
 php artisan migrate
 
-# Resetar banco (dev)
+# Resetar schema (CUIDADO — apaga tudo, só usar em dev/hml)
+# Prefira `bin/dev test` para testes (SQLite :memory: isolado) e `make migrate`
+# para aplicar migrations. `migrate:fresh` NUNCA contra o banco de produção.
 php artisan migrate:fresh --seed
 
 # Servidor MCP standalone

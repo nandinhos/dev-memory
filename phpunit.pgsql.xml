@@ -9,12 +9,16 @@
   ajuste o HBA do seu servico ou defina a variavel de ambiente adequada
   no shell antes de invocar o phpunit.
 
+  O bootstrap tests/bootstrap.php valida a topologia ANTES de o Laravel
+  carregar .env e aborta se DB_DATABASE não for dev_memory_test (postgres)
+  ou :memory: (sqlite). Impede acidentes como o incidente 2026-08-02.
+
   Uso local:
       ./vendor/bin/phpunit -c phpunit.pgsql.xml
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <testsuites>
