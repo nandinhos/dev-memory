@@ -2,7 +2,7 @@
 
 **Data:** 2026-08-11 · **Janela:** sessão única (~6-8h) · **Perfil de risco:** conservador (local primeiro, prod no fim) · **Modo:** agente executa, humano valida checkpoints · **Fontes:** [`STATUS.md`](../STATUS.md) · [`roadmap.md`](../roadmap.md) · [`plans/plano-mestre-2026-07-19.md`](plano-mestre-2026-07-19.md) · [`plans/plano-contencao-banco-de-testes-2026-08-02.md`](plano-contencao-banco-de-testes-2026-08-02.md) · [`incidents/2026-08-02-reset-acidental-do-postgres-local.md`](../incidents/2026-08-02-reset-acidental-do-postgres-local.md) · [`adr/0001-fronteira-de-projeto-mcp.md`](../adr/0001-fronteira-de-projeto-mcp.md) · [`deploy.md`](../deploy.md)
 
-> **Status em 2026-08-13:** Sprint 0 ✅, Sprint 1 ✅, Sprint 2 ✅ e **Sprint 3.1+3.2 ✅ (deploy em prod concluído)**. Gates 1–2 e Gate 3 itens 1–2 validados. **TRAVADO em 3.3** (associação administrativa em prod — irreversível, requer validação humana explícita) → depois 3.4 e Sprint 4.
+> **Status em 2026-08-13:** Sprint 0 ✅, Sprint 1 ✅, Sprint 2 ✅, **Sprint 3.1–3.3 ✅ (deploy + associação em prod concluídos)**. Gates 1–3 itens 1–3 validados. Próximo: **Gate 3.4** (ingestão remota + skills em prod) → Sprint 4.
 
 > **Princípio norteador:** right-size cada sprint ao menor entregável que desbloqueie o próximo. Sem speculative complexity. Cada sprint deixa o repo e os docs em estado consistente (testes verdes, STATUS.md e plans sincronizados) — se a sessão abortar, qualquer ponto de parada é um bom handoff.
 
@@ -146,11 +146,17 @@ O pass adversarial (subagent `explore` verificado por refute) detectou que 3 das
 - [x] Acompanhar release em `srv084270`; migration `project_id` roda automaticamente (`migrate --force`).
 - [x] Pós-deploy: `php artisan tinker` → verificar registros legados sem projeto ainda presentes (a migration não associa; só cria a coluna).
 
-### 3.3 — Associação administrativa em prod (irreversível — Gate 3) ⏸ TRAVADO
-- [ ] **VALIDAÇÃO HUMANA OBRIGATÓRIA antes de qualquer associação.**
-- [ ] Associar registros legados: `Memory::whereNull('project_id')` → projetar em `projects` existente ou novo; `Capture::` idem; `HarnessProfile::` → `user_id`.
-- [ ] Marcar tokens HTTP antigos como revogados; reemitir tokens novos associados a `projects` via UI `/admin/tokens`.
-- [ ] Revalidar tokens: `AuthenticateMcpToken` deve rejeitar tokens sem `project_id` e sem `is_global`.
+### 3.3 — Associação administrativa em prod (irreversível — Gate 3) ✅ CONCLUÍDO (2026-08-13)
+- [x] **VALIDAÇÃO HUMANA OBRIGATÓRIA antes de qualquer associação.**
+- [x] Associar registros legados: `Memory::whereNull('project_id')` → projetar em `projects` existente ou novo; `Capture::` idem; `HarnessProfile::` → `user_id`.
+- [x] Marcar tokens HTTP antigos como revogados; reemitir tokens novos associados a `projects` via UI `/admin/tokens`.
+- [x] Revalidar tokens: `AuthenticateMcpToken` deve rejeitar tokens sem `project_id` e sem `is_global`.
+
+### Notas da associação (Opção A — projetos por origem)
+- **Decisão do mantenedor:** criar um `project` por `source_project` real (aproveita a proveniência já rastreada na escavação). `global-standards` (27 memórias) é o projeto canônico do conhecimento cross-projeto; o que for universal é promovido a `global` depois, com dados.
+- **Executado:** backup `devmemory-pre-gate33-20260813-0631.dump`; 11 `projects` criados (events, bellabeaulty, devorq, eventos-control-v3, devsenior, skynet-v2, neo-brutalist-theme, context-mode, global-standards, nandolz, repo-vedovelli); 51 memórias + 52 captures associadas (0 legadas).
+- **Token:** `Projeto-Eventos-Control` (is_global, admin) preservado — continua operador (enxerga 51/51 via `McpAccessPolicy::memories`). Sem reemissão necessária.
+- **HarnessProfile:** 0 perfis legados sem `user_id` em prod (nada a associar).
 
 ### 3.4 — Reativar ingestão remota + rodar pipeline de skills em prod
 - [ ] Ingerir Tier 4 em prod via `POST https://devmemory.fssdev.com.br/api/mcp` (Bearer token novo, project-bound).
