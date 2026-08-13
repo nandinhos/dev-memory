@@ -2,7 +2,7 @@
 
 **Data:** 2026-08-11 · **Janela:** sessão única (~6-8h) · **Perfil de risco:** conservador (local primeiro, prod no fim) · **Modo:** agente executa, humano valida checkpoints · **Fontes:** [`STATUS.md`](../STATUS.md) · [`roadmap.md`](../roadmap.md) · [`plans/plano-mestre-2026-07-19.md`](plano-mestre-2026-07-19.md) · [`plans/plano-contencao-banco-de-testes-2026-08-02.md`](plano-contencao-banco-de-testes-2026-08-02.md) · [`incidents/2026-08-02-reset-acidental-do-postgres-local.md`](../incidents/2026-08-02-reset-acidental-do-postgres-local.md) · [`adr/0001-fronteira-de-projeto-mcp.md`](../adr/0001-fronteira-de-projeto-mcp.md) · [`deploy.md`](../deploy.md)
 
-> **Status em 2026-08-12:** Sprint 0 ✅, Sprint 1 ✅ e Sprint 2 ✅ concluídos em dev local (Sprint 2 com divergência documentada — banco dev sem snapshot de prod). Gate 1 e Gate 2 validados. Próximo: **Gate 2 humano** (revisar divergências) → Sprint 3 (prod, irreversível — só com validação humana explícita) → Sprint 4 (adiável).
+> **Status em 2026-08-13:** Sprint 0 ✅, Sprint 1 ✅, Sprint 2 ✅ e **Sprint 3.1+3.2 ✅ (deploy em prod concluído)**. Gates 1–2 e Gate 3 itens 1–2 validados. **TRAVADO em 3.3** (associação administrativa em prod — irreversível, requer validação humana explícita) → depois 3.4 e Sprint 4.
 
 > **Princípio norteador:** right-size cada sprint ao menor entregável que desbloqueie o próximo. Sem speculative complexity. Cada sprint deixa o repo e os docs em estado consistente (testes verdes, STATUS.md e plans sincronizados) — se a sessão abortar, qualquer ponto de parada é um bom handoff.
 
@@ -131,22 +131,22 @@ O pass adversarial (subagent `explore` verificado por refute) detectou que 3 das
 
 ---
 
-## Sprint 3 — Deploy controlado para produção · ~1h
+## Sprint 3 — Deploy controlado para produção · ~1h 🔄 EM ANDAMENTO (3.1 ✅ e 3.2 ✅ em 2026-08-12/13; 3.3 travado em Gate 3 — requer humano)
 
 > **Por que agora:** Sprint 0 (segurança do banco local served) + Sprint 1 (fronteira MCP em dev) + Sprint 2 (Tier 4+skills validados em dev) mitigam todos os riscos de produção antes de tocar prod. Só após este ponto.
 
 ### 3.1 — Pre-deploy (verificação na VPS, sem alteração)
-- [ ] `ssh vps3`; `cd /var/www/devmemory.fssdev.com.br/current`; `php artisan tinker` → inventariar `Capture::whereNull('project_id')->count()`, `Memory::whereNull('project_id')->count()`, `ApiToken::whereNull('project_id')->count()` em prod.
-- [ ] Confirmar lotação do `.env` compartido (`shared/.env`): `DB_QUEUE_RETRY_AFTER=330`, `EMBEDDING_*`, `MINIMAX_API_KEY`.
-- [ ] Backup do banco prod (pg_dump) antes de qualquer migration.
+- [x] `ssh vps3`; `cd /var/www/devmemory.fssdev.com.br/current`; `php artisan tinker` → inventariar `Capture::whereNull('project_id')->count()`, `Memory::whereNull('project_id')->count()`, `ApiToken::whereNull('project_id')->count()` em prod.
+- [x] Confirmar lotação do `.env` compartido (`shared/.env`): `DB_QUEUE_RETRY_AFTER=330`, `EMBEDDING_*`, `MINIMAX_API_KEY`.
+- [x] Backup do banco prod (pg_dump) antes de qualquer migration.
 
 ### 3.2 — Push para `main` (auto-deploy)
-- [ ] Merge `dev` → `main` (squash ou merge commit — conforme padrão DEVORQ).
-- [ ] `git push origin main` → webhook dispara deploy Jarvis Forge.
-- [ ] Acompanhar release em `srv084270`; migration `project_id` roda automaticamente (`migrate --force`).
-- [ ] Pós-deploy: `php artisan tinker` → verificar registros legados sem projeto ainda presentes (a migration não associa; só cria a coluna).
+- [x] Merge `dev` → `main` (squash ou merge commit — conforme padrão DEVORQ).
+- [x] `git push origin main` → webhook dispara deploy Jarvis Forge.
+- [x] Acompanhar release em `srv084270`; migration `project_id` roda automaticamente (`migrate --force`).
+- [x] Pós-deploy: `php artisan tinker` → verificar registros legados sem projeto ainda presentes (a migration não associa; só cria a coluna).
 
-### 3.3 — Associação administrativa em prod (irreversível — Gate 3)
+### 3.3 — Associação administrativa em prod (irreversível — Gate 3) ⏸ TRAVADO
 - [ ] **VALIDAÇÃO HUMANA OBRIGATÓRIA antes de qualquer associação.**
 - [ ] Associar registros legados: `Memory::whereNull('project_id')` → projetar em `projects` existente ou novo; `Capture::` idem; `HarnessProfile::` → `user_id`.
 - [ ] Marcar tokens HTTP antigos como revogados; reemitir tokens novos associados a `projects` via UI `/admin/tokens`.
@@ -158,10 +158,10 @@ O pass adversarial (subagent `explore` verificado por refute) detectou que 3 das
 - [ ] Confirmar que tudo persistiu: contagens de `memories`, `skills`, `skill_groups` em prod.
 
 ### Gate 3 (validação humana - produção)
-1. `pg_dump` de prod restaurável (offsite).
-2. Deploy via Jarvis Forge sem erros; migrations aplicadas sem downtime (zero-downtime release).
-3. Zero registros legados sem associação administrativa consciente; tokens remotos sem projeto revogados.
-4. Ingestão Tier 4 em prod bem-sucedida; pipeline de skills roda e publica; UI de prod mostra as novas skills.
+1. ✅ `pg_dump` de prod restaurável (offsite) — `devmemory-pre-mcp-20260812-1617.dump` (145 TOC entries) validado com `pg_restore --list`.
+2. ✅ Deploy via Jarvis Forge sem erros; migration `2026_08_02` aplicada (batch 6); site HTTP 200; sem erros novos no log.
+3. ⏳ Zero registros legados sem associação administrativa consciente — **PENDENTE (Gate 3.3 travado)**: prod tem 51 memórias + 52 captures sem `project_id`, 0 projetos, 1 token `is_global` (`Projeto-Eventos-Control`). Requer decisão humana.
+4. ⏳ Ingestão Tier 4 em prod + pipeline de skills — **PENDENTE** (aguarda 3.3).
 
 ---
 

@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-08-12 · **Saúde local:** 259 testes verdes / 700 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprint 1 e 2 concluídos e validados em dev local — fronteira MCP aplicada (zero legados), Tier 4 ingerido via MCP remoto (5 curadas / 2 descartadas / 0 failed), extração governada de relações operacional (nasce `proposed`, só `validated` entra no grafo)
+**Atualizado:** 2026-08-13 · **Saúde local:** 259 testes verdes / 700 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–2 concluídos e validados em dev; **Sprint 3.1+3.2 (deploy prod) concluído** — fronteira MCP aplicada em produção (migration batch 6), site saudável; **Gate 3.3 travado** (associação administrativa de legados em prod requer decisão humana)
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -70,10 +70,11 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 ## Próximos passos (curto prazo)
 
-1. **Deploy controlado da fronteira MCP (Sprint 3)** — pre-deploy na VPS (inventário de legados em prod, backup pg_dump), merge `dev` → `main` (auto-deploy), associação administrativa em prod com validação humana, reemitir tokens, reativar ingestão remota e rodar pipeline de skills em prod.
-2. **Provisionamento agnóstico de harness** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity (Sprint 4, isolado/adiável).
-3. **Investigar qualidade do motor MiniMax** — curadoria em chinês em dev (idioma/prompt); validar/promover memórias de produção com a prova Context7.
-4. **Ingerir Tier 1–3** do inventário de escavação (Tier 4 já validado o fluxo em dev).
+1. **Gate 3.3 — associação administrativa em prod** (requer humano): projetar as 51 memórias + 52 captures legadas em `projects`; reemitir tokens project-bound; revogar token antigo se necessário.
+2. **Gate 3.4** — reativar ingestão remota em prod (Tier 4 + pipeline de skills `group → compile → publish`).
+3. **Provisionamento agnóstico de harness (Sprint 4)** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity (isolado/adiável).
+4. **Investigar qualidade do motor MiniMax** — curadoria em chinês em dev (idioma/prompt).
+5. **Ingerir Tier 1–3** do inventário de escavação (Tier 4 já validado o fluxo em dev).
 
 ## Concluído (Sprint 1 — 2026-08-11)
 
@@ -88,6 +89,12 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 - ⚠️ **Divergência de escopo** — Gate 2 previa 48→55 memórias; banco dev local não tem snapshot de prod (vazio por política). Fluxo ponta a ponta validado com as 5 peças do Tier 4.
 - ⚠️ **Qualidade do motor** — MiniMax devolveu curadoria em chinês (scraping gov); corrigido manualmente; a investigar (idioma/prompt do engine).
 - ✅ **Pipeline de skills em dev** — `group-skills` propôs 5 STANDALONE → 0 grupos (nicho, correto); compile/publish adiados para prod (onde há 48 memórias).
+
+## Concluído (Sprint 3.1 + 3.2 — 2026-08-13, deploy em produção)
+
+- ✅ **Pré-deploy** — inventário em prod: 51 memórias + 52 captures legadas sem `project_id`, 0 projetos, 1 token `is_global` (`Projeto-Eventos-Control`); `.env` compartilhado completo (MINIMAX_API_KEY, DB_QUEUE_RETRY_AFTER, EMBEDDING_*); **backup `pg_dump`** (`devmemory-pre-mcp-20260812-1617.dump`, 145 TOC, validado).
+- ✅ **Deploy** — merge `dev`→`main` (`75cab7e`), push com confirmação humana; Jarvis Forge aplicou migration `2026_08_02_create_projects_and_bind_mcp_context` (batch 6); site HTTP 200; sem erros novos no log.
+- ⏸ **Gate 3.3 travado** — associação de legados em prod é irreversível e requer decisão administrativa humana (que projeto? token global mantido ou reemitido?).
 
 ## Notas operacionais
 
