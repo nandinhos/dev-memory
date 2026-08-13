@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-08-13 · **Saúde local:** 260 testes verdes / 701 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–3 concluídos — fronteira MCP aplicada e **dados legados associados a 11 projetos em prod** (Gate 3.3 ✅), deploy saudável; **Gate 3.4 pendente** (ingestão remota + skills em prod)
+**Atualizado:** 2026-08-13 · **Saúde local:** 260 testes verdes / 701 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–3 e Gate 3.4 concluídos — fronteira MCP aplicada, dados associados a 17 projetos, **110 memórias + 11 skills publicadas em prod**; deploy saudável
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -58,10 +58,10 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 | | |
 |---|---|
-| Memórias em produção | 48 no último snapshot documentado (2026-07-18; não reverificado nesta mudança local) |
+| Memórias em produção | 110 (17 projetos; 88 pending, 22 validated) |
 | Banco local validado | PostgreSQL 16 + pgvector 0.8.2; migrations aplicadas; fronteira MCP (batch 3); dev com 5 memórias do Tier 4 (sem dados artificiais além do teste de fluxo) |
-| Skills (produção) | **5 publicadas** (git-versionadas) — Laravel Clean Architecture, Alpine+Livewire, Docker Laravel, PHP Code Quality, Artisan CLI |
-| Skill groups | 5 (compilados) |
+| Skills (produção) | **11 publicadas** (git-versionadas) — Laravel Clean Architecture, Alpine+Livewire, Docker Laravel, PHP Code Quality, Artisan CLI, Controller-Validation-Service, Livewire+Alpine Integration, Docker Environment Setup, Jobs Resilience, PHP Modern Standards, Data Handling |
+| Skill groups | 11 (compilados) |
 | Testes | **259 verdes** (700 asserções, 1 skip PostgreSQL) — confirmado em 2026-08-11 |
 
 ## Decisões pendentes
@@ -70,11 +70,10 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 ## Próximos passos (curto prazo)
 
-1. **Gate 3.4** — reativar ingestão remota em prod: ingerir as 102 memórias da escavação local via MCP project-bound, rodar pipeline de skills (`group → compile → publish`), validar/promover.
+1. **Validar na UI** — 88 memórias `pending` em prod (`/memories`); 6 grupos + 6 skills já aprovados/publicados.
 2. **Provisionamento agnóstico de harness (Sprint 4)** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity (isolado/adiável).
 3. **Investigar qualidade do motor MiniMax** — curadoria em chinês em dev (idioma/prompt).
-4. **Ingerir Tier 1–3** do inventário de escavação (Tier 4 já validado o fluxo).
-5. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
+4. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
 
 ## Concluído (Sprint 1 — 2026-08-11)
 
@@ -95,6 +94,7 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 - ✅ **Pré-deploy** — inventário em prod: 51 memórias + 52 captures legadas sem `project_id`, 0 projetos, 1 token `is_global` (`Projeto-Eventos-Control`); `.env` compartilhado completo (MINIMAX_API_KEY, DB_QUEUE_RETRY_AFTER, EMBEDDING_*); **backup `pg_dump`** (`devmemory-pre-mcp-20260812-1617.dump`, 145 TOC, validado).
 - ✅ **Deploy** — merge `dev`→`main` (`75cab7e`), push com confirmação humana; Jarvis Forge aplicou migration `2026_08_02_create_projects_and_bind_mcp_context` (batch 6); site HTTP 200; sem erros novos no log.
 - ✅ **Gate 3.3 — associação administrativa em prod** — 11 `projects` criados (um por `source_project` real: global-standards, events, nandolz, etc.); 51 memórias + 52 captures associadas (0 legadas); token `Projeto-Eventos-Control` (is_global, admin) preservado como operador — enxerga 51/51 via `McpAccessPolicy`; backup `devmemory-pre-gate33-20260813-0631.dump`.
+- ✅ **Gate 3.4 — ingestão remota + skills em prod** — 75 novas memórias da escavação ingeridas via `POST /api/mcp` (token global, `source_project` preservado, associadas por mapeamento a 18 projetos); 110 memórias totais; curadoria 0 failed (1 descartada por confiança); pipeline de skills: 6 grupos novos → 6 skills compiladas → **6 publicadas** (total 11 skills, 11 grupos); site HTTP 200, sem erros.
 
 ## Notas operacionais
 
