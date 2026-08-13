@@ -12,7 +12,7 @@
                         {{ $edge->target->memory?->title ?? $edge->target->label }}
                     </h2>
                     <p class="text-sm text-gray-700 mt-1 mb-0">
-                        Origem: <code class="text-xs">{{ optional($edge->source->memory)->id ?? '—' ?></code>
+                        Origem: <code class="text-xs">{{ optional($edge->source->memory)->id ?? '—' }}</code>
                         · Destino: <code class="text-xs">{{ optional($edge->target->memory)->id ?? '—' }}</code>
                     </p>
                 </div>

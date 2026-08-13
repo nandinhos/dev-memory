@@ -6,6 +6,7 @@ use App\Enums\MemoryType;
 use App\Enums\SkillGroupStatus;
 use App\Enums\SkillStatus;
 use App\Livewire\Admin\CapturesInbox;
+use App\Livewire\Admin\RelationProposalsReview;
 use App\Livewire\Admin\SkillGroupsReview;
 use App\Livewire\Admin\SkillsAdmin;
 use App\Models\Memory;
@@ -125,6 +126,11 @@ class AdminPipelineTest extends TestCase
     public function test_captures_inbox_renders(): void
     {
         Livewire::test(CapturesInbox::class)->assertOk();
+    }
+
+    public function test_relation_proposals_review_renders_empty_state(): void
+    {
+        Livewire::test(RelationProposalsReview::class)->assertOk();
     }
 
     public function test_admin_routes_require_auth(): void
