@@ -74,6 +74,7 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 2. **Provisionamento agnóstico de harness (Sprint 4)** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity (isolado/adiável).
 3. **Investigar qualidade do motor MiniMax** — curadoria em chinês em dev (idioma/prompt).
 4. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
+5. **🔒 BACKLOG DE SEGURANÇA** — (a) rotacionar token global admin de prod e demais tokens/keys vazados em chat (MINIMAX, postgres, MCP); (b) mover credenciais de prod para env vars via wrapper de inicialização dos harnesses (nunca hardcoded em config); (c) reemitir tokens project-bound com escopo mínimo para integrações MCP; (d) auditar e remover qualquer credencial real remanescente em `~/.config/opencode/opencode.json`, `~/.zshrc`, `.mcp.json`, etc. (substituir por placeholders + env vars). Regra operacional registrada: nunca exibir credenciais reais em chat.
 
 ## Concluído (Sprint 1 — 2026-08-11)
 
