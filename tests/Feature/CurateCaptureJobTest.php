@@ -12,6 +12,7 @@ use App\Models\Memory;
 use App\Services\Curation\CaptureSanitizer;
 use App\Services\Curation\CaptureService;
 use App\Services\MemoryService;
+use App\Services\Search\MemorySearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -60,6 +61,27 @@ class CurateCaptureJobTest extends TestCase
         ];
     }
 
+    /**
+     * Configura o top-K de candidatos do RecurrenceScorer para entregar
+     * exatamente as memórias informadas. Necessário porque a busca em
+     * SQLite (LIKE) não tem a mesma cobertura do TF-cosine do scorer
+     * original — sem o mock, deduplicação legítima não seria encontrada.
+     */
+    private function fakeTopKCandidates(array $memories): void
+    {
+        $this->mock(MemorySearchService::class, function ($mock) use ($memories) {
+            $mock->shouldReceive('search')->andReturn([
+                'results' => collect($memories)->map(fn (Memory $m) => [
+                    'memory' => $m,
+                    'similarity' => 0.0,
+                    'lexical_score' => 0.0,
+                    'rank_score' => 0.0,
+                ]),
+                'search_mode' => 'lexical',
+            ]);
+        });
+    }
+
     public function test_creates_pending_memory_and_records_execution(): void
     {
         Http::fake(['*' => Http::response($this->fakeDraftResponse())]);
@@ -98,6 +120,8 @@ class CurateCaptureJobTest extends TestCase
             'recurrence_count' => 2,
         ]);
 
+        $this->fakeTopKCandidates([$existing]);
+
         $capture = $this->ingestCapture();
         CurateCaptureJob::dispatchSync($capture);
 
@@ -119,6 +143,8 @@ class CurateCaptureJobTest extends TestCase
             'stack' => 'Laravel',
             'recurrence_count' => 2,
         ]);
+
+        $this->fakeTopKCandidates([$existing]);
 
         $service = new CaptureService(new CaptureSanitizer);
 

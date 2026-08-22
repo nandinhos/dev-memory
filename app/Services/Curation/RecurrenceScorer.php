@@ -4,6 +4,7 @@ namespace App\Services\Curation;
 
 use App\Models\Capture;
 use App\Models\Memory;
+use App\Services\Search\MemorySearchService;
 
 /**
  * Composite recurrence scoring (P5): replaces title-only Levenshtein.
@@ -14,6 +15,16 @@ use App\Models\Memory;
  */
 class RecurrenceScorer
 {
+    /**
+     * Top-K cap for dedup candidates. The previous implementation
+     * iterated ALL memories (O(n) cosine per pair); with the hub's
+     * 100+ memories this was already slow, and would not scale.
+     * The candidate set is the top-K returned by MemorySearchService
+     * (lexical + semantic + RRF); memórias fora do top-K não viram
+     * match — esse é o trade-off documentado na Onda 4 do plano 2026-08-22.
+     */
+    public const CANDIDATE_LIMIT = 30;
+
     public const WEIGHTS = [
         'text' => 0.35,
         'error' => 0.25,
@@ -37,19 +48,35 @@ class RecurrenceScorer
         'nao', 'dos', 'das', 'por', 'ser', 'usar', 'quando', 'como', 'mais',
     ];
 
+    public function __construct(
+        private readonly MemorySearchService $search,
+    ) {}
+
     public function findMatch(LessonDraft $draft, ?Capture $capture = null): ?RecurrenceMatch
     {
         $best = null;
 
-        $memories = Memory::query();
+        $query = trim(implode(' ', [$draft->title, $draft->summary, $draft->problem, $draft->solution]));
 
-        if ($capture?->project_id !== null) {
-            $memories->where('project_id', $capture->project_id);
-        } else {
-            $memories->whereNull('project_id');
+        if ($query === '') {
+            return null;
         }
 
-        foreach ($memories->get() as $memory) {
+        $filters = [];
+
+        if ($capture?->project_id !== null) {
+            $filters['visible_project_id'] = $capture->project_id;
+        }
+
+        $searchResult = $this->search->search($query, $filters, self::CANDIDATE_LIMIT);
+
+        foreach ($searchResult['results'] as $result) {
+            $memory = $result['memory'] ?? null;
+
+            if (! $memory instanceof Memory) {
+                continue;
+            }
+
             $score = $this->score($draft, $memory);
 
             if ($score->total < self::TOTAL_FLOOR || $score->components['text'] < self::TEXT_FLOOR) {
