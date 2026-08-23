@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-08-22 · **Saúde local:** 266 testes verdes / 722 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–3 + Ondas 1, 4, 5 concluídas — `RecurrenceScorer` indexado via `MemorySearchService` (top-K); busca híbrida na UI com badge de modo; DSH admin ativo; 145 memórias (17 projetos, 11 skills publicadas); scheduler + workers + health check operacionais na VPS
+**Atualizado:** 2026-08-22 · **Saúde local:** 266 testes verdes / 722 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–3 + Ondas 1, 4, 5, 6 concluídas — `RecurrenceScorer` indexado via `MemorySearchService` (top-K); busca híbrida na UI com badge de modo; DSH admin ativo; **HSTS ativo** (`max-age=31536000; includeSubDomains; preload`); 145 memórias (17 projetos, 11 skills publicadas); scheduler + workers + health check operacionais na VPS
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -99,7 +99,7 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 ## Concluído (Ondas 1+4+5+6 — 2026-08-22, plano `docs/plans/ondas-2026-08-22.md`)
 
-- ✅ **Onda 1 (Operação DSH)** — token global `dsh-global-new` emitido via DB, `~/.dsh/.env` atualizado, DSH reiniciado, `memory_stats` pulou de 12 → **145** (17 projetos, 9 globais). Higiene do repo: `cookies.txt` removido, commitado em `75ae68a`.
+- ✅ **Onda 1 (Operação DSH)** — token global `dsh-global-new` emitido via DB, `~/.dsh/.env` atualizado, DSH reiniciado, `memory_stats` pulou de 12 → **145** (17 projetos, 9 globais). Higiene do repo: `cookies.txt` removido, commitado em `75ae68a`. **HSTS ativo** no Cloudflare (`max-age=31536000; includeSubDomains; preload`).
 - ✅ **Onda 4 (Escala de dedup)** — `RecurrenceScorer` indexado via `MemorySearchService` (top-K=30), troca full-scan O(n) por candidatura lexical+semântica+RRF. Floors `TEXT_FLOOR=0.55`/`TOTAL_FLOOR=0.50` mantidos. Deploy em `c705984` via rebase+ff em `main`. 262 testes (3 novos: outside top-K, score máximo, delegação com filtro).
 - ✅ **Onda 5 (Busca híbrida na UI)** — `MemoryList::render` delega ao `MemorySearchService` quando `$search` não vazio; badge `search_mode` (hybrid/semantic/lexical/filter) no header da view. Filtros type/scope/stack vão para o serviço; status/doc/maturity aplicados post-search. Paridade UI↔MCP verificada por teste. Deploy em `3ec1c00`. 266 testes (4 novos).
 - ✅ **Onda 6 (Operação VPS)** — scheduler `php artisan schedule:run` registrado em `/etc/cron.d/laravel-devmemory` (não estava instalado — auto-cura da fila não rodava). 2 workers `queue:work` confirmados via `supervisorctl status`. Script de visibilidade `devmemory-health-check.sh` em `/usr/local/bin/` + cron a cada 15min em `/etc/cron.d/devmemory-health-check` (alerta se `captures.failed > 0` ou workers < 2). Baseline atual: `captures_failed=0 workers=2 scheduler=1`.
