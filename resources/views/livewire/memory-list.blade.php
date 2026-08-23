@@ -133,6 +133,30 @@
         </aside>
 
         <main class="lg:col-span-3">
+            @if($searchMode !== 'idle')
+                @php
+                    $modeBadgeClass = match($searchMode) {
+                        'hybrid' => 'bg-neo-teal',
+                        'semantic' => 'bg-neo-magenta',
+                        'lexical' => 'bg-neo-yellow',
+                        default => 'bg-neo-white',
+                    };
+                    $modeLabel = match($searchMode) {
+                        'hybrid' => 'Busca híbrida (lexical + semântica + RRF)',
+                        'semantic' => 'Busca semântica (pgvector)',
+                        'lexical' => 'Busca lexical (LIKE / tsvector)',
+                        default => 'Filtro',
+                    };
+                @endphp
+                <div class="mb-4 flex items-center gap-2 text-xs font-mono">
+                    <span class="neo-border-sm shadow-neo-sm px-2 py-1 {{ $modeBadgeClass }} font-bold uppercase">
+                        {{ $searchMode }}
+                    </span>
+                    <span class="text-gray-700">{{ $modeLabel }}</span>
+                    <span class="text-gray-500">— paridade com MCP `memory_search`</span>
+                </div>
+            @endif
+
             @if($memories->isEmpty())
                 <x-neo.empty-state titulo="Nenhuma memória encontrada" mensagem="Comece adicionando sua primeira memória técnica!">
                     <x-slot:actions>
