@@ -6,7 +6,7 @@
 #  - Sem COPY do código nem build de assets: o código entra por bind-mount, então
 #    editar um arquivo reflete na hora, sem rebuild.
 #  - Com Xdebug disponível (desligado por padrão — ligue com XDEBUG_MODE).
-FROM php:8.4-cli
+FROM php:8.4.27-cli
 
 ARG UID=1000
 ARG GID=1000
