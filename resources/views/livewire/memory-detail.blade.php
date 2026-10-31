@@ -345,16 +345,13 @@
                         </span>
                     </div>
 
-                    {{-- Abas: Relações vs Diagrama Mermaid --}}
-                    <div class="flex items-center gap-1">
-                        <button type="button" wire:click="setGraphTab('relations')"
-                                class="px-3 py-1 text-xs font-mono font-bold uppercase transition-all {{ $graphTab === 'relations' ? 'bg-neo-white text-black font-black' : 'text-gray-300 hover:text-white' }}">
-                            Relações
-                        </button>
-                        <button type="button" wire:click="setGraphTab('mermaid')"
-                                class="px-3 py-1 text-xs font-mono font-bold uppercase transition-all {{ $graphTab === 'mermaid' ? 'bg-neo-magenta text-white font-black' : 'text-gray-300 hover:text-white' }}">
-                            Diagrama (Mermaid)
-                        </button>
+                    {{-- Atalho para o Grafo Causal Interativo Dedicado --}}
+                    <div>
+                        <a href="{{ route('graph.index', ['focus' => $memory->id]) }}" wire:navigate
+                           class="btn-neo bg-neo-magenta text-white px-3 py-1 font-heading text-xs hover:bg-neo-yellow hover:text-black transition-colors flex items-center gap-1.5 no-underline">
+                            <span>EXPLORAR GRAFO INTERATIVO</span>
+                            <span>↗</span>
+                        </a>
                     </div>
                 </div>
 
@@ -405,116 +402,61 @@
                         </div>
                     @endif
 
-                    @if($graphTab === 'relations')
-                        {{-- Visualização em Lista de Relações Conectadas --}}
-                        @if(empty($relatedResults))
-                            <div class="text-center py-8 px-4 border-2 border-dashed border-gray-300">
-                                <span class="text-2xl block mb-2">🕸️</span>
-                                <p class="font-heading text-sm text-gray-600 m-0">Nenhuma relação validada no knowledge graph para esta memória.</p>
-                                <p class="text-xs font-mono text-gray-400 mt-1">Conforme novas memórias forem ingeridas ou propostas forem validadas, a malha causal será projetada automaticamente.</p>
-                            </div>
-                        @else
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                @foreach($relatedResults as $res)
-                                    @php
-                                        $relMemory = $res['memory'];
-                                        $lastPath = end($res['path']);
-                                        $relationName = $lastPath['relation'] ?? 'relates_to';
-                                        $direction = $lastPath['direction'] ?? 'outgoing';
-                                        $typeBadge = match($relMemory->type->value) {
-                                            'error' => 'bg-neo-magenta text-white',
-                                            'best_practice' => 'bg-neo-green text-black',
-                                            'lesson' => 'bg-neo-yellow text-black',
-                                            default => 'bg-gray-200 text-black',
-                                        };
-                                        $relBadge = match($relationName) {
-                                            'resolves' => 'bg-neo-green text-black',
-                                            'prevents' => 'bg-neo-teal text-black',
-                                            'causes' => 'bg-neo-magenta text-white',
-                                            default => 'bg-black text-white',
-                                        };
-                                    @endphp
-                                    <a href="{{ route('memories.show', $relMemory) }}" wire:navigate
-                                       class="card-neo bg-white neo-border-sm p-4 hover:-translate-y-1 hover:shadow-neo transition-all no-underline block text-black group">
-                                        <div class="flex items-center justify-between gap-2 mb-2">
-                                            <span class="{{ $relBadge }} px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider">
-                                                {{ $direction === 'incoming' ? '← ' : '→ ' }}{{ $relationName }}
-                                            </span>
-                                            <span class="text-[10px] font-mono text-gray-400">
-                                                distância: {{ $res['depth'] }}
-                                            </span>
-                                        </div>
-
-                                        <div class="flex items-center gap-1.5 mb-2">
-                                            <span class="{{ $typeBadge }} px-1.5 py-0.5 text-[9px] font-heading font-black uppercase">
-                                                {{ $relMemory->type->label() }}
-                                            </span>
-                                            @if($relMemory->stack)
-                                                <span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 text-[9px] font-mono">
-                                                    {{ $relMemory->stack }}
-                                                </span>
-                                            @endif
-                                        </div>
-
-                                        <h4 class="font-heading text-sm group-hover:text-neo-magenta transition-colors line-clamp-2 m-0">
-                                            {{ $relMemory->title }}
-                                        </h4>
-                                    </a>
-                                @endforeach
-                            </div>
-                        @endif
-
+                    {{-- Visualização em Cards das Relações em até 2 Saltos --}}
+                    @if(empty($relatedResults))
+                        <div class="text-center py-8 px-4 border-2 border-dashed border-gray-300">
+                            <span class="text-2xl block mb-2">🕸️</span>
+                            <p class="font-heading text-sm text-gray-600 m-0">Nenhuma relação validada no knowledge graph para esta memória.</p>
+                            <p class="text-xs font-mono text-gray-400 mt-1">Conforme novas memórias forem ingeridas ou propostas forem validadas, a malha causal será projetada automaticamente.</p>
+                        </div>
                     @else
-                        {{-- Visualização Gráfica em Mermaid --}}
-                        <div x-data="{
-                            copied: false,
-                            mermaidCode: @js($mermaidGraph),
-                            init() {
-                                this.renderGraph();
-                            },
-                            async renderGraph() {
-                                try {
-                                    if (!window.mermaid) {
-                                        const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
-                                        window.mermaid = mermaid;
-                                        window.mermaid.initialize({
-                                            startOnLoad: false,
-                                            theme: 'neutral',
-                                            flowchart: {
-                                                useMaxWidth: false,
-                                                htmlLabels: true,
-                                                curve: 'basis'
-                                            }
-                                        });
-                                    }
-                                    const { svg } = await window.mermaid.render('mermaid-svg-' + Math.random().toString(36).substring(7), this.mermaidCode);
-                                    this.$refs.container.innerHTML = svg;
-                                } catch (err) {
-                                    console.error('Mermaid render error:', err);
-                                }
-                            },
-                            copyCode() {
-                                navigator.clipboard.writeText(this.mermaidCode);
-                                this.copied = true;
-                                setTimeout(() => this.copied = false, 2000);
-                            }
-                        }" class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-mono text-gray-500 uppercase">
-                                    Diagrama Causal de Topologia (Arraste para navegar)
-                                </span>
-                                <button type="button" @click="copyCode()"
-                                        class="btn-neo bg-neo-teal px-3 py-1 font-mono text-xs hover:bg-neo-yellow transition-colors flex items-center gap-1.5">
-                                    <span x-text="copied ? '✓ Copiado!' : 'Copiar Mermaid'"></span>
-                                </button>
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($relatedResults as $res)
+                                @php
+                                    $relMemory = $res['memory'];
+                                    $lastPath = end($res['path']);
+                                    $relationName = $lastPath['relation'] ?? 'relates_to';
+                                    $direction = $lastPath['direction'] ?? 'outgoing';
+                                    $typeBadge = match($relMemory->type->value) {
+                                        'error' => 'bg-neo-magenta text-white',
+                                        'best_practice' => 'bg-neo-green text-black',
+                                        'lesson' => 'bg-neo-yellow text-black',
+                                        default => 'bg-gray-200 text-black',
+                                    };
+                                    $relBadge = match($relationName) {
+                                        'resolves' => 'bg-neo-green text-black',
+                                        'prevents' => 'bg-neo-teal text-black',
+                                        'causes' => 'bg-neo-magenta text-white',
+                                        default => 'bg-black text-white',
+                                    };
+                                @endphp
+                                <a href="{{ route('memories.show', $relMemory) }}" wire:navigate
+                                   class="card-neo bg-white neo-border-sm p-4 hover:-translate-y-1 hover:shadow-neo transition-all no-underline block text-black group">
+                                    <div class="flex items-center justify-between gap-2 mb-2">
+                                        <span class="{{ $relBadge }} px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider">
+                                            {{ $direction === 'incoming' ? '← ' : '→ ' }}{{ $relationName }}
+                                        </span>
+                                        <span class="text-[10px] font-mono text-gray-400">
+                                            distância: {{ $res['depth'] }}
+                                        </span>
+                                    </div>
 
-                            <div class="bg-white neo-border p-4 overflow-auto min-h-[350px] max-h-[600px]">
-                                <div x-ref="container" class="w-full flex justify-center py-2 [&_svg]:max-w-none [&_svg]:h-auto">
-                                    {{-- Fallback textual enquanto carrega ou se offline --}}
-                                    <pre class="text-xs font-mono text-left bg-gray-50 p-3 overflow-x-auto border border-gray-200"><code>{{ $mermaidGraph }}</code></pre>
-                                </div>
-                            </div>
+                                    <div class="flex items-center gap-1.5 mb-2">
+                                        <span class="{{ $typeBadge }} px-1.5 py-0.5 text-[9px] font-heading font-black uppercase">
+                                            {{ $relMemory->type->label() }}
+                                        </span>
+                                        @if($relMemory->stack)
+                                            <span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 text-[9px] font-mono">
+                                                {{ $relMemory->stack }}
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <h4 class="font-heading text-sm group-hover:text-neo-magenta transition-colors line-clamp-2 m-0">
+                                        {{ $relMemory->title }}
+                                    </h4>
+                                </a>
+                            @endforeach
                         </div>
                     @endif
                 </div>

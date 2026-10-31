@@ -22,9 +22,6 @@ class MemoryDetail extends Component
 {
     public Memory $memory;
 
-    /** Aba ativa no card de Grafo de Conhecimento ('relations' ou 'mermaid') */
-    public string $graphTab = 'relations';
-
     /** Resultado efêmero da análise de contradição (IA) — não persistido. */
     public array $canonAssessment = [];
 
@@ -209,13 +206,6 @@ class MemoryDetail extends Component
         $this->dispatch('show-toast', message: 'Memória rejeitada', type: 'aviso');
     }
 
-    public function setGraphTab(string $tab): void
-    {
-        if (in_array($tab, ['relations', 'mermaid'], true)) {
-            $this->graphTab = $tab;
-        }
-    }
-
     public function approveRelation(string $edgeId): void
     {
         $this->authorizeAdmin();
@@ -240,7 +230,6 @@ class MemoryDetail extends Component
     {
         $queryService = app(KnowledgeGraphQueryService::class);
         $relatedResults = $queryService->relatedTo($this->memory, depth: 2, limit: 12);
-        $mermaidGraph = $queryService->renderMermaid($this->memory, $relatedResults);
 
         $nodeId = $this->memory->knowledgeNode?->id;
         $proposedEdges = $nodeId ? KnowledgeEdge::with(['source.memory', 'target.memory', 'evidence'])
@@ -252,7 +241,6 @@ class MemoryDetail extends Component
 
         return view('livewire.memory-detail', [
             'relatedResults' => $relatedResults,
-            'mermaidGraph' => $mermaidGraph,
             'proposedEdges' => $proposedEdges,
         ]);
     }

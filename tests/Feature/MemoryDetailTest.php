@@ -115,15 +115,13 @@ class MemoryDetailTest extends TestCase
             ->assertSee('resolves');
     }
 
-    public function test_toggles_graph_tab_between_relations_and_mermaid(): void
+    public function test_renders_interactive_graph_link_with_focus_parameter(): void
     {
         $memory = $this->makeMemory();
 
         Livewire::test(MemoryDetail::class, ['memory' => $memory])
-            ->assertSet('graphTab', 'relations')
-            ->call('setGraphTab', 'mermaid')
-            ->assertSet('graphTab', 'mermaid')
-            ->assertSee('Diagrama Causal de Topologia');
+            ->assertSee('EXPLORAR GRAFO INTERATIVO')
+            ->assertSee(route('graph.index', ['focus' => $memory->id]));
     }
 
     public function test_approves_and_rejects_proposed_relations_from_detail_view(): void
