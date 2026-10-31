@@ -119,13 +119,17 @@ class KnowledgeGraphExplorerTest extends TestCase
         $this->actingAs($user);
 
         $mem = $this->makeMemory(['title' => 'Erro EADDRINUSE na porta 3000']);
+        $projector = app(KnowledgeGraphProjector::class);
+        $projector->projectMemory($mem);
+
+        $node = KnowledgeNode::where('memory_id', $mem->id)->firstOrFail();
 
         Livewire::test(KnowledgeGraphExplorer::class)
-            ->call('selectNode', $mem->id)
-            ->assertSet('selectedMemoryId', $mem->id)
+            ->call('selectNode', $node->id)
+            ->assertSet('selectedNodeId', $node->id)
             ->assertSee('Erro EADDRINUSE na porta 3000')
             ->call('clearSelection')
-            ->assertSet('selectedMemoryId', null);
+            ->assertSet('selectedNodeId', null);
     }
 
     public function test_can_set_and_clear_focus(): void
