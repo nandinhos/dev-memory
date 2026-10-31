@@ -68,11 +68,13 @@ class KnowledgeGraphExplorer extends Component
 
     public function updatedStack(): void
     {
+        $this->focus = null;
         $this->dispatch('graph-data-updated', data: $this->getGraphData());
     }
 
     public function updatedSearch(): void
     {
+        $this->focus = null;
         $this->dispatch('graph-data-updated', data: $this->getGraphData());
     }
 
@@ -187,10 +189,10 @@ class KnowledgeGraphExplorer extends Component
 
         if ($this->stack !== '') {
             $edgeQuery->where(function ($q) {
-                $q->whereHas('source.memory', fn ($sq) => $sq->where('stack', 'like', "%{$this->stack}%"))
-                    ->orWhereHas('target.memory', fn ($tq) => $tq->where('stack', 'like', "%{$this->stack}%"))
-                    ->orWhereHas('source', fn ($sq) => $sq->where('label', 'like', "%{$this->stack}%"))
-                    ->orWhereHas('target', fn ($tq) => $tq->where('label', 'like', "%{$this->stack}%"));
+                $q->whereHas('source.memory', fn ($sq) => $sq->where('stack', 'ilike', "%{$this->stack}%"))
+                    ->orWhereHas('target.memory', fn ($tq) => $tq->where('stack', 'ilike', "%{$this->stack}%"))
+                    ->orWhereHas('source', fn ($sq) => $sq->where('label', 'ilike', "%{$this->stack}%"))
+                    ->orWhereHas('target', fn ($tq) => $tq->where('label', 'ilike', "%{$this->stack}%"));
             });
         }
 

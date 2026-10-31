@@ -5,7 +5,7 @@
          selectedId: @entangle('selectedNodeId')
      })"
      x-init="initGraph()"
-     @graph-data-updated.window="updateGraph($event.detail.data)">
+     @graph-data-updated.window="updateGraph($event)">
 
     {{-- Script CDN do Vis-Network com carregamento seguro --}}
     @assets
@@ -99,8 +99,9 @@
 
     {{-- Área Principal: Canvas Full Screen do Grafo + Drawer Lateral --}}
     <div class="flex-1 w-full h-full relative overflow-hidden flex">
-        {{-- Canvas do Vis-Network com altura 100% garantida --}}
+        {{-- Canvas do Vis-Network protegido com wire:ignore contra DOM morphing do Livewire --}}
         <div id="vis-network-container"
+             wire:ignore
              x-ref="graphContainer"
              class="flex-1 w-full h-full cursor-grab active:cursor-grabbing bg-[#faf6ee] relative"
              style="height: 100%; width: 100%; min-height: 400px; background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 24px 24px;">
@@ -360,19 +361,32 @@
                     });
                 },
 
-                updateGraph(data) {
+                updateGraph(eventOrData) {
+                    let data = eventOrData;
+                    if (eventOrData && eventOrData.detail) {
+                        data = eventOrData.detail.data || eventOrData.detail[0]?.data || eventOrData.detail[0] || eventOrData.detail;
+                    } else if (eventOrData && eventOrData.data) {
+                        data = eventOrData.data;
+                    }
+
+                    if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+                        return;
+                    }
+
                     if (!this.network) {
                         this.mountNetwork(data.nodes, data.edges);
                         return;
                     }
 
-                    this.nodesDataSet.clear();
-                    this.edgesDataSet.clear();
+                    this.nodesDataSet = new vis.DataSet(data.nodes);
+                    this.edgesDataSet = new vis.DataSet(data.edges);
 
-                    this.nodesDataSet.add(data.nodes);
-                    this.edgesDataSet.add(data.edges);
+                    this.network.setData({
+                        nodes: this.nodesDataSet,
+                        edges: this.edgesDataSet
+                    });
 
-                    this.network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+                    this.network.fit({ animation: { duration: 450, easingFunction: 'easeInOutQuad' } });
                 },
 
                 zoomIn() {
