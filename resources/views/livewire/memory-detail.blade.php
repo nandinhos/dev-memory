@@ -477,7 +477,15 @@
                                     if (!window.mermaid) {
                                         const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
                                         window.mermaid = mermaid;
-                                        window.mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+                                        window.mermaid.initialize({
+                                            startOnLoad: false,
+                                            theme: 'neutral',
+                                            flowchart: {
+                                                useMaxWidth: false,
+                                                htmlLabels: true,
+                                                curve: 'basis'
+                                            }
+                                        });
                                     }
                                     const { svg } = await window.mermaid.render('mermaid-svg-' + Math.random().toString(36).substring(7), this.mermaidCode);
                                     this.$refs.container.innerHTML = svg;
@@ -493,7 +501,7 @@
                         }" class="space-y-4">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs font-mono text-gray-500 uppercase">
-                                    Diagrama Causal de Topologia
+                                    Diagrama Causal de Topologia (Arraste para navegar)
                                 </span>
                                 <button type="button" @click="copyCode()"
                                         class="btn-neo bg-neo-teal px-3 py-1 font-mono text-xs hover:bg-neo-yellow transition-colors flex items-center gap-1.5">
@@ -501,8 +509,8 @@
                                 </button>
                             </div>
 
-                            <div class="bg-white neo-border p-4 overflow-x-auto min-h-[220px] flex items-center justify-center">
-                                <div x-ref="container" class="w-full text-center">
+                            <div class="bg-white neo-border p-4 overflow-auto min-h-[350px] max-h-[600px]">
+                                <div x-ref="container" class="w-full flex justify-center py-2 [&_svg]:max-w-none [&_svg]:h-auto">
                                     {{-- Fallback textual enquanto carrega ou se offline --}}
                                     <pre class="text-xs font-mono text-left bg-gray-50 p-3 overflow-x-auto border border-gray-200"><code>{{ $mermaidGraph }}</code></pre>
                                 </div>

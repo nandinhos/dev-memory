@@ -183,7 +183,7 @@ class McpHttpTest extends TestCase
         $result = json_decode($content, true);
 
         $this->assertArrayHasKey('mermaid', $result);
-        $this->assertStringStartsWith('graph TD', $result['mermaid']);
+        $this->assertStringStartsWith('graph LR', $result['mermaid']);
         $this->assertStringContainsString('Problema A', $result['mermaid']);
         $this->assertStringContainsString('Solução B', $result['mermaid']);
     }
