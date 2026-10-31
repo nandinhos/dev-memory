@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-08-13 · **Saúde local:** 260 testes verdes / 701 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–3 e Gate 3.4 concluídos — fronteira MCP aplicada, dados associados a 17 projetos, **110 memórias + 11 skills publicadas em prod**; deploy saudável
+**Atualizado:** 2026-10-31 · **Saúde local:** 278 testes verdes / 770 asserções · **Estado:** Grafo Causal Interativo (/graph) entregue com Vis-Network, suporte a nós heterogêneos (memórias + hubs tecnológicos), exploração em 2 saltos, drawer lateral e sincronização reativa Livewire/Alpine; suite completa de testes verde e assets compilados.
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -96,6 +96,14 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 - ✅ **Deploy** — merge `dev`→`main` (`75cab7e`), push com confirmação humana; Jarvis Forge aplicou migration `2026_08_02_create_projects_and_bind_mcp_context` (batch 6); site HTTP 200; sem erros novos no log.
 - ✅ **Gate 3.3 — associação administrativa em prod** — 11 `projects` criados (um por `source_project` real: global-standards, events, nandolz, etc.); 51 memórias + 52 captures associadas (0 legadas); token `Projeto-Eventos-Control` (is_global, admin) preservado como operador — enxerga 51/51 via `McpAccessPolicy`; backup `devmemory-pre-gate33-20260813-0631.dump`.
 - ✅ **Gate 3.4 — ingestão remota + skills em prod** — 75 novas memórias da escavação ingeridas via `POST /api/mcp` (token global, `source_project` preservado, associadas por mapeamento a 18 projetos); 110 memórias totais; curadoria 0 failed (1 descartada por confiança); pipeline de skills: 6 grupos novos → 6 skills compiladas → **6 publicadas** (total 11 skills, 11 grupos); site HTTP 200, sem erros.
+
+## Concluído (Grafo Causal Interativo — 2026-10-31)
+
+- ✅ **Página dedicada `/graph`** — explorer interativo com física de molas (Vis-Network), nós heterogêneos (memórias com cores por maturidade e tecnologia/hubs elípticos), exploração em 2 saltos (`?focus={id}`).
+- ✅ **Drawer lateral responsivo** — visualização limpa com lista de memórias conectadas ocupando o espaço vertical completo sem quebrar a proporção do canvas.
+- ✅ **Reatividade Livewire + Alpine** — sincronização em tempo real via payload DOM (`#graph-data-payload`), isolamento de proxy Alpine para estabilidade de private fields do Vis-Network.
+- ✅ **Metodologia Ponytail no detalhe da memória** — remoção do diagrama Mermaid estático em favor de cards limpos de 2 saltos e CTA direcionando para `/graph?focus={id}`.
+- ✅ **Testes e cobertura** — 278 testes verdes (770 asserções) com testes de feature dedicados (`KnowledgeGraphExplorerTest` e `MemoryDetailTest`).
 
 ## Notas operacionais
 
