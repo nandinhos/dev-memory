@@ -187,4 +187,35 @@ class McpHttpTest extends TestCase
         $this->assertStringContainsString('Problema A', $result['mermaid']);
         $this->assertStringContainsString('Solução B', $result['mermaid']);
     }
+
+    public function test_harness_hook_script_generates_preflight_guard(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->tokenFor($user);
+
+        $response = $this->rpc($token, [
+            'jsonrpc' => '2.0',
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'harness_hook_script',
+                'arguments' => [
+                    'harness' => 'antigravity',
+                    'hook_type' => 'preflight',
+                ],
+            ],
+            'id' => 101,
+        ]);
+
+        $response->assertOk();
+        $content = $response->json('result.content.0.text');
+        $this->assertNotNull($content);
+
+        $result = json_decode($content, true);
+
+        $this->assertSame('antigravity', $result['harness']);
+        $this->assertSame('preflight', $result['hook_type']);
+        $this->assertContains('.agents/hooks/pre-flight-guard.sh', $result['hook_paths']);
+        $this->assertStringContainsString('Pre-flight Guard Hook', $result['script']);
+        $this->assertStringContainsString('hub_briefing', $result['script']);
+    }
 }

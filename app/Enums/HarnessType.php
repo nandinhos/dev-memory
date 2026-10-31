@@ -68,4 +68,19 @@ enum HarnessType: string
             self::HERMES => ['~/.hermes/hooks/post_stop.sh'],
         };
     }
+
+    /**
+     * Caminhos dos scripts de hook de pre-flight guard preventiva.
+     *
+     * @return list<string>
+     */
+    public function preflightHookPaths(): array
+    {
+        return match ($this) {
+            self::CLAUDE_CODE => ['~/.claude/hooks/pre_prompt.sh'],
+            self::CODEX => ['~/.codex/hooks/pre_execution.sh'],
+            self::ANTIGRAVITY => ['.agents/hooks/pre-flight-guard.sh'],
+            self::HERMES => ['~/.hermes/hooks/pre_flight.sh'],
+        };
+    }
 }

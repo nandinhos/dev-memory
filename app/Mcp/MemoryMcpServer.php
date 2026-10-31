@@ -270,11 +270,12 @@ class MemoryMcpServer
             ],
             'harness_hook_script' => [
                 'name' => 'harness_hook_script',
-                'description' => 'Gera um script de hook leve e não-bloqueante para captura contínua de aprendizados do harness',
+                'description' => 'Gera um script de hook para o harness (captura contínua ou pre-flight guard)',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
                         'harness' => ['type' => 'string', 'enum' => array_column(HarnessType::cases(), 'value')],
+                        'hook_type' => ['type' => 'string', 'enum' => ['capture', 'preflight'], 'default' => 'capture', 'description' => 'Tipo de hook: "capture" (pós-execução) ou "preflight" (guarda preventiva pré-execução)'],
                         'mcp_url' => ['type' => 'string', 'description' => 'URL do endpoint MCP (ex: https://devmemory.fssdev.com.br/api/mcp)', 'default' => 'https://devmemory.fssdev.com.br/api/mcp'],
                     ],
                     'required' => ['harness'],
@@ -929,12 +930,22 @@ class MemoryMcpServer
         }
 
         $mcpUrl = $args['mcp_url'] ?? 'https://devmemory.fssdev.com.br/api/mcp';
+        $hookType = $args['hook_type'] ?? 'capture';
         $generator = app(HarnessHookGenerator::class);
+
+        $script = $hookType === 'preflight'
+            ? $generator->generatePreflightHookScript($harness, $mcpUrl)
+            : $generator->generateHookScript($harness, $mcpUrl);
+
+        $paths = $hookType === 'preflight'
+            ? $harness->preflightHookPaths()
+            : $harness->hookPaths();
 
         return [
             'harness' => $harness->value,
-            'hook_paths' => $harness->hookPaths(),
-            'script' => $generator->generateHookScript($harness, $mcpUrl),
+            'hook_type' => $hookType,
+            'hook_paths' => $paths,
+            'script' => $script,
         ];
     }
 
