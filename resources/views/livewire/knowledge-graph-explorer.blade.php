@@ -283,161 +283,193 @@
         @endif
     </div>
 
-    {{-- Script Alpine.js para Inicializar, Controlar e Redimensionar o Vis-Network --}}
+    {{-- Payload de Dados Reativo: o Livewire atualiza este elemento a cada request --}}
+    <div id="graph-data-payload"
+         x-ref="graphDataPayload"
+         class="hidden"
+         data-nodes="{{ json_encode($graphData['nodes']) }}"
+         data-edges="{{ json_encode($graphData['edges']) }}">
+    </div>
+
+    {{-- Script Alpine.js para Inicializar, Controlar e Sincronizar o Vis-Network --}}
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('knowledgeGraphExplorer', (config) => ({
-                network: null,
-                nodesDataSet: null,
-                edgesDataSet: null,
+        (function() {
+            function registerExplorer() {
+                if (window.Alpine && !window.knowledgeGraphRegistered) {
+                    window.knowledgeGraphRegistered = true;
 
-                initGraph() {
-                    this.$nextTick(() => {
-                        this.mountNetwork(config.nodesData, config.edgesData);
-                    });
+                    Alpine.data('knowledgeGraphExplorer', (config) => ({
+                        network: null,
+                        nodesDataSet: null,
+                        edgesDataSet: null,
+                        observer: null,
 
-                    // Watchers reativos diretos nas propriedades do Livewire 3
-                    this.$watch('$wire.stack', () => this.refreshFromBackend());
-                    this.$watch('$wire.focus', () => this.refreshFromBackend());
-                    this.$watch('$wire.search', () => this.refreshFromBackend());
+                        initGraph() {
+                            window.knowledgeGraphInstance = this;
 
-                    // Listener oficial do Livewire 3 para eventos disparados do PHP
-                    this.$wire.on('graph-data-updated', (event) => {
-                        const data = event?.data ?? (Array.isArray(event) ? event[0]?.data : event);
-                        if (data && data.nodes) {
-                            this.updateGraph(data);
-                        } else {
-                            this.refreshFromBackend();
-                        }
-                    });
+                            this.$nextTick(() => {
+                                this.mountNetwork(config.nodesData, config.edgesData);
+                                this.setupObserver();
+                            });
 
-                    window.addEventListener('resize', () => {
-                        if (this.network) {
-                            this.network.redraw();
-                            this.network.fit();
-                        }
-                    });
-                },
-
-                async refreshFromBackend() {
-                    this.$nextTick(async () => {
-                        try {
-                            const data = await this.$wire.getGraphData();
-                            if (data && Array.isArray(data.nodes) && Array.isArray(data.edges)) {
-                                this.updateGraph(data);
-                            }
-                        } catch (err) {
-                            console.error('Erro ao atualizar grafo reativo:', err);
-                        }
-                    });
-                },
-
-                mountNetwork(nodes, edges) {
-                    const container = this.$refs.graphContainer;
-                    if (!container) return;
-
-                    // Cria DataSets do Vis-Network
-                    this.nodesDataSet = new vis.DataSet(nodes);
-                    this.edgesDataSet = new vis.DataSet(edges);
-
-                    const data = {
-                        nodes: this.nodesDataSet,
-                        edges: this.edgesDataSet
-                    };
-
-                    const options = {
-                        autoResize: true,
-                        height: '100%',
-                        width: '100%',
-                        interaction: {
-                            hover: true,
-                            tooltipDelay: 150,
-                            zoomView: true,
-                            dragView: true,
-                            navigationButtons: false,
-                            keyboard: false
+                            window.addEventListener('resize', () => {
+                                if (this.network) {
+                                    this.network.redraw();
+                                    this.network.fit();
+                                }
+                            });
                         },
-                        physics: {
-                            solver: 'forceAtlas2Based',
-                            forceAtlas2Based: {
-                                gravitationalConstant: -140, // Repulsão maior para espalhar bem os nós
-                                centralGravity: 0.008,       // Gravidade suave mantendo coeso
-                                springLength: 150,           // Distância confortável entre nós conectados
-                                springConstant: 0.05,
-                                damping: 0.45,
-                                avoidOverlap: 1.0            // Evita colisão entre caixas e labels
-                            },
-                            stabilization: {
-                                iterations: 120,
-                                updateInterval: 25,
-                                fit: true
+
+                        setupObserver() {
+                            const payloadEl = this.$refs.graphDataPayload;
+                            if (!payloadEl) return;
+
+                            this.observer = new MutationObserver(() => {
+                                this.syncFromPayload();
+                            });
+
+                            this.observer.observe(payloadEl, {
+                                attributes: true,
+                                attributeFilter: ['data-nodes', 'data-edges']
+                            });
+                        },
+
+                        syncFromPayload() {
+                            const el = this.$refs.graphDataPayload || document.getElementById('graph-data-payload');
+                            if (!el) return;
+
+                            try {
+                                const rawNodes = el.getAttribute('data-nodes');
+                                const rawEdges = el.getAttribute('data-edges');
+                                if (rawNodes && rawEdges) {
+                                    const nodes = JSON.parse(rawNodes);
+                                    const edges = JSON.parse(rawEdges);
+                                    this.updateGraph({ nodes, edges });
+                                }
+                            } catch (e) {
+                                console.error('Erro ao sincronizar dados do grafo:', e);
                             }
+                        },
+
+                        mountNetwork(nodes, edges) {
+                            const container = this.$refs.graphContainer;
+                            if (!container) return;
+
+                            this.nodesDataSet = new vis.DataSet(nodes);
+                            this.edgesDataSet = new vis.DataSet(edges);
+
+                            const data = {
+                                nodes: this.nodesDataSet,
+                                edges: this.edgesDataSet
+                            };
+
+                            const options = {
+                                autoResize: true,
+                                height: '100%',
+                                width: '100%',
+                                interaction: {
+                                    hover: true,
+                                    tooltipDelay: 150,
+                                    zoomView: true,
+                                    dragView: true,
+                                    navigationButtons: false,
+                                    keyboard: false
+                                },
+                                physics: {
+                                    solver: 'forceAtlas2Based',
+                                    forceAtlas2Based: {
+                                        gravitationalConstant: -140,
+                                        centralGravity: 0.008,
+                                        springLength: 150,
+                                        springConstant: 0.05,
+                                        damping: 0.45,
+                                        avoidOverlap: 1.0
+                                    },
+                                    stabilization: {
+                                        iterations: 120,
+                                        updateInterval: 25,
+                                        fit: true
+                                    }
+                                }
+                            };
+
+                            this.network = new vis.Network(container, data, options);
+
+                            this.network.once('stabilizationIterationsDone', () => {
+                                this.network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+                            });
+
+                            this.network.on('click', (params) => {
+                                if (params.nodes.length > 0) {
+                                    const nodeId = params.nodes[0];
+                                    this.$wire.selectNode(nodeId);
+                                } else if (params.edges.length === 0) {
+                                    this.$wire.clearSelection();
+                                }
+                            });
+                        },
+
+                        updateGraph(data) {
+                            if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+                                return;
+                            }
+
+                            if (!this.network) {
+                                this.mountNetwork(data.nodes, data.edges);
+                                return;
+                            }
+
+                            this.nodesDataSet = new vis.DataSet(data.nodes);
+                            this.edgesDataSet = new vis.DataSet(data.edges);
+
+                            this.network.setData({
+                                nodes: this.nodesDataSet,
+                                edges: this.edgesDataSet
+                            });
+
+                            this.network.fit({ animation: { duration: 450, easingFunction: 'easeInOutQuad' } });
+                        },
+
+                        zoomIn() {
+                            if (!this.network) return;
+                            const scale = this.network.getScale();
+                            this.network.moveTo({ scale: scale * 1.35, animation: { duration: 250 } });
+                        },
+
+                        zoomOut() {
+                            if (!this.network) return;
+                            const scale = this.network.getScale();
+                            this.network.moveTo({ scale: scale * 0.7, animation: { duration: 250 } });
+                        },
+
+                        fitView() {
+                            if (!this.network) return;
+                            this.network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
                         }
-                    };
-
-                    this.network = new vis.Network(container, data, options);
-
-                    // Ajusta o enquadramento ao concluir a estabilização da física
-                    this.network.once('stabilizationIterationsDone', () => {
-                        this.network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
-                    });
-
-                    // Evento de clique para selecionar nó
-                    this.network.on('click', (params) => {
-                        if (params.nodes.length > 0) {
-                            const nodeId = params.nodes[0];
-                            this.$wire.selectNode(nodeId);
-                        } else if (params.edges.length === 0) {
-                            this.$wire.clearSelection();
-                        }
-                    });
-                },
-
-                updateGraph(eventOrData) {
-                    let data = eventOrData;
-                    if (eventOrData && eventOrData.detail) {
-                        data = eventOrData.detail.data || eventOrData.detail[0]?.data || eventOrData.detail[0] || eventOrData.detail;
-                    } else if (eventOrData && eventOrData.data) {
-                        data = eventOrData.data;
-                    }
-
-                    if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
-                        return;
-                    }
-
-                    if (!this.network) {
-                        this.mountNetwork(data.nodes, data.edges);
-                        return;
-                    }
-
-                    this.nodesDataSet = new vis.DataSet(data.nodes);
-                    this.edgesDataSet = new vis.DataSet(data.edges);
-
-                    this.network.setData({
-                        nodes: this.nodesDataSet,
-                        edges: this.edgesDataSet
-                    });
-
-                    this.network.fit({ animation: { duration: 450, easingFunction: 'easeInOutQuad' } });
-                },
-
-                zoomIn() {
-                    if (!this.network) return;
-                    const scale = this.network.getScale();
-                    this.network.moveTo({ scale: scale * 1.35, animation: { duration: 250 } });
-                },
-
-                zoomOut() {
-                    if (!this.network) return;
-                    const scale = this.network.getScale();
-                    this.network.moveTo({ scale: scale * 0.7, animation: { duration: 250 } });
-                },
-
-                fitView() {
-                    if (!this.network) return;
-                    this.network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+                    }));
                 }
-            }));
-        });
+            }
+
+            if (window.Alpine) {
+                registerExplorer();
+            } else {
+                document.addEventListener('alpine:init', registerExplorer);
+            }
+
+            // Hook global do Livewire 3 para reforço determinístico pós-commit
+            document.addEventListener('livewire:initialized', () => {
+                if (window.Livewire) {
+                    Livewire.hook('commit', ({ succeed }) => {
+                        succeed(() => {
+                            if (window.knowledgeGraphInstance) {
+                                setTimeout(() => {
+                                    window.knowledgeGraphInstance.syncFromPayload();
+                                }, 50);
+                            }
+                        });
+                    });
+                }
+            });
+        })();
     </script>
 </div>
