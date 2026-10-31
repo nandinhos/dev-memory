@@ -2,12 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Enums\KnowledgeEdgeStatus;
+use App\Enums\KnowledgeRelationType;
 use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
 use App\Livewire\MemoryDetail;
+use App\Models\KnowledgeEdge;
+use App\Models\KnowledgeNode;
 use App\Models\Memory;
 use App\Models\User;
+use App\Services\KnowledgeGraph\KnowledgeGraphProjector;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -83,5 +88,70 @@ class MemoryDetailTest extends TestCase
             ->assertDispatched('show-toast', type: 'erro');
 
         $this->assertSame(MemoryScope::PROJECT, $memory->fresh()->scope);
+    }
+
+    public function test_renders_knowledge_graph_section_and_related_memories(): void
+    {
+        $root = $this->makeMemory(['title' => 'Raiz Causal', 'scope' => MemoryScope::GLOBAL, 'validation_status' => ValidationStatus::VALIDATED]);
+        $target = $this->makeMemory(['title' => 'Solução Relacionada', 'scope' => MemoryScope::GLOBAL, 'validation_status' => ValidationStatus::VALIDATED]);
+
+        $projector = app(KnowledgeGraphProjector::class);
+        $projector->projectMemory($root);
+        $projector->projectMemory($target);
+
+        $nodeA = KnowledgeNode::where('memory_id', $root->id)->first();
+        $nodeB = KnowledgeNode::where('memory_id', $target->id)->first();
+
+        KnowledgeEdge::factory()->create([
+            'source_node_id' => $nodeB->id,
+            'target_node_id' => $nodeA->id,
+            'relation_type' => KnowledgeRelationType::RESOLVES,
+            'status' => KnowledgeEdgeStatus::VALIDATED,
+        ]);
+
+        Livewire::test(MemoryDetail::class, ['memory' => $root])
+            ->assertSee('KNOWLEDGE GRAPH')
+            ->assertSee('Solução Relacionada')
+            ->assertSee('resolves');
+    }
+
+    public function test_toggles_graph_tab_between_relations_and_mermaid(): void
+    {
+        $memory = $this->makeMemory();
+
+        Livewire::test(MemoryDetail::class, ['memory' => $memory])
+            ->assertSet('graphTab', 'relations')
+            ->call('setGraphTab', 'mermaid')
+            ->assertSet('graphTab', 'mermaid')
+            ->assertSee('Diagrama Causal de Topologia');
+    }
+
+    public function test_approves_and_rejects_proposed_relations_from_detail_view(): void
+    {
+        $this->actingAs(User::factory()->create(['is_admin' => true]));
+
+        $root = $this->makeMemory(['scope' => MemoryScope::GLOBAL]);
+        $target = $this->makeMemory(['scope' => MemoryScope::GLOBAL]);
+
+        $projector = app(KnowledgeGraphProjector::class);
+        $projector->projectMemory($root);
+        $projector->projectMemory($target);
+
+        $nodeA = KnowledgeNode::where('memory_id', $root->id)->first();
+        $nodeB = KnowledgeNode::where('memory_id', $target->id)->first();
+
+        $edge = KnowledgeEdge::factory()->create([
+            'source_node_id' => $nodeA->id,
+            'target_node_id' => $nodeB->id,
+            'relation_type' => KnowledgeRelationType::CAUSES,
+            'status' => KnowledgeEdgeStatus::PROPOSED,
+        ]);
+
+        Livewire::test(MemoryDetail::class, ['memory' => $root])
+            ->assertSee('Propostas de Relação Pendentes')
+            ->call('approveRelation', $edge->id)
+            ->assertDispatched('show-toast', type: 'sucesso');
+
+        $this->assertSame(KnowledgeEdgeStatus::VALIDATED, $edge->fresh()->status);
     }
 }

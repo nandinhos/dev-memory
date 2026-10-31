@@ -117,4 +117,60 @@ class KnowledgeGraphQueryService
             ])->values()->all(),
         ];
     }
+
+    /**
+     * Renderiza o grafo causal em formato Mermaid (graph TD)
+     */
+    public function renderMermaid(Memory $root, array $results): string
+    {
+        $lines = ['graph TD'];
+        $rootId = 'node_'.substr(md5($root->id), 0, 8);
+        $rootTitle = addslashes(str_replace(['"', "\n", "\r"], ["'", ' ', ' '], $root->title));
+        $rootEmoji = match ($root->type->value) {
+            'error' => '❌ ',
+            'best_practice' => '⭐ ',
+            'lesson' => '💡 ',
+            default => '📄 ',
+        };
+        $lines[] = "    {$rootId}[\"{$rootEmoji}{$rootTitle}\"]:::root";
+
+        $renderedEdges = [];
+
+        foreach ($results as $result) {
+            /** @var Memory|null $mem */
+            $mem = $result['memory'] ?? null;
+            if ($mem === null) {
+                continue;
+            }
+
+            $memId = 'node_'.substr(md5($mem->id), 0, 8);
+            $memTitle = addslashes(str_replace(['"', "\n", "\r"], ["'", ' ', ' '], $mem->title));
+            $typeEmoji = match ($mem->type->value) {
+                'error' => '❌ ',
+                'best_practice' => '⭐ ',
+                'lesson' => '💡 ',
+                default => '📄 ',
+            };
+            $lines[] = "    {$memId}[\"{$typeEmoji}{$memTitle}\"]";
+
+            foreach ($result['path'] ?? [] as $segment) {
+                $relation = $segment['relation'] ?? 'relates_to';
+                $direction = $segment['direction'] ?? 'outgoing';
+                $edgeKey = $direction === 'incoming' ? "{$memId}->{$rootId}:{$relation}" : "{$rootId}->{$memId}:{$relation}";
+
+                if (! isset($renderedEdges[$edgeKey])) {
+                    $renderedEdges[$edgeKey] = true;
+                    if ($direction === 'incoming') {
+                        $lines[] = "    {$memId} -->|{$relation}| {$rootId}";
+                    } else {
+                        $lines[] = "    {$rootId} -->|{$relation}| {$memId}";
+                    }
+                }
+            }
+        }
+
+        $lines[] = '    classDef root fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#fff;';
+
+        return implode("\n", $lines);
+    }
 }
