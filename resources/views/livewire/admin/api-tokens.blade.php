@@ -1,4 +1,4 @@
-<div class="animate-fade-in-up">
+<div class="animate-fade-in-up" x-data="{ confirmingRevoke: false, tokenToRevokeId: null, tokenToRevokeName: '' }">
     <p class="text-sm text-gray-600 font-mono mb-6">Acesso remoto de outros projetos via MCP.</p>
 
     <div class="bg-neo-white neo-border shadow-neo p-6 mb-6">
@@ -55,10 +55,37 @@
                     @endif
                 </div>
             </div>
-            <x-neo.button variante="destrutivo" tamanho="sm" wire:click="revoke('{{ $token->id }}')"
-                          wire:confirm="Revogar este token? Projetos que o usam perderão acesso.">REVOGAR</x-neo.button>
+            <x-neo.button type="button" variante="destrutivo" tamanho="sm"
+                          @click="tokenToRevokeId = '{{ $token->id }}'; tokenToRevokeName = '{{ addslashes($token->name) }}'; confirmingRevoke = true">REVOGAR</x-neo.button>
         </div>
     @empty
         <x-neo.empty-state titulo="Nenhum token" mensagem="Gere um token para conectar outros projetos a este hub via MCP." />
     @endforelse
+
+    <x-neo.modal model="confirmingRevoke" titulo="REVOGAR TOKEN MCP" variante="destrutivo">
+        <div class="space-y-4">
+            <div class="bg-neo-salmon/20 neo-border-sm p-4 font-mono text-sm">
+                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">// CONFIRMAÇÃO DE REVOGAÇÃO</span>
+                <p class="text-black text-sm leading-relaxed mb-2">
+                    Deseja realmente revogar o token:
+                </p>
+                <div class="bg-neo-yellow neo-border-sm px-3 py-1.5 font-mono font-bold text-black break-all shadow-neo-sm text-sm inline-block">
+                    <span x-text="tokenToRevokeName"></span>
+                </div>
+                <p class="text-xs text-gray-700 mt-3 font-mono leading-normal">
+                    ⚠️ <strong>Atenção:</strong> Todas as conexões, terminais ou agentes de IA utilizando este token perderão imediatamente o acesso às tools MCP deste hub.
+                </p>
+            </div>
+        </div>
+
+        <x-slot:actions>
+            <x-neo.button type="button" variante="contorno" tamanho="md" @click="confirmingRevoke = false">
+                CANCELAR
+            </x-neo.button>
+            <x-neo.button type="button" variante="destrutivo" tamanho="md" 
+                          @click="$wire.revoke(tokenToRevokeId); confirmingRevoke = false">
+                CONFIRMAR REVOGAÇÃO
+            </x-neo.button>
+        </x-slot:actions>
+    </x-neo.modal>
 </div>

@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-08-22 · **Saúde local:** 266 testes verdes / 722 asserções, 1 skip (gate PostgreSQL local) · **Estado:** Sprints 1–3 + Ondas 1, 2, 3, 4, 5, 6, 7, 8 (parcial) concluídas — `RecurrenceScorer` indexado via `MemorySearchService` (top-K); busca híbrida na UI com badge de modo; DSH admin ativo; **HSTS ativo**; perfil `claude-code` v1.0.0 capturado + instalador idempotente validado; **hook de captura contínua** + projeto `dev-memory-laravel` + token project-bound; ADR 0002 (migração futura para `laravel/mcp`); **2 tokens órfãos revogados** (`Projeto-Eventos-Control`, `escavacao-2026-08-13`); 145 memórias (17 projetos, 11 skills publicadas); scheduler + workers + health check operacionais na VPS
+**Atualizado:** 2026-10-31 · **Saúde local:** 278 testes verdes / 770 asserções · **Estado:** Grafo Causal Interativo (/graph), Modal Neo-Brutalista de Tokens MCP, Sprints 1–3 + Ondas 1–8 concluídas; suite completa de testes verde e assets compilados.
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -107,6 +107,15 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 - ✅ **Onda 4 (Escala de dedup)** — `RecurrenceScorer` indexado via `MemorySearchService` (top-K=30), troca full-scan O(n) por candidatura lexical+semântica+RRF. Floors `TEXT_FLOOR=0.55`/`TOTAL_FLOOR=0.50` mantidos. Deploy em `c705984` via rebase+ff em `main`. 262 testes (3 novos: outside top-K, score máximo, delegação com filtro).
 - ✅ **Onda 5 (Busca híbrida na UI)** — `MemoryList::render` delega ao `MemorySearchService` quando `$search` não vazio; badge `search_mode` (hybrid/semantic/lexical/filter) no header da view. Filtros type/scope/stack vão para o serviço; status/doc/maturity aplicados post-search. Paridade UI↔MCP verificada por teste. Deploy em `3ec1c00`. 266 testes (4 novos).
 - ✅ **Onda 6 (Operação VPS)** — scheduler `php artisan schedule:run` registrado em `/etc/cron.d/laravel-devmemory` (não estava instalado — auto-cura da fila não rodava). 2 workers `queue:work` confirmados via `supervisorctl status`. Script de visibilidade `devmemory-health-check.sh` em `/usr/local/bin/` + cron a cada 15min em `/etc/cron.d/devmemory-health-check` (alerta se `captures.failed > 0` ou workers < 2). Baseline atual: `captures_failed=0 workers=2 scheduler=1`.
+
+## Concluído (Grafo Causal Interativo e Modal MCP — 2026-10-31)
+
+- ✅ **Página dedicada `/graph`** — explorer interativo com física de molas (Vis-Network), nós heterogêneos (memórias com cores por maturidade e tecnologia/hubs elípticos), exploração em 2 saltos (`?focus={id}`).
+- ✅ **Drawer lateral responsivo** — visualização limpa com lista de memórias conectadas ocupando o espaço vertical completo sem quebrar a proporção do canvas.
+- ✅ **Reatividade Livewire + Alpine** — sincronização em tempo real via payload DOM (`#graph-data-payload`), isolamento de proxy Alpine para estabilidade de private fields do Vis-Network.
+- ✅ **Metodologia Ponytail no detalhe da memória** — remoção do diagrama Mermaid estático em favor de cards limpos de 2 saltos e CTA direcionando para `/graph?focus={id}`.
+- ✅ **Modal Neo-Brutalista de Tokens MCP** — substituição de `wire:confirm` nativo do navegador por `<x-neo.modal>` estilizado com confirmação de impacto.
+- ✅ **Testes e cobertura** — 278 testes verdes (770 asserções) com testes de feature dedicados (`KnowledgeGraphExplorerTest` e `MemoryDetailTest`).
 
 ## Notas operacionais
 

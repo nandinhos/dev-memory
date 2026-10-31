@@ -27,6 +27,10 @@ echo "PostgreSQL is up!"
 echo "Running migrations..."
 php artisan migrate --force --no-interaction
 
+# Publish Livewire assets
+echo "Publishing Livewire assets..."
+php artisan livewire:publish --assets --no-interaction 2>/dev/null || true
+
 # Fix storage permissions — 777 para funcionar em bind mount (host e container)
 echo "Fixing storage permissions..."
 chmod -R 777 storage bootstrap/cache

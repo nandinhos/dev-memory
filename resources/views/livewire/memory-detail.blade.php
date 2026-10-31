@@ -332,6 +332,135 @@
                     </div>
                 </div>
             </div>
+
+            {{-- CARD: Grafo de Conhecimento & Relações Causais (Fase 6) --}}
+            <div class="card-neo bg-neo-white neo-border shadow-neo overflow-hidden mt-6">
+                <div class="h-12 bg-black text-white flex items-center justify-between px-6">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono font-bold uppercase tracking-widest text-neo-teal">
+                            // KNOWLEDGE GRAPH & CAUSALITY
+                        </span>
+                        <span class="bg-neo-yellow text-black text-[10px] font-black px-2 py-0.5 border border-black">
+                            {{ count($relatedResults) }} conexões
+                        </span>
+                    </div>
+
+                    {{-- Atalho para o Grafo Causal Interativo Dedicado --}}
+                    <div>
+                        <a href="{{ route('graph.index', ['focus' => $memory->id]) }}" wire:navigate
+                           class="btn-neo bg-neo-magenta text-white px-3 py-1 font-heading text-xs hover:bg-neo-yellow hover:text-black transition-colors flex items-center gap-1.5 no-underline">
+                            <span>EXPLORAR GRAFO INTERATIVO</span>
+                            <span>↗</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    {{-- Propostas de Relação Pendentes (se houver) --}}
+                    @if($proposedEdges->isNotEmpty())
+                        <div class="bg-neo-yellow/20 neo-border-sm p-4 mb-6 border-l-4 border-l-neo-orange">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="font-heading font-black text-xs uppercase flex items-center gap-1.5 text-black">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-neo-orange animate-ping"></span>
+                                    Propostas de Relação Pendentes pela IA ({{ $proposedEdges->count() }})
+                                </span>
+                                <span class="text-[10px] font-mono text-gray-500">Curadoria Humana</span>
+                            </div>
+
+                            <div class="space-y-3">
+                                @foreach($proposedEdges as $propEdge)
+                                    <div class="bg-white neo-border-sm p-3 flex flex-wrap items-center justify-between gap-3">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="bg-black text-white px-2 py-0.5 text-[10px] font-mono uppercase font-bold">
+                                                    {{ $propEdge->relation_type->value }}
+                                                </span>
+                                                <span class="text-xs font-mono text-gray-500">
+                                                    confiança: {{ number_format($propEdge->confidence, 2) }}
+                                                </span>
+                                            </div>
+                                            <p class="text-xs font-heading font-bold text-black m-0 truncate">
+                                                {{ $propEdge->source->memory?->title ?? $propEdge->source->label }}
+                                                <span class="text-neo-magenta font-black"> → </span>
+                                                {{ $propEdge->target->memory?->title ?? $propEdge->target->label }}
+                                            </p>
+                                        </div>
+
+                                        @if(auth()->user()?->is_admin)
+                                            <div class="flex items-center gap-2">
+                                                <x-neo.button variante="sucesso" tamanho="sm" wire:click="approveRelation('{{ $propEdge->id }}')">
+                                                    Aprovar
+                                                </x-neo.button>
+                                                <x-neo.button variante="destrutivo" tamanho="sm" wire:click="rejectRelation('{{ $propEdge->id }}')">
+                                                    Rejeitar
+                                                </x-neo.button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Visualização em Cards das Relações em até 2 Saltos --}}
+                    @if(empty($relatedResults))
+                        <div class="text-center py-8 px-4 border-2 border-dashed border-gray-300">
+                            <span class="text-2xl block mb-2">🕸️</span>
+                            <p class="font-heading text-sm text-gray-600 m-0">Nenhuma relação validada no knowledge graph para esta memória.</p>
+                            <p class="text-xs font-mono text-gray-400 mt-1">Conforme novas memórias forem ingeridas ou propostas forem validadas, a malha causal será projetada automaticamente.</p>
+                        </div>
+                    @else
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($relatedResults as $res)
+                                @php
+                                    $relMemory = $res['memory'];
+                                    $lastPath = end($res['path']);
+                                    $relationName = $lastPath['relation'] ?? 'relates_to';
+                                    $direction = $lastPath['direction'] ?? 'outgoing';
+                                    $typeBadge = match($relMemory->type->value) {
+                                        'error' => 'bg-neo-magenta text-white',
+                                        'best_practice' => 'bg-neo-green text-black',
+                                        'lesson' => 'bg-neo-yellow text-black',
+                                        default => 'bg-gray-200 text-black',
+                                    };
+                                    $relBadge = match($relationName) {
+                                        'resolves' => 'bg-neo-green text-black',
+                                        'prevents' => 'bg-neo-teal text-black',
+                                        'causes' => 'bg-neo-magenta text-white',
+                                        default => 'bg-black text-white',
+                                    };
+                                @endphp
+                                <a href="{{ route('memories.show', $relMemory) }}" wire:navigate
+                                   class="card-neo bg-white neo-border-sm p-4 hover:-translate-y-1 hover:shadow-neo transition-all no-underline block text-black group">
+                                    <div class="flex items-center justify-between gap-2 mb-2">
+                                        <span class="{{ $relBadge }} px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider">
+                                            {{ $direction === 'incoming' ? '← ' : '→ ' }}{{ $relationName }}
+                                        </span>
+                                        <span class="text-[10px] font-mono text-gray-400">
+                                            distância: {{ $res['depth'] }}
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-center gap-1.5 mb-2">
+                                        <span class="{{ $typeBadge }} px-1.5 py-0.5 text-[9px] font-heading font-black uppercase">
+                                            {{ $relMemory->type->label() }}
+                                        </span>
+                                        @if($relMemory->stack)
+                                            <span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 text-[9px] font-mono">
+                                                {{ $relMemory->stack }}
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <h4 class="font-heading text-sm group-hover:text-neo-magenta transition-colors line-clamp-2 m-0">
+                                        {{ $relMemory->title }}
+                                    </h4>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
         </main>
 
         <aside class="lg:col-span-1">

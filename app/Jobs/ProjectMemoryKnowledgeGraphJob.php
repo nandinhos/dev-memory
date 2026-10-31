@@ -31,5 +31,7 @@ class ProjectMemoryKnowledgeGraphJob implements ShouldQueue
         }
 
         $projector->projectMemory($memory);
+
+        ProposeMemoryRelationsJob::dispatch($memory->id);
     }
 }

@@ -17,5 +17,8 @@ class HarnessTypeTest extends TestCase
         $this->assertContains('~/.codex/config.toml', HarnessType::CODEX->recommendedPaths());
         $this->assertContains('~/.gemini/config/AGENTS.md', HarnessType::ANTIGRAVITY->recommendedPaths());
         $this->assertContains('~/.hermes/config.json', HarnessType::HERMES->recommendedPaths());
+
+        $this->assertContains('.agents/hooks/pre-flight-guard.sh', HarnessType::ANTIGRAVITY->preflightHookPaths());
+        $this->assertContains('~/.claude/hooks/pre_prompt.sh', HarnessType::CLAUDE_CODE->preflightHookPaths());
     }
 }

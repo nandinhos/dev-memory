@@ -3,13 +3,16 @@
 namespace App\Livewire;
 
 use App\Enums\DocumentationValidationStatus;
+use App\Enums\KnowledgeEdgeStatus;
 use App\Enums\ValidationStatus;
 use App\Jobs\ValidateMemoryDocumentationJob;
+use App\Models\KnowledgeEdge;
 use App\Models\Memory;
 use App\Services\Curation\CanonicalizationAdvisor;
 use App\Services\Curation\CurationFailedException;
 use App\Services\Curation\DocumentationValidator;
 use App\Services\Curation\DocValidationOutcome;
+use App\Services\KnowledgeGraph\KnowledgeGraphQueryService;
 use App\Services\MemoryService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -203,9 +206,43 @@ class MemoryDetail extends Component
         $this->dispatch('show-toast', message: 'Memória rejeitada', type: 'aviso');
     }
 
+    public function approveRelation(string $edgeId): void
+    {
+        $this->authorizeAdmin();
+
+        $edge = KnowledgeEdge::where('status', KnowledgeEdgeStatus::PROPOSED)->findOrFail($edgeId);
+        $edge->update(['status' => KnowledgeEdgeStatus::VALIDATED]);
+
+        $this->dispatch('show-toast', message: 'Relação validada no grafo', type: 'sucesso');
+    }
+
+    public function rejectRelation(string $edgeId): void
+    {
+        $this->authorizeAdmin();
+
+        $edge = KnowledgeEdge::where('status', KnowledgeEdgeStatus::PROPOSED)->findOrFail($edgeId);
+        $edge->update(['status' => KnowledgeEdgeStatus::REJECTED]);
+
+        $this->dispatch('show-toast', message: 'Relação proposta rejeitada', type: 'aviso');
+    }
+
     public function render()
     {
-        return view('livewire.memory-detail');
+        $queryService = app(KnowledgeGraphQueryService::class);
+        $relatedResults = $queryService->relatedTo($this->memory, depth: 2, limit: 12);
+
+        $nodeId = $this->memory->knowledgeNode?->id;
+        $proposedEdges = $nodeId ? KnowledgeEdge::with(['source.memory', 'target.memory', 'evidence'])
+            ->where('status', KnowledgeEdgeStatus::PROPOSED)
+            ->where(function ($q) use ($nodeId) {
+                $q->where('source_node_id', $nodeId)->orWhere('target_node_id', $nodeId);
+            })
+            ->get() : collect();
+
+        return view('livewire.memory-detail', [
+            'relatedResults' => $relatedResults,
+            'proposedEdges' => $proposedEdges,
+        ]);
     }
 
     /** Ações de curadoria (validar/promover/excluir) são restritas a admin. */

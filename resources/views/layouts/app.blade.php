@@ -38,6 +38,11 @@
                 <span>MEMÓRIAS</span>
             </a>
 
+            <a href="{{ route('graph.index') }}"
+               class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('graph.index') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
+                <span>GRAFO CAUSAL</span>
+            </a>
+
             <a href="{{ route('memories.create') }}"
                class="flex items-center gap-3 px-4 py-3 font-heading font-black text-lg no-underline transition-all border-4 border-transparent hover:border-black {{ request()->routeIs('memories.create') ? 'sidebar-link-active border-black' : 'text-black hover:bg-black/5' }}">
                 <span>+ NOVA</span>
@@ -137,7 +142,7 @@
             </div>
         </div>
 
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-neo-bg relative">
+        <main class="flex-1 {{ request()->routeIs('graph.index') ? 'overflow-hidden flex flex-col p-0' : 'overflow-y-auto p-4 sm:p-6 lg:p-8' }} bg-neo-bg relative">
             {{ $slot }}
         </main>
 

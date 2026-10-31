@@ -7,6 +7,7 @@ use App\Enums\MemoryScope;
 use App\Models\KnowledgeEdge;
 use App\Models\KnowledgeNode;
 use App\Models\Memory;
+use Illuminate\Support\Str;
 
 class KnowledgeGraphQueryService
 {
@@ -116,5 +117,70 @@ class KnowledgeGraphQueryService
                 'confidence' => $evidence->confidence,
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * Renderiza o grafo causal em formato Mermaid (graph LR)
+     */
+    public function renderMermaid(Memory $root, array $results, string $direction = 'LR'): string
+    {
+        $lines = ["graph {$direction}"];
+        $rootId = 'node_'.substr(md5($root->id), 0, 8);
+        $cleanRootTitle = Str::limit(str_replace(['"', "\n", "\r"], ["'", ' ', ' '], $root->title), 50);
+        $rootEmoji = match ($root->type->value) {
+            'error' => '❌ ',
+            'best_practice' => '⭐ ',
+            'lesson' => '💡 ',
+            default => '📄 ',
+        };
+        $lines[] = "    {$rootId}[\"{$rootEmoji}{$cleanRootTitle}\"]:::root";
+
+        $renderedEdges = [];
+
+        foreach ($results as $result) {
+            /** @var Memory|null $mem */
+            $mem = $result['memory'] ?? null;
+            if ($mem === null) {
+                continue;
+            }
+
+            $memId = 'node_'.substr(md5($mem->id), 0, 8);
+            $cleanMemTitle = Str::limit(str_replace(['"', "\n", "\r"], ["'", ' ', ' '], $mem->title), 45);
+            $typeEmoji = match ($mem->type->value) {
+                'error' => '❌ ',
+                'best_practice' => '⭐ ',
+                'lesson' => '💡 ',
+                default => '📄 ',
+            };
+            $typeClass = match ($mem->type->value) {
+                'error' => ':::typeError',
+                'best_practice' => ':::typeBp',
+                'lesson' => ':::typeLesson',
+                default => '',
+            };
+            $lines[] = "    {$memId}[\"{$typeEmoji}{$cleanMemTitle}\"]{$typeClass}";
+
+            foreach ($result['path'] ?? [] as $segment) {
+                $relation = $segment['relation'] ?? 'relates_to';
+                $edgeDirection = $segment['direction'] ?? 'outgoing';
+                $edgeKey = $edgeDirection === 'incoming' ? "{$memId}->{$rootId}:{$relation}" : "{$rootId}->{$memId}:{$relation}";
+
+                if (! isset($renderedEdges[$edgeKey])) {
+                    $renderedEdges[$edgeKey] = true;
+                    if ($edgeDirection === 'incoming') {
+                        $lines[] = "    {$memId} -->|{$relation}| {$rootId}";
+                    } else {
+                        $lines[] = "    {$rootId} -->|{$relation}| {$memId}";
+                    }
+                }
+            }
+        }
+
+        $lines[] = '    classDef root fill:#4f46e5,stroke:#312e81,stroke-width:3px,color:#fff;';
+        $lines[] = '    classDef typeError fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d;';
+        $lines[] = '    classDef typeBp fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d;';
+        $lines[] = '    classDef typeLesson fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#713f12;';
+
+        return implode("\n", $lines);
     }
 }

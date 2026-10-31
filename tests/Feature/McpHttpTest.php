@@ -2,9 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MemoryScope;
+use App\Enums\MemoryType;
+use App\Enums\ValidationStatus;
 use App\Livewire\Admin\ApiTokens;
 use App\Models\ApiToken;
+use App\Models\Memory;
 use App\Models\User;
+use App\Services\KnowledgeGraph\KnowledgeGraphProjector;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -131,5 +136,86 @@ class McpHttpTest extends TestCase
             ->call('revoke', $token->id);
 
         $this->assertSame(1, ApiToken::where('user_id', $owner->id)->count());
+    }
+
+    public function test_memory_related_renders_mermaid_when_requested(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->tokenFor($user);
+
+        $source = Memory::factory()->create([
+            'title' => 'Problema A',
+            'type' => MemoryType::ERROR,
+            'stack' => 'Laravel',
+            'scope' => MemoryScope::GLOBAL,
+            'validation_status' => ValidationStatus::VALIDATED,
+        ]);
+
+        $solution = Memory::factory()->create([
+            'title' => 'Solução B',
+            'type' => MemoryType::BEST_PRACTICE,
+            'stack' => 'Laravel',
+            'scope' => MemoryScope::GLOBAL,
+            'validation_status' => ValidationStatus::VALIDATED,
+        ]);
+
+        $projector = app(KnowledgeGraphProjector::class);
+        $projector->projectMemory($source);
+        $projector->projectMemory($solution);
+
+        $response = $this->rpc($token, [
+            'jsonrpc' => '2.0',
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'memory_related',
+                'arguments' => [
+                    'id' => $source->id,
+                    'format' => 'mermaid',
+                ],
+            ],
+            'id' => 99,
+        ]);
+
+        $response->assertOk();
+        $content = $response->json('result.content.0.text');
+        $this->assertNotNull($content);
+
+        $result = json_decode($content, true);
+
+        $this->assertArrayHasKey('mermaid', $result);
+        $this->assertStringStartsWith('graph LR', $result['mermaid']);
+        $this->assertStringContainsString('Problema A', $result['mermaid']);
+        $this->assertStringContainsString('Solução B', $result['mermaid']);
+    }
+
+    public function test_harness_hook_script_generates_preflight_guard(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->tokenFor($user);
+
+        $response = $this->rpc($token, [
+            'jsonrpc' => '2.0',
+            'method' => 'tools/call',
+            'params' => [
+                'name' => 'harness_hook_script',
+                'arguments' => [
+                    'harness' => 'antigravity',
+                    'hook_type' => 'preflight',
+                ],
+            ],
+            'id' => 101,
+        ]);
+
+        $response->assertOk();
+        $content = $response->json('result.content.0.text');
+        $this->assertNotNull($content);
+
+        $result = json_decode($content, true);
+
+        $this->assertSame('antigravity', $result['harness']);
+        $this->assertSame('preflight', $result['hook_type']);
+        $this->assertContains('.agents/hooks/pre-flight-guard.sh', $result['hook_paths']);
+        $this->assertStringContainsString('Pre-flight Guard Hook', $result['script']);
+        $this->assertStringContainsString('hub_briefing', $result['script']);
     }
 }

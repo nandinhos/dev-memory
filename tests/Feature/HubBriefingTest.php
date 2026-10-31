@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
 use App\Jobs\CurateCaptureJob;
@@ -10,6 +11,7 @@ use App\Models\Capture;
 use App\Models\Memory;
 use App\Models\User;
 use App\Services\HubBriefingService;
+use App\Services\KnowledgeGraph\KnowledgeGraphProjector;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -146,5 +148,39 @@ class HubBriefingTest extends TestCase
 
         $this->assertSame(1, Capture::count());
         Queue::assertPushed(CurateCaptureJob::class, 1);
+    }
+
+    public function test_briefing_enriches_results_with_knowledge_graph_insights(): void
+    {
+        $source = Memory::factory()->create([
+            'title' => 'Deadlock de transação no Postgres',
+            'type' => MemoryType::ERROR,
+            'stack' => 'PostgreSQL',
+            'scope' => MemoryScope::GLOBAL,
+            'validation_status' => ValidationStatus::VALIDATED,
+        ]);
+
+        $solution = Memory::factory()->create([
+            'title' => 'Usar select for update com ordenação consistente',
+            'type' => MemoryType::BEST_PRACTICE,
+            'stack' => 'PostgreSQL',
+            'scope' => MemoryScope::GLOBAL,
+            'validation_status' => ValidationStatus::VALIDATED,
+        ]);
+
+        $projector = app(KnowledgeGraphProjector::class);
+        $projector->projectMemory($source);
+        $projector->projectMemory($solution);
+
+        $briefing = app(HubBriefingService::class)->briefing('PostgreSQL');
+
+        $this->assertArrayHasKey('graph_insights', $briefing);
+        $this->assertNotEmpty($briefing['graph_insights']);
+
+        $insight = $briefing['graph_insights'][0];
+        $this->assertArrayHasKey('source_id', $insight);
+        $this->assertArrayHasKey('relation', $insight);
+        $this->assertArrayHasKey('target_title', $insight);
+        $this->assertStringContainsString('conexão(ões) no grafo', $briefing['summary']);
     }
 }

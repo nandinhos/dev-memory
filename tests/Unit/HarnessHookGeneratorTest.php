@@ -105,4 +105,80 @@ STUB;
         $this->assertSame('memory_ingest', $decoded['params']['name']);
         $this->assertSame($multiline, $decoded['params']['arguments']['content']);
     }
+
+    public function test_generates_valid_preflight_hook_script(): void
+    {
+        /** @var HarnessHookGenerator $generator */
+        $generator = app(HarnessHookGenerator::class);
+
+        $script = $generator->generatePreflightHookScript(
+            harness: HarnessType::ANTIGRAVITY,
+            mcpUrl: 'https://devmemory.fssdev.com.br/api/mcp',
+            apiToken: 'token-preflight-xyz',
+        );
+
+        $this->assertStringContainsString('#!/usr/bin/env bash', $script);
+        $this->assertStringContainsString('Pre-flight Guard Hook', $script);
+        $this->assertStringContainsString('Google Antigravity', $script);
+        $this->assertStringContainsString('hub_briefing', $script);
+        $this->assertStringContainsString('Authorization: Bearer token-preflight-xyz', $script);
+        $this->assertStringContainsString('DEV-MEMORY GUARD', $script);
+        $this->assertStringContainsString('graph_insights', $script);
+    }
+
+    public function test_preflight_hook_script_payload_is_valid_json(): void
+    {
+        foreach (['bash', 'jq'] as $bin) {
+            $found = trim((string) shell_exec("command -v {$bin} 2>/dev/null"));
+            if ($found === '') {
+                $this->markTestSkipped("Requer {$bin} disponível no host.");
+            }
+        }
+
+        /** @var HarnessHookGenerator $generator */
+        $generator = app(HarnessHookGenerator::class);
+
+        $script = $generator->generatePreflightHookScript(
+            harness: HarnessType::CLAUDE_CODE,
+            mcpUrl: 'http://127.0.0.1:1/never-called',
+            apiToken: 'token-preflight-abc',
+        );
+
+        $capture = tempnam(sys_get_temp_dir(), 'preflight-payload-');
+        $bashFile = tempnam(sys_get_temp_dir(), 'preflight-bash-');
+
+        $curlStub = <<<'STUB'
+curl() {
+  local prev="" arg=""
+  for arg in "$@"; do
+    case "$prev" in
+      -d|--data|--data-raw|--data-binary) printf '%s' "$arg" > "$HOOK_CAPTURE";;
+    esac
+    prev="$arg"
+  done
+  echo '{"result":{"content":[{"text":"{\"total_memories\":1,\"errors\":[],\"best_practices\":[],\"graph_insights\":[]}"}]}}'
+  return 0
+}
+export -f curl
+STUB;
+
+        file_put_contents(
+            $bashFile,
+            'HOOK_CAPTURE='.escapeshellarg($capture)."\n".$curlStub."\n".$script,
+        );
+
+        $process = new Process(['bash', $bashFile, 'Minha tarefa de teste']);
+        $process->setTimeout(10);
+        $process->run();
+
+        $payload = file_get_contents($capture);
+        @unlink($capture);
+        @unlink($bashFile);
+
+        $this->assertNotEmpty($payload, 'O hook de preflight deveria ter enviado requisição ao MCP. STDERR: '.$process->getErrorOutput());
+        $decoded = json_decode(trim($payload), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame('2.0', $decoded['jsonrpc']);
+        $this->assertSame('hub_briefing', $decoded['params']['name']);
+        $this->assertSame('Minha tarefa de teste', $decoded['params']['arguments']['description']);
+    }
 }
