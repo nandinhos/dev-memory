@@ -84,6 +84,7 @@ class MemoryMcpServer
                         'id' => ['type' => 'string', 'description' => 'UUID da memória de origem'],
                         'depth' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3, 'default' => 2],
                         'limit' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20],
+                        'format' => ['type' => 'string', 'enum' => ['json', 'mermaid'], 'default' => 'json', 'description' => 'Formato de saída: "json" (padrão) ou "mermaid" para visualização gráfica em diagrama'],
                     ],
                     'required' => ['id'],
                 ],
@@ -509,7 +510,9 @@ class MemoryMcpServer
             (int) ($args['limit'] ?? 20),
         );
 
-        return [
+        $format = $args['format'] ?? 'json';
+
+        $output = [
             'memory_id' => $memory->id,
             'total' => count($results),
             'results' => collect($results)->map(fn (array $result) => [
@@ -522,6 +525,60 @@ class MemoryMcpServer
                 'path' => $result['path'],
             ])->all(),
         ];
+
+        if ($format === 'mermaid') {
+            $output['mermaid'] = $this->renderMermaidGraph($memory, $results);
+        }
+
+        return $output;
+    }
+
+    private function renderMermaidGraph(Memory $root, array $results): string
+    {
+        $lines = ['graph TD'];
+        $rootId = 'node_'.substr(md5($root->id), 0, 8);
+        $rootTitle = addslashes(str_replace(['"', "\n", "\r"], ["'", ' ', ' '], $root->title));
+        $rootEmoji = match ($root->type->value) {
+            'error' => '❌ ',
+            'best_practice' => '⭐ ',
+            'lesson' => '💡 ',
+            default => '📄 ',
+        };
+        $lines[] = "    {$rootId}[\"{$rootEmoji}{$rootTitle}\"]:::root";
+
+        $renderedEdges = [];
+
+        foreach ($results as $result) {
+            $mem = $result['memory'];
+            $memId = 'node_'.substr(md5($mem->id), 0, 8);
+            $memTitle = addslashes(str_replace(['"', "\n", "\r"], ["'", ' ', ' '], $mem->title));
+            $typeEmoji = match ($mem->type->value) {
+                'error' => '❌ ',
+                'best_practice' => '⭐ ',
+                'lesson' => '💡 ',
+                default => '📄 ',
+            };
+            $lines[] = "    {$memId}[\"{$typeEmoji}{$memTitle}\"]";
+
+            foreach ($result['path'] ?? [] as $segment) {
+                $relation = $segment['relation'] ?? 'relates_to';
+                $direction = $segment['direction'] ?? 'outgoing';
+                $edgeKey = $direction === 'incoming' ? "{$memId}->{$rootId}:{$relation}" : "{$rootId}->{$memId}:{$relation}";
+
+                if (! isset($renderedEdges[$edgeKey])) {
+                    $renderedEdges[$edgeKey] = true;
+                    if ($direction === 'incoming') {
+                        $lines[] = "    {$memId} -->|{$relation}| {$rootId}";
+                    } else {
+                        $lines[] = "    {$rootId} -->|{$relation}| {$memId}";
+                    }
+                }
+            }
+        }
+
+        $lines[] = '    classDef root fill:#4f46e5,stroke:#312e81,stroke-width:2px,color:#fff;';
+
+        return implode("\n", $lines);
     }
 
     private function toolRelationExtractPropose(array $args): array
