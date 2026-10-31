@@ -1,4 +1,4 @@
-<div class="flex-1 flex flex-col h-[calc(100vh-4rem)] lg:h-screen overflow-hidden bg-neo-bg"
+<div class="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#faf6ee] relative"
      x-data="knowledgeGraphExplorer({
          nodesData: @js($graphData['nodes']),
          edgesData: @js($graphData['edges']),
@@ -12,8 +12,8 @@
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     @endassets
 
-    {{-- Header de Controle e Filtros --}}
-    <header class="bg-neo-white border-b-4 border-black p-4 shrink-0 flex flex-wrap items-center justify-between gap-4 z-10 shadow-neo-sm">
+    {{-- Header de Controle e Filtros Neo-Brutalista --}}
+    <header class="bg-neo-white border-b-4 border-black px-4 py-3 shrink-0 flex flex-wrap items-center justify-between gap-4 z-10 shadow-neo-sm">
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2">
                 <span class="text-xl">🕸️</span>
@@ -22,7 +22,7 @@
                 </h1>
             </div>
 
-            <div class="hidden sm:flex items-center gap-2">
+            <div class="flex items-center gap-2">
                 <span class="bg-black text-white text-[11px] font-mono font-bold px-2.5 py-1 border border-black">
                     {{ count($graphData['nodes']) }} nós
                 </span>
@@ -69,7 +69,7 @@
                 </button>
                 <button type="button"
                         @click="fitView()"
-                        title="Centralizar Grafo"
+                        title="Centralizar / Enquadrar Todos os Nós"
                         class="btn-neo bg-white neo-border-sm px-2.5 py-1 font-mono text-xs font-black hover:bg-neo-teal">
                     ⤢
                 </button>
@@ -79,7 +79,7 @@
 
     {{-- Banner de Foco Ativo (se aplicável) --}}
     @if($rootMemory)
-        <div class="bg-neo-yellow border-b-4 border-black px-4 py-2 flex items-center justify-between gap-3 shrink-0">
+        <div class="bg-neo-yellow border-b-4 border-black px-4 py-2 flex items-center justify-between gap-3 shrink-0 z-10">
             <div class="flex items-center gap-2 min-w-0">
                 <span class="bg-black text-white px-2 py-0.5 text-[10px] font-mono font-bold uppercase shrink-0">
                     FOCO ATIVO (2 SALTOS)
@@ -97,62 +97,75 @@
         </div>
     @endif
 
-    {{-- Área Principal: Canvas do Grafo + Drawer Lateral --}}
-    <div class="flex-1 relative overflow-hidden flex">
-        {{-- Canvas do Vis-Network --}}
+    {{-- Área Principal: Canvas Full Screen do Grafo + Drawer Lateral --}}
+    <div class="flex-1 w-full h-full relative overflow-hidden flex">
+        {{-- Canvas do Vis-Network com altura 100% garantida --}}
         <div id="vis-network-container"
              x-ref="graphContainer"
-             class="flex-1 w-full h-full cursor-grab active:cursor-grabbing bg-[#faf6ee]"
-             style="background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 24px 24px;">
+             class="flex-1 w-full h-full cursor-grab active:cursor-grabbing bg-[#faf6ee] relative"
+             style="height: 100%; width: 100%; min-height: 400px; background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 24px 24px;">
         </div>
 
-        {{-- Legenda Neo-Brutalista Flutuante no Canto Inferior Esquerdo --}}
-        <div class="absolute bottom-4 left-4 z-10 bg-white/95 neo-border-sm p-3 shadow-neo hidden sm:block backdrop-blur-sm">
-            <div class="text-[10px] font-mono font-bold uppercase text-gray-500 mb-2">// LEGENDA</div>
-            <div class="space-y-1.5 text-xs font-mono">
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 border border-black inline-block bg-[#fee2e2]"></span>
-                    <span class="text-black font-bold">Erro / Falha</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 border border-black inline-block bg-[#dcfce7]"></span>
-                    <span class="text-black font-bold">Boa Prática</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 border border-black inline-block bg-[#fef9c3]"></span>
-                    <span class="text-black font-bold">Lição Aprendida</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 border border-black inline-block bg-[#ccfbf1] rounded-full"></span>
-                    <span class="text-black font-bold">Tecnologia (Hub)</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 border border-black inline-block bg-[#4f46e5]"></span>
-                    <span class="text-black font-bold">Foco Central</span>
-                </div>
+        {{-- Legenda Neo-Brutalista Flutuante no Canto Inferior Esquerdo com Cores Explícitas --}}
+        <div class="absolute bottom-5 left-5 z-20 bg-white neo-border p-3.5 shadow-neo hidden sm:block backdrop-blur-sm pointer-events-auto"
+             x-data="{ collapsed: false }">
+            <div class="flex items-center justify-between gap-4 mb-2 pb-1 border-b-2 border-black">
+                <span class="text-[10px] font-mono font-black uppercase text-black tracking-wider">// LEGENDA DO GRAFO</span>
+                <button type="button" @click="collapsed = !collapsed" class="text-xs font-mono font-black hover:text-neo-magenta px-1">
+                    <span x-text="collapsed ? '[+]' : '[−]'"></span>
+                </button>
             </div>
-            <div class="mt-2 pt-2 border-t border-gray-200 text-[10px] font-mono text-gray-500">
-                Arraste nós • Scroll p/ zoom • Clique p/ inspecionar
+            
+            <div x-show="!collapsed" class="space-y-2 text-xs font-mono transition-all">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-4 h-4 border-2 border-black inline-block shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          style="background-color: #fee2e2;"></span>
+                    <span class="text-black font-bold text-[11px]">Erro / Falha</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-4 h-4 border-2 border-black inline-block shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          style="background-color: #dcfce7;"></span>
+                    <span class="text-black font-bold text-[11px]">Boa Prática</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-4 h-4 border-2 border-black inline-block shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          style="background-color: #fef08a;"></span>
+                    <span class="text-black font-bold text-[11px]">Lição Aprendida</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-4 h-4 border-2 border-black inline-block shrink-0 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          style="background-color: #ccfbf1;"></span>
+                    <span class="text-black font-bold text-[11px]">Tecnologia (Hub)</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-4 h-4 border-2 border-black inline-block shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          style="background-color: #4f46e5;"></span>
+                    <span class="text-black font-bold text-[11px]">Foco Central</span>
+                </div>
+                <div class="pt-1.5 mt-1 border-t border-gray-200 text-[10px] font-mono text-gray-500">
+                    Arraste nós • Scroll p/ zoom • Clique p/ inspecionar
+                </div>
             </div>
         </div>
 
         {{-- Painel Lateral (Drawer) de Inspeção do Nó Selecionado --}}
         @if($selectedNode)
-            <div class="w-80 md:w-96 bg-white border-l-4 border-black p-5 flex flex-col justify-between shrink-0 shadow-[-6px_0px_0px_0px_rgba(0,0,0,1)] z-20 overflow-y-auto">
+            <div class="w-80 md:w-96 bg-white border-l-4 border-black p-5 flex flex-col justify-between shrink-0 shadow-[-6px_0px_0px_0px_rgba(0,0,0,1)] z-30 overflow-y-auto">
                 <div class="space-y-4">
                     {{-- Nó de Memória --}}
                     @if($selectedNode->memory)
                         @php
                             $mem = $selectedNode->memory;
                             $badgeStyle = match($mem->type->value) {
-                                'error' => 'bg-neo-magenta text-white',
-                                'best_practice' => 'bg-neo-green text-black',
-                                'lesson' => 'bg-neo-yellow text-black',
-                                default => 'bg-gray-200 text-black',
+                                'error' => 'background-color: #fee2e2; color: #7f1d1d; border-color: #ef4444;',
+                                'best_practice' => 'background-color: #dcfce7; color: #14532d; border-color: #22c55e;',
+                                'lesson' => 'background-color: #fef9c3; color: #713f12; border-color: #ca8a04;',
+                                default => 'background-color: #f3f4f6; color: #000000; border-color: #000000;',
                             };
                         @endphp
                         <div class="flex items-center justify-between gap-2 border-b-2 border-black pb-3">
-                            <span class="{{ $badgeStyle }} px-2 py-0.5 text-[11px] font-heading font-black uppercase border border-black">
+                            <span class="px-2.5 py-0.5 text-[11px] font-heading font-black uppercase border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                  style="{{ $badgeStyle }}">
                                 {{ $mem->type->label() }}
                             </span>
 
@@ -197,7 +210,8 @@
                     {{-- Nó de Tecnologia / Hub --}}
                     @else
                         <div class="flex items-center justify-between gap-2 border-b-2 border-black pb-3">
-                            <span class="bg-neo-teal text-black px-2 py-0.5 text-[11px] font-heading font-black uppercase border border-black">
+                            <span class="px-2.5 py-0.5 text-[11px] font-heading font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                  style="background-color: #ccfbf1; color: #134e4a;">
                                 HUB TECNOLÓGICO
                             </span>
 
@@ -264,7 +278,7 @@
         @endif
     </div>
 
-    {{-- Script Alpine.js para Inicializar e Controlar o Vis-Network --}}
+    {{-- Script Alpine.js para Inicializar, Controlar e Redimensionar o Vis-Network --}}
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('knowledgeGraphExplorer', (config) => ({
@@ -275,6 +289,13 @@
                 initGraph() {
                     this.$nextTick(() => {
                         this.mountNetwork(config.nodesData, config.edgesData);
+                    });
+
+                    window.addEventListener('resize', () => {
+                        if (this.network) {
+                            this.network.redraw();
+                            this.network.fit();
+                        }
                     });
                 },
 
@@ -306,21 +327,27 @@
                         physics: {
                             solver: 'forceAtlas2Based',
                             forceAtlas2Based: {
-                                gravitationalConstant: -50,
-                                centralGravity: 0.015,
-                                springLength: 100,
-                                springConstant: 0.08,
-                                damping: 0.4,
-                                avoidOverlap: 0.8
+                                gravitationalConstant: -140, // Repulsão maior para espalhar bem os nós
+                                centralGravity: 0.008,       // Gravidade suave mantendo coeso
+                                springLength: 150,           // Distância confortável entre nós conectados
+                                springConstant: 0.05,
+                                damping: 0.45,
+                                avoidOverlap: 1.0            // Evita colisão entre caixas e labels
                             },
                             stabilization: {
-                                iterations: 70,
-                                updateInterval: 25
+                                iterations: 120,
+                                updateInterval: 25,
+                                fit: true
                             }
                         }
                     };
 
                     this.network = new vis.Network(container, data, options);
+
+                    // Ajusta o enquadramento ao concluir a estabilização da física
+                    this.network.once('stabilizationIterationsDone', () => {
+                        this.network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+                    });
 
                     // Evento de clique para selecionar nó
                     this.network.on('click', (params) => {
@@ -345,13 +372,13 @@
                     this.nodesDataSet.add(data.nodes);
                     this.edgesDataSet.add(data.edges);
 
-                    this.network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+                    this.network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
                 },
 
                 zoomIn() {
                     if (!this.network) return;
                     const scale = this.network.getScale();
-                    this.network.moveTo({ scale: scale * 1.3, animation: { duration: 250 } });
+                    this.network.moveTo({ scale: scale * 1.35, animation: { duration: 250 } });
                 },
 
                 zoomOut() {

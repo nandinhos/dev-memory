@@ -142,7 +142,7 @@
             </div>
         </div>
 
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-neo-bg relative">
+        <main class="flex-1 {{ request()->routeIs('graph.index') ? 'overflow-hidden flex flex-col p-0' : 'overflow-y-auto p-4 sm:p-6 lg:p-8' }} bg-neo-bg relative">
             {{ $slot }}
         </main>
 
