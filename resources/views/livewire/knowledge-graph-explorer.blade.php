@@ -148,22 +148,24 @@
             </div>
         </div>
 
-        {{-- Painel Lateral (Drawer) de Inspeção do Nó Selecionado --}}
+        {{-- Painel Lateral (Drawer) de Inspeção Responsivo --}}
         @if($selectedNode)
-            <div class="w-80 md:w-96 bg-white border-l-4 border-black p-5 flex flex-col justify-between shrink-0 shadow-[-6px_0px_0px_0px_rgba(0,0,0,1)] z-30 overflow-y-auto">
-                <div class="space-y-4">
-                    {{-- Nó de Memória --}}
-                    @if($selectedNode->memory)
-                        @php
-                            $mem = $selectedNode->memory;
-                            $badgeStyle = match($mem->type->value) {
-                                'error' => 'background-color: #fee2e2; color: #7f1d1d; border-color: #ef4444;',
-                                'best_practice' => 'background-color: #dcfce7; color: #14532d; border-color: #22c55e;',
-                                'lesson' => 'background-color: #fef9c3; color: #713f12; border-color: #ca8a04;',
-                                default => 'background-color: #f3f4f6; color: #000000; border-color: #000000;',
-                            };
-                        @endphp
-                        <div class="flex items-center justify-between gap-2 border-b-2 border-black pb-3">
+            <div class="w-full sm:w-[420px] md:w-[480px] lg:w-[540px] xl:w-[580px] max-w-full bg-white border-l-4 border-black p-5 flex flex-col justify-between shrink-0 shadow-[-6px_0px_0px_0px_rgba(0,0,0,1)] z-30 h-full overflow-hidden">
+                {{-- Nó de Memória --}}
+                @if($selectedNode->memory)
+                    @php
+                        $mem = $selectedNode->memory;
+                        $badgeStyle = match($mem->type->value) {
+                            'error' => 'background-color: #fee2e2; color: #7f1d1d; border-color: #ef4444;',
+                            'best_practice' => 'background-color: #dcfce7; color: #14532d; border-color: #22c55e;',
+                            'lesson' => 'background-color: #fef9c3; color: #713f12; border-color: #ca8a04;',
+                            default => 'background-color: #f3f4f6; color: #000000; border-color: #000000;',
+                        };
+                    @endphp
+
+                    {{-- Topo da Memória --}}
+                    <div class="shrink-0 space-y-3 pb-3 border-b-2 border-black">
+                        <div class="flex items-center justify-between gap-2">
                             <span class="px-2.5 py-0.5 text-[11px] font-heading font-black uppercase border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                   style="{{ $badgeStyle }}">
                                 {{ $mem->type->label() }}
@@ -171,19 +173,19 @@
 
                             <button type="button"
                                     wire:click="clearSelection"
-                                    class="w-6 h-6 rounded-none border border-black font-mono text-xs font-bold hover:bg-black hover:text-white flex items-center justify-center">
+                                    class="w-7 h-7 rounded-none border-2 border-black font-mono text-xs font-black hover:bg-black hover:text-white flex items-center justify-center transition-colors">
                                 ✕
                             </button>
                         </div>
 
                         <div>
-                            <span class="text-[10px] font-mono uppercase text-gray-400 block mb-1">Título da Memória</span>
-                            <h2 class="font-heading font-black text-base text-black leading-snug m-0">
+                            <span class="text-[10px] font-mono uppercase text-gray-400 block mb-0.5">Título da Memória</span>
+                            <h2 class="font-heading font-black text-base sm:text-lg text-black leading-snug m-0">
                                 {{ $mem->title }}
                             </h2>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2 pt-2">
+                        <div class="grid grid-cols-2 gap-2">
                             <div class="bg-gray-50 neo-border-sm p-2">
                                 <span class="text-[9px] font-mono uppercase text-gray-500 block">Stack</span>
                                 <span class="font-mono text-xs font-bold text-black truncate block mt-0.5">
@@ -197,19 +199,36 @@
                                 </span>
                             </div>
                         </div>
+                    </div>
 
-                        @if($mem->description)
-                            <div class="pt-2">
-                                <span class="text-[10px] font-mono uppercase text-gray-400 block mb-1">Resumo Causal</span>
-                                <p class="font-sans text-xs text-gray-700 bg-gray-50 p-2.5 neo-border-sm m-0 leading-relaxed max-h-36 overflow-y-auto">
-                                    {{ Str::limit($mem->description, 280) }}
-                                </p>
-                            </div>
-                        @endif
+                    {{-- Resumo Causal Responsivo (Ocupa o espaço livre com scroll elegante) --}}
+                    <div class="flex-1 min-h-0 flex flex-col py-3 overflow-hidden">
+                        <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1.5 shrink-0">// RESUMO CAUSAL</span>
+                        <div class="flex-1 overflow-y-auto bg-gray-50 p-3.5 neo-border-sm text-xs text-gray-800 leading-relaxed font-sans max-h-full">
+                            {{ $mem->description ?: 'Sem descrição detalhada registrada para esta memória.' }}
+                        </div>
+                    </div>
 
-                    {{-- Nó de Tecnologia / Hub --}}
-                    @else
-                        <div class="flex items-center justify-between gap-2 border-b-2 border-black pb-3">
+                    {{-- Ações no Rodapé da Memória --}}
+                    <div class="shrink-0 space-y-2 pt-3 border-t-2 border-black bg-white">
+                        <button type="button"
+                                wire:click="setFocus('{{ $selectedNode->memory->id }}')"
+                                class="w-full btn-neo bg-neo-yellow neo-border-sm text-black py-2.5 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
+                            <span>🎯 Focar Grafo Aqui (2 Saltos)</span>
+                        </button>
+
+                        <a href="{{ route('memories.show', $selectedNode->memory) }}"
+                           wire:navigate
+                           class="w-full btn-neo bg-neo-magenta neo-border-sm text-white py-2.5 font-heading font-black text-xs hover:bg-neo-teal hover:text-black transition-colors flex items-center justify-center gap-2 no-underline">
+                            <span>Abrir Detalhe Completo ↗</span>
+                        </a>
+                    </div>
+
+                {{-- Nó de Tecnologia / Hub --}}
+                @else
+                    {{-- Topo do Hub Tecnológico --}}
+                    <div class="shrink-0 space-y-2 pb-3 border-b-2 border-black">
+                        <div class="flex items-center justify-between gap-2">
                             <span class="px-2.5 py-0.5 text-[11px] font-heading font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                   style="background-color: #ccfbf1; color: #134e4a;">
                                 HUB TECNOLÓGICO
@@ -217,63 +236,75 @@
 
                             <button type="button"
                                     wire:click="clearSelection"
-                                    class="w-6 h-6 rounded-none border border-black font-mono text-xs font-bold hover:bg-black hover:text-white flex items-center justify-center">
+                                    class="w-7 h-7 rounded-none border-2 border-black font-mono text-xs font-black hover:bg-black hover:text-white flex items-center justify-center transition-colors">
                                 ✕
                             </button>
                         </div>
 
                         <div>
-                            <span class="text-[10px] font-mono uppercase text-gray-400 block mb-1">Tecnologia / Conceito</span>
-                            <h2 class="font-heading font-black text-xl text-black leading-snug m-0">
-                                ⚡ {{ $selectedNode->label }}
+                            <span class="text-[10px] font-mono uppercase text-gray-400 block mb-0.5">Tecnologia / Hub Causal</span>
+                            <h2 class="font-heading font-black text-xl sm:text-2xl text-black leading-snug m-0 flex items-center gap-1.5">
+                                <span class="text-neo-magenta">⚡</span>
+                                <span>{{ $selectedNode->label }}</span>
                             </h2>
                         </div>
+                    </div>
 
-                        <div class="pt-2">
-                            <span class="text-[10px] font-mono uppercase text-gray-500 block mb-2">Memórias Conectadas ({{ $selectedNode->incomingEdges->count() }})</span>
-                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                                @forelse($selectedNode->incomingEdges as $inEdge)
-                                    @if($inEdge->source?->memory)
-                                        <a href="{{ route('memories.show', $inEdge->source->memory) }}" wire:navigate
-                                           class="block bg-gray-50 hover:bg-neo-yellow/20 p-2 neo-border-sm no-underline text-black group transition-colors">
-                                            <span class="text-[9px] font-mono uppercase text-gray-500 block">
+                    {{-- Lista Responsiva de Memórias Conectadas (Ocupa 100% da altura livre do drawer) --}}
+                    <div class="flex-1 min-h-0 flex flex-col py-3 overflow-hidden">
+                        <div class="flex items-center justify-between gap-2 mb-2 pb-1 border-b border-black/20 shrink-0">
+                            <span class="text-[10px] font-mono font-black uppercase text-gray-600 tracking-wider">
+                                // MEMÓRIAS CONECTADAS ({{ $selectedNode->incomingEdges->count() }})
+                            </span>
+                            <span class="text-[10px] font-mono text-gray-400">
+                                role para ver mais
+                            </span>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto pr-1.5 space-y-2.5">
+                            @forelse($selectedNode->incomingEdges as $inEdge)
+                                @if($inEdge->source?->memory)
+                                    @php
+                                        $relMem = $inEdge->source->memory;
+                                        $typeColor = match($relMem->type->value) {
+                                            'error' => 'bg-neo-magenta text-white',
+                                            'best_practice' => 'bg-neo-green text-black',
+                                            'lesson' => 'bg-neo-yellow text-black',
+                                            default => 'bg-gray-200 text-black',
+                                        };
+                                    @endphp
+                                    <a href="{{ route('memories.show', $relMem) }}" wire:navigate
+                                       class="block bg-white hover:bg-neo-yellow/20 p-3 neo-border-sm no-underline text-black group transition-all hover:translate-x-1 shadow-sm">
+                                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                                            <span class="bg-black text-white px-1.5 py-0.5 text-[9px] font-mono uppercase font-bold">
                                                 {{ $inEdge->relation_type->value }}
                                             </span>
-                                            <p class="font-heading text-xs font-bold group-hover:text-neo-magenta line-clamp-2 m-0 mt-0.5">
-                                                {{ $inEdge->source->memory->title }}
-                                            </p>
-                                        </a>
-                                    @endif
-                                @empty
-                                    <p class="text-xs font-mono text-gray-400">Nenhuma memória vinculada diretamente.</p>
-                                @endforelse
-                            </div>
+                                            <span class="{{ $typeColor }} px-1.5 py-0.5 text-[9px] font-heading font-black uppercase border border-black">
+                                                {{ $relMem->type->label() }}
+                                            </span>
+                                        </div>
+                                        <p class="font-heading text-xs font-bold text-black group-hover:text-neo-magenta line-clamp-2 m-0 leading-tight">
+                                            {{ $relMem->title }}
+                                        </p>
+                                    </a>
+                                @endif
+                            @empty
+                                <div class="text-center py-8 text-gray-400 font-mono text-xs border border-dashed border-gray-300">
+                                    Nenhuma memória vinculada diretamente a este hub.
+                                </div>
+                            @endforelse
                         </div>
-                    @endif
-                </div>
+                    </div>
 
-                {{-- Ações no Rodapé do Drawer --}}
-                <div class="space-y-2 pt-4 border-t-2 border-black mt-4">
-                    @if($selectedNode->memory)
-                        <button type="button"
-                                wire:click="setFocus('{{ $selectedNode->memory->id }}')"
-                                class="w-full btn-neo bg-neo-yellow neo-border-sm text-black py-2 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
-                            <span>🎯 Focar Grafo Aqui (2 Saltos)</span>
-                        </button>
-
-                        <a href="{{ route('memories.show', $selectedNode->memory) }}"
-                           wire:navigate
-                           class="w-full btn-neo bg-neo-magenta neo-border-sm text-white py-2 font-heading font-black text-xs hover:bg-neo-teal hover:text-black transition-colors flex items-center justify-center gap-2 no-underline">
-                            <span>Abrir Detalhe Completo ↗</span>
-                        </a>
-                    @else
+                    {{-- Ações no Rodapé do Hub Tecnológico --}}
+                    <div class="shrink-0 pt-3 border-t-2 border-black bg-white">
                         <button type="button"
                                 wire:click="$set('stack', '{{ $selectedNode->label }}')"
-                                class="w-full btn-neo bg-neo-teal neo-border-sm text-black py-2 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
-                            <span>Filtrar por esta Stack</span>
+                                class="w-full btn-neo bg-neo-teal neo-border-sm text-black py-2.5 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
+                            <span>Filtrar Grafo por esta Stack ({{ $selectedNode->label }})</span>
                         </button>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </div>
         @endif
     </div>
