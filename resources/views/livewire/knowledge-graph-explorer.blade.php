@@ -37,6 +37,7 @@
             @if($availableStacks->isNotEmpty())
                 <div class="w-36">
                     <select wire:model.live="stack"
+                            @change="refreshFromBackend()"
                             class="w-full bg-white neo-border-sm px-2.5 py-1.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-black">
                         <option value="">Todas as Stacks</option>
                         @foreach($availableStacks as $s)
@@ -91,6 +92,7 @@
 
             <button type="button"
                     wire:click="clearFocus"
+                    @click="refreshFromBackend()"
                     class="btn-neo bg-white neo-border-sm text-black px-3 py-1 text-xs font-mono font-bold hover:bg-neo-magenta hover:text-white shrink-0">
                 ✕ Ver Todos os Nós
             </button>
@@ -258,6 +260,7 @@
                     @if($selectedNode->memory)
                         <button type="button"
                                 wire:click="setFocus('{{ $selectedNode->memory->id }}')"
+                                @click="refreshFromBackend()"
                                 class="w-full btn-neo bg-neo-yellow neo-border-sm text-black py-2 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
                             <span>🎯 Focar Grafo Aqui (2 Saltos)</span>
                         </button>
@@ -270,6 +273,7 @@
                     @else
                         <button type="button"
                                 wire:click="$set('stack', '{{ $selectedNode->label }}')"
+                                @click="refreshFromBackend()"
                                 class="w-full btn-neo bg-neo-teal neo-border-sm text-black py-2 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
                             <span>Filtrar por esta Stack</span>
                         </button>
@@ -292,10 +296,38 @@
                         this.mountNetwork(config.nodesData, config.edgesData);
                     });
 
+                    // Watchers reativos diretos nas propriedades do Livewire 3
+                    this.$watch('$wire.stack', () => this.refreshFromBackend());
+                    this.$watch('$wire.focus', () => this.refreshFromBackend());
+                    this.$watch('$wire.search', () => this.refreshFromBackend());
+
+                    // Listener oficial do Livewire 3 para eventos disparados do PHP
+                    this.$wire.on('graph-data-updated', (event) => {
+                        const data = event?.data ?? (Array.isArray(event) ? event[0]?.data : event);
+                        if (data && data.nodes) {
+                            this.updateGraph(data);
+                        } else {
+                            this.refreshFromBackend();
+                        }
+                    });
+
                     window.addEventListener('resize', () => {
                         if (this.network) {
                             this.network.redraw();
                             this.network.fit();
+                        }
+                    });
+                },
+
+                async refreshFromBackend() {
+                    this.$nextTick(async () => {
+                        try {
+                            const data = await this.$wire.getGraphData();
+                            if (data && Array.isArray(data.nodes) && Array.isArray(data.edges)) {
+                                this.updateGraph(data);
+                            }
+                        } catch (err) {
+                            console.error('Erro ao atualizar grafo reativo:', err);
                         }
                     });
                 },
