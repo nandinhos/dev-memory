@@ -148,9 +148,9 @@
             </div>
         </div>
 
-        {{-- Painel Lateral (Drawer) de Inspeção Responsivo --}}
+        {{-- Painel Lateral Compacto (Drawer) de Inspeção --}}
         @if($selectedNode)
-            <div class="w-full sm:w-[420px] md:w-[480px] lg:w-[540px] xl:w-[580px] max-w-full bg-white border-l-4 border-black p-5 flex flex-col justify-between shrink-0 shadow-[-6px_0px_0px_0px_rgba(0,0,0,1)] z-30 h-full overflow-hidden">
+            <div class="w-80 md:w-96 bg-white border-l-4 border-black p-5 flex flex-col justify-between shrink-0 shadow-[-6px_0px_0px_0px_rgba(0,0,0,1)] z-30 h-full overflow-hidden">
                 {{-- Nó de Memória --}}
                 @if($selectedNode->memory)
                     @php
@@ -180,7 +180,7 @@
 
                         <div>
                             <span class="text-[10px] font-mono uppercase text-gray-400 block mb-0.5">Título da Memória</span>
-                            <h2 class="font-heading font-black text-base sm:text-lg text-black leading-snug m-0">
+                            <h2 class="font-heading font-black text-base text-black leading-snug m-0">
                                 {{ $mem->title }}
                             </h2>
                         </div>
@@ -201,10 +201,10 @@
                         </div>
                     </div>
 
-                    {{-- Resumo Causal Responsivo (Ocupa o espaço livre com scroll elegante) --}}
-                    <div class="flex-1 min-h-0 flex flex-col py-3 overflow-hidden">
-                        <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1.5 shrink-0">// RESUMO CAUSAL</span>
-                        <div class="flex-1 overflow-y-auto bg-gray-50 p-3.5 neo-border-sm text-xs text-gray-800 leading-relaxed font-sans max-h-full">
+                    {{-- Resumo Causal (Preenche todo o espaço vertical útil) --}}
+                    <div class="flex-1 min-h-0 flex flex-col my-3 overflow-hidden">
+                        <span class="text-[10px] font-mono uppercase text-gray-500 block mb-1 shrink-0">// RESUMO CAUSAL</span>
+                        <div class="flex-1 overflow-y-auto bg-gray-50 p-3 neo-border-sm text-xs text-gray-800 leading-relaxed font-sans">
                             {{ $mem->description ?: 'Sem descrição detalhada registrada para esta memória.' }}
                         </div>
                     </div>
@@ -243,25 +243,25 @@
 
                         <div>
                             <span class="text-[10px] font-mono uppercase text-gray-400 block mb-0.5">Tecnologia / Hub Causal</span>
-                            <h2 class="font-heading font-black text-xl sm:text-2xl text-black leading-snug m-0 flex items-center gap-1.5">
+                            <h2 class="font-heading font-black text-xl text-black leading-snug m-0 flex items-center gap-1.5">
                                 <span class="text-neo-magenta">⚡</span>
                                 <span>{{ $selectedNode->label }}</span>
                             </h2>
                         </div>
                     </div>
 
-                    {{-- Lista Responsiva de Memórias Conectadas (Ocupa 100% da altura livre do drawer) --}}
-                    <div class="flex-1 min-h-0 flex flex-col py-3 overflow-hidden">
+                    {{-- Lista Verticalmente Expandida de Memórias (Preenche 100% da área demarcada em vermelho) --}}
+                    <div class="flex-1 min-h-0 flex flex-col my-3 overflow-hidden">
                         <div class="flex items-center justify-between gap-2 mb-2 pb-1 border-b border-black/20 shrink-0">
                             <span class="text-[10px] font-mono font-black uppercase text-gray-600 tracking-wider">
                                 // MEMÓRIAS CONECTADAS ({{ $selectedNode->incomingEdges->count() }})
                             </span>
                             <span class="text-[10px] font-mono text-gray-400">
-                                role para ver mais
+                                scroll ativo
                             </span>
                         </div>
 
-                        <div class="flex-1 overflow-y-auto pr-1.5 space-y-2.5">
+                        <div class="flex-1 overflow-y-auto pr-1 space-y-2">
                             @forelse($selectedNode->incomingEdges as $inEdge)
                                 @if($inEdge->source?->memory)
                                     @php
@@ -274,8 +274,8 @@
                                         };
                                     @endphp
                                     <a href="{{ route('memories.show', $relMem) }}" wire:navigate
-                                       class="block bg-white hover:bg-neo-yellow/20 p-3 neo-border-sm no-underline text-black group transition-all hover:translate-x-1 shadow-sm">
-                                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                                       class="block bg-white hover:bg-neo-yellow/20 p-2.5 neo-border-sm no-underline text-black group transition-all hover:translate-x-1 shadow-sm">
+                                        <div class="flex items-center justify-between gap-2 mb-1">
                                             <span class="bg-black text-white px-1.5 py-0.5 text-[9px] font-mono uppercase font-bold">
                                                 {{ $inEdge->relation_type->value }}
                                             </span>
@@ -301,7 +301,7 @@
                         <button type="button"
                                 wire:click="$set('stack', '{{ $selectedNode->label }}')"
                                 class="w-full btn-neo bg-neo-teal neo-border-sm text-black py-2.5 font-heading font-black text-xs hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2">
-                            <span>Filtrar Grafo por esta Stack ({{ $selectedNode->label }})</span>
+                            <span>Filtrar Grafo por esta Stack</span>
                         </button>
                     </div>
                 @endif
