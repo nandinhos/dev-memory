@@ -151,4 +151,11 @@ class MemoryModelTest extends TestCase
             $memory->id
         );
     }
+
+    public function test_memory_project_relationship_uses_correct_foreign_key(): void
+    {
+        $memory = new Memory;
+
+        $this->assertSame('project_id', $memory->memoryProject()->getForeignKeyName());
+    }
 }

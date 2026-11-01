@@ -144,7 +144,7 @@ class Memory extends Model
 
     public function memoryProject(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function knowledgeNode(): HasOne

@@ -379,6 +379,10 @@ class MemoryMcpServer
             };
         } catch (AuthorizationException $exception) {
             $result = ['error' => $exception->getMessage()];
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->errorResponse($id, $exception->getMessage(), -32603);
         }
 
         if ($result === null) {

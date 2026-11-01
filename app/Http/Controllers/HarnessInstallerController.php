@@ -23,8 +23,13 @@ class HarnessInstallerController extends Controller
             return response("Harness inválido: {$harness}\n", 404, ['Content-Type' => 'text/plain']);
         }
 
+        $user = auth()->user();
         $profile = HarnessProfile::where('harness', $harnessEnum->value)
             ->where('name', $name)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user?->id)
+                    ->orWhereNull('user_id');
+            })
             ->first();
 
         if (! $profile) {

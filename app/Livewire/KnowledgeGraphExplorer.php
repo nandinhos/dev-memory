@@ -188,11 +188,12 @@ class KnowledgeGraphExplorer extends Component
             ->where('status', KnowledgeEdgeStatus::VALIDATED->value);
 
         if ($this->stack !== '') {
-            $edgeQuery->where(function ($q) {
-                $q->whereHas('source.memory', fn ($sq) => $sq->where('stack', 'ilike', "%{$this->stack}%"))
-                    ->orWhereHas('target.memory', fn ($tq) => $tq->where('stack', 'ilike', "%{$this->stack}%"))
-                    ->orWhereHas('source', fn ($sq) => $sq->where('label', 'ilike', "%{$this->stack}%"))
-                    ->orWhereHas('target', fn ($tq) => $tq->where('label', 'ilike', "%{$this->stack}%"));
+            $stackTerm = mb_strtolower($this->stack);
+            $edgeQuery->where(function ($q) use ($stackTerm) {
+                $q->whereHas('source.memory', fn ($sq) => $sq->whereRaw('LOWER(stack) LIKE ?', ["%{$stackTerm}%"]))
+                    ->orWhereHas('target.memory', fn ($tq) => $tq->whereRaw('LOWER(stack) LIKE ?', ["%{$stackTerm}%"]))
+                    ->orWhereHas('source', fn ($sq) => $sq->whereRaw('LOWER(label) LIKE ?', ["%{$stackTerm}%"]))
+                    ->orWhereHas('target', fn ($tq) => $tq->whereRaw('LOWER(label) LIKE ?', ["%{$stackTerm}%"]));
             });
         }
 
