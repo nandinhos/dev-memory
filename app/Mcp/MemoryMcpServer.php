@@ -9,6 +9,7 @@ use App\Jobs\CurateCaptureJob;
 use App\Models\ApiToken;
 use App\Models\Memory;
 use App\Services\ConfirmationGuard;
+use App\Services\Curation\CaptureSanitizer;
 use App\Services\Curation\CaptureService;
 use App\Services\Curation\CurationFailedException;
 use App\Services\HarnessHookGenerator;
@@ -117,6 +118,11 @@ class MemoryMcpServer
                         'type' => ['type' => 'string', 'enum' => ['error', 'lesson', 'best_practice'], 'description' => 'Tipo'],
                         'stack' => ['type' => 'string', 'description' => 'Stack (ex: Laravel)'],
                         'scope' => ['type' => 'string', 'enum' => ['project', 'global'], 'default' => 'project'],
+                        'probe_exit_code' => ['type' => 'integer', 'description' => 'Fast-track (Curadoria v2 §5.4): exit code do probe determinístico; 0 é pré-requisito'],
+                        'probe_platform' => ['type' => 'string', 'description' => 'Fast-track: manifesto de plataforma (ex: "Linux x86_64 php 8.3 abc1234")'],
+                        'probe_output_hash' => ['type' => 'string', 'description' => 'Fast-track: hash da saída/asserção do probe (não-vazia)'],
+                        'official_reference' => ['type' => 'string', 'description' => 'Trilha A: URL da documentação oficial (com reference_version + probe, valida automático)'],
+                        'reference_version' => ['type' => 'string', 'description' => 'Trilha A: versão pinada exata da doc/pacote/protocolo (obrigatória p/ fast-track)'],
                     ],
                     'required' => ['title', 'description', 'type'],
                 ],
@@ -465,6 +471,8 @@ class MemoryMcpServer
                     'title' => $m->title,
                     'description' => substr($m->description, 0, 200).(strlen($m->description) > 200 ? '...' : ''),
                     'type' => $m->type->value,
+                    'validation_status' => $m->validation_status->value,
+                    'scope' => $m->scope->value,
                     'maturity' => $m->maturity?->value ?? 'provisional',
                     'similarity' => round($similarity, 4),
                     'rank_score' => round($rankScore, 6),
@@ -490,6 +498,7 @@ class MemoryMcpServer
             'stack' => $memory->stack,
             'scope' => $memory->scope->value,
             'validation_status' => $memory->validation_status->value,
+            'validation_evidence' => $memory->validation_evidence,
             'official_reference' => $memory->official_reference,
             'recurrence_count' => $memory->recurrence_count,
             'created_at' => $memory->created_at->toIso8601String(),
@@ -588,12 +597,51 @@ class MemoryMcpServer
             return ['error' => 'Apenas administradores podem criar memórias globais.'];
         }
 
+        // Fast-Track (Curadoria v2 §2.1/§5.4): probe completo + zero-leak
+        // promove direto a validated/project. Qualquer requisito faltando
+        // (ou segredo detectado) cai no Review Gate: pending.
+        // Trilha A (fato externo): referência oficial + versão pinada +
+        // probe de integração (exit 0 + hash). Sem pin, sem fast-track.
+        $zeroLeak = app(CaptureSanitizer::class)
+            ->sanitize($args['title']."\n".$args['description'], null)
+            ->totalRedactions() === 0;
+        $probeOk = ($args['probe_exit_code'] ?? null) === 0
+            && trim((string) ($args['probe_output_hash'] ?? '')) !== '';
+        $isProject = $scope === MemoryScope::PROJECT->value;
+
+        $track = null;
+        if ($isProject && $zeroLeak && $probeOk
+            && trim((string) ($args['probe_platform'] ?? '')) !== '') {
+            $track = 'probe';
+        } elseif ($isProject && $zeroLeak && $probeOk
+            && trim((string) ($args['official_reference'] ?? '')) !== ''
+            && trim((string) ($args['reference_version'] ?? '')) !== '') {
+            $track = 'reference';
+        }
+
+        $evidence = $track === null ? null : array_filter([
+            'track' => $track,
+            'probe_exit_code' => 0,
+            'probe_platform' => trim((string) ($args['probe_platform'] ?? '')) ?: null,
+            'probe_output_hash' => trim((string) $args['probe_output_hash']),
+            'reference_version' => $track === 'reference' ? trim((string) $args['reference_version']) : null,
+            'validated_at' => now()->toIso8601String(),
+        ], fn ($value) => $value !== null);
+
         $memory = app(MemoryService::class)->create([
             'title' => $args['title'],
             'description' => $args['description'],
             'type' => $type,
             'stack' => $args['stack'] ?? null,
             'scope' => $scope,
+            ...(($officialReference = trim((string) ($args['official_reference'] ?? ''))) !== ''
+                ? ['official_reference' => $officialReference] : []),
+            ...($track !== null ? [
+                'validation_status' => 'validated',
+                'validated_at' => now(),
+                'validated_by' => "fast-track:{$track}",
+                'validation_evidence' => $evidence,
+            ] : []),
             'project_id' => $scope === MemoryScope::PROJECT->value && ! $this->access()->canPublishGlobal($this->token)
                 ? $this->access()->projectId($this->token)
                 : null,
@@ -602,6 +650,7 @@ class MemoryMcpServer
         return [
             'success' => true,
             'id' => $memory->id,
+            'validation_status' => $memory->fresh()->validation_status->value,
             'message' => 'Memória criada com sucesso',
         ];
     }

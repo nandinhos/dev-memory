@@ -72,6 +72,16 @@ class HubBriefingService
     {
         return Memory::query()
             ->where('validation_status', ValidationStatus::VALIDATED)
+            // Curadoria v2 §5.3: alvo de aresta `supersedes` validada nunca
+            // entra no briefing, mesmo se ainda estiver `validated` (a
+            // transição p/ superseded é defesa em profundidade, não pré-req).
+            ->whereNotExists(fn ($sub) => $sub
+                ->selectRaw('1')
+                ->from('knowledge_edges')
+                ->join('knowledge_nodes', 'knowledge_nodes.id', '=', 'knowledge_edges.target_node_id')
+                ->whereColumn('knowledge_nodes.memory_id', 'memories.id')
+                ->where('knowledge_edges.relation_type', 'supersedes')
+                ->where('knowledge_edges.status', 'validated'))
             ->when($stack, fn (Builder $q, string $s) => $q->where('stack', 'like', "%{$s}%"));
     }
 
@@ -106,8 +116,7 @@ class HubBriefingService
             ->take(6);
 
         if ($terms->isNotEmpty()) {
-            $lexical = $this->visible(Memory::query()
-                ->where('validation_status', ValidationStatus::VALIDATED)
+            $lexical = $this->visible($this->validated(null)
                 ->where(function (Builder $q) use ($terms) {
                     foreach ($terms as $term) {
                         $q->orWhere('title', 'like', "%{$term}%")
@@ -119,6 +128,23 @@ class HubBriefingService
                 ->get();
 
             $found = $found->concat($lexical)->unique('id')->take(8);
+        }
+
+        // Curadoria v2 §5.3: a busca híbrida não passa por validated(),
+        // então alvos de `supersedes` validado são removidos aqui também.
+        if ($found->isNotEmpty()) {
+            $supersededIds = Memory::query()
+                ->whereIn('id', $found->pluck('id'))
+                ->whereExists(fn ($sub) => $sub
+                    ->selectRaw('1')
+                    ->from('knowledge_edges')
+                    ->join('knowledge_nodes', 'knowledge_nodes.id', '=', 'knowledge_edges.target_node_id')
+                    ->whereColumn('knowledge_nodes.memory_id', 'memories.id')
+                    ->where('knowledge_edges.relation_type', 'supersedes')
+                    ->where('knowledge_edges.status', 'validated'))
+                ->pluck('id');
+
+            $found = $found->reject(fn (Memory $m) => $supersededIds->contains($m->id))->values();
         }
 
         return $found;
