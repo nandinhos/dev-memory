@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\KnowledgeEdgeStatus;
+use App\Enums\KnowledgeRelationType;
 use App\Enums\MemoryMaturity;
 use App\Enums\MemoryScope;
 use App\Enums\ValidationStatus;
 use App\Jobs\GenerateMemoryEmbeddingJob;
 use App\Jobs\ProjectMemoryKnowledgeGraphJob;
+use App\Models\KnowledgeEdge;
 use App\Models\Memory;
 use App\Models\User;
 use App\Services\Search\MemorySearchService;
@@ -129,6 +132,25 @@ class MemoryService
         $this->refreshDerivedState($memory);
 
         return $memory->fresh();
+    }
+
+    /**
+     * Ponto único da transição §3: toda aprovação de aresta (detalhe da
+     * memória, página de propostas, jobs) passa por aqui. Aresta que não
+     * é SUPERSEDES validada é no-op.
+     */
+    public function applySupersedesTransition(KnowledgeEdge $edge): void
+    {
+        if ($edge->relation_type !== KnowledgeRelationType::SUPERSEDES
+            || $edge->status !== KnowledgeEdgeStatus::VALIDATED) {
+            return;
+        }
+
+        $oldMemory = $edge->target?->memory;
+
+        if ($oldMemory !== null && $oldMemory->validation_status !== ValidationStatus::SUPERSEDED) {
+            $this->supersede($oldMemory);
+        }
     }
 
     public function promoteToGlobal(Memory $memory): Memory

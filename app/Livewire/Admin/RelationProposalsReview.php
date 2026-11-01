@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Enums\KnowledgeEdgeStatus;
 use App\Models\KnowledgeEdge;
+use App\Services\MemoryService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,6 +23,9 @@ class RelationProposalsReview extends Component
             ->findOrFail($id);
 
         $edge->update(['status' => KnowledgeEdgeStatus::VALIDATED]);
+
+        // Curadoria v2 §3: supersedes aprovado aposenta a memória antiga.
+        app(MemoryService::class)->applySupersedesTransition($edge);
 
         $this->dispatch(
             'show-toast',
