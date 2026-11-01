@@ -31,3 +31,9 @@ Schedule::command('memory:health-check')
 Schedule::command('memory:prune-tokens --days=30')
     ->weekly()
     ->withoutOverlapping();
+
+// Curadoria v2: re-prova semanal dos modelos da cadeia (free são
+// "limited time" e somem sem aviso; o motor reordena pelo resultado).
+Schedule::command('memory:models-check')
+    ->weeklyOn(1, '06:00')
+    ->withoutOverlapping();

@@ -55,6 +55,29 @@ class AnthropicCurationEngineTest extends TestCase
         $this->assertSame(200, $engine->lastUsage['output_tokens']);
     }
 
+    public function test_falls_back_to_next_model_when_first_fails_with_402(): void
+    {
+        Http::fake(function ($request) {
+            if (($request->data()['model'] ?? null) === 'beam-free') {
+                return Http::response(['error' => 'payment required'], 402);
+            }
+
+            return Http::response($this->apiResponse($this->validDraftJson()));
+        });
+
+        $engine = new AnthropicCurationEngine(
+            baseUrl: 'https://fake.minimax.test/anthropic',
+            apiKey: 'test-key',
+            model: 'beam-free',
+            models: ['beam-free', 'minimax-m3'],
+        );
+
+        $draft = $engine->prepare('captura de teste');
+
+        $this->assertSame('error', $draft->category);
+        $this->assertSame('minimax-m3', $engine->lastModel);
+    }
+
     public function test_sends_opencode_session_and_user_agent_headers(): void
     {
         Http::fake(['*' => Http::response($this->apiResponse($this->validDraftJson()))]);
