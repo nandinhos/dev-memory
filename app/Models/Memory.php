@@ -47,6 +47,7 @@ class Memory extends Model
         'external_reference',
         'validated_at',
         'validated_by',
+        'validation_evidence',
     ];
 
     protected $casts = [
@@ -63,6 +64,7 @@ class Memory extends Model
         'severity' => Severity::class,
         'recurrence_count' => 'integer',
         'validated_at' => 'datetime',
+        'validation_evidence' => 'array',
     ];
 
     public function scopeByMaturity($query, $maturity)

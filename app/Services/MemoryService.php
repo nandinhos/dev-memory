@@ -119,6 +119,18 @@ class MemoryService
         return $memory->fresh();
     }
 
+    /**
+     * Curadoria v2 §3: memória superada por relação `supersedes` confirmada.
+     * Nunca deletada — apenas sai do conjunto ativo (briefings a ignoram).
+     */
+    public function supersede(Memory $memory): Memory
+    {
+        $memory->update(['validation_status' => ValidationStatus::SUPERSEDED]);
+        $this->refreshDerivedState($memory);
+
+        return $memory->fresh();
+    }
+
     public function promoteToGlobal(Memory $memory): Memory
     {
         if ($memory->validation_status !== ValidationStatus::VALIDATED) {
