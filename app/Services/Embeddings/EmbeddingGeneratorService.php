@@ -46,6 +46,51 @@ class EmbeddingGeneratorService
         return null;
     }
 
+    /**
+     * Executa diagnóstico ativo de prontidão e latência do provedor configurado.
+     *
+     * @return array{status: string, provider: string, space: string, latency_ms: int, error: ?string}
+     */
+    public function healthCheck(): array
+    {
+        $start = microtime(true);
+        $space = $this->space();
+        $provider = $this->provider();
+
+        try {
+            $result = $this->generate('healthcheck');
+            $latencyMs = (int) round((microtime(true) - $start) * 1000);
+
+            if ($result !== null) {
+                return [
+                    'status' => 'healthy',
+                    'provider' => $provider,
+                    'space' => $space,
+                    'latency_ms' => $latencyMs,
+                    'error' => null,
+                ];
+            }
+
+            return [
+                'status' => 'degraded',
+                'provider' => $provider,
+                'space' => $space,
+                'latency_ms' => $latencyMs,
+                'error' => 'Provedor não retornou vetor válido ou dimensões incompatíveis',
+            ];
+        } catch (Exception $e) {
+            $latencyMs = (int) round((microtime(true) - $start) * 1000);
+
+            return [
+                'status' => 'degraded',
+                'provider' => $provider,
+                'space' => $space,
+                'latency_ms' => $latencyMs,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
     public function space(): string
     {
         $provider = $this->provider();

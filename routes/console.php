@@ -21,3 +21,8 @@ Schedule::command('memory:process-captures --retry-failed')
 Schedule::command('memory:backup-db --retention=14')
     ->dailyAt('02:00')
     ->withoutOverlapping();
+
+// Telemetria e monitoramento ativo do motor de IA/Embeddings (GAP 3 de Homologação)
+Schedule::command('memory:health-check')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
