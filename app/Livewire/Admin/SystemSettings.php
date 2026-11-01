@@ -183,7 +183,12 @@ class SystemSettings extends Component
         try {
             $response = Http::baseUrl($this->curationBaseUrl)
                 ->timeout(20)
-                ->withHeaders(['x-api-key' => $apiKey, 'anthropic-version' => '2023-06-01'])
+                ->withHeaders([
+                    'x-api-key' => $apiKey,
+                    'anthropic-version' => '2023-06-01',
+                    'x-opencode-session' => 'devmemory-hub',
+                    'User-Agent' => 'devmemory-hub/1.0',
+                ])
                 ->post('/v1/messages', [
                     'model' => $this->curationModel,
                     'max_tokens' => 1,

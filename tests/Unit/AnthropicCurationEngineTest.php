@@ -55,6 +55,20 @@ class AnthropicCurationEngineTest extends TestCase
         $this->assertSame(200, $engine->lastUsage['output_tokens']);
     }
 
+    public function test_sends_opencode_session_and_user_agent_headers(): void
+    {
+        Http::fake(['*' => Http::response($this->apiResponse($this->validDraftJson()))]);
+
+        $this->engine()->prepare('captura de teste');
+
+        // OpenCode Go recusa sem sessão estável (HTTP 400 MissingSessionID,
+        // provado em prod 2026-10-31); header extra é inofensivo p/ demais
+        // endpoints Anthropic-compatible.
+        Http::assertSent(fn ($request) => $request->hasHeader('x-opencode-session')
+            && $request->header('x-opencode-session')[0] !== ''
+            && str_contains($request->header('User-Agent')[0] ?? '', 'devmemory-hub'));
+    }
+
     public function test_strips_code_fences_from_response(): void
     {
         Http::fake([

@@ -85,6 +85,12 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
                     ->withHeaders([
                         'x-api-key' => $this->apiKey,
                         'anthropic-version' => '2023-06-01',
+                        // OpenCode Go exige sessão estável (HTTP 400
+                        // MissingSessionID sem ela, provado em prod) e
+                        // User-Agent próprio; inofensivo nos demais
+                        // endpoints Anthropic-compatible.
+                        'x-opencode-session' => 'devmemory-hub',
+                        'User-Agent' => 'devmemory-hub/1.0',
                     ])
                     ->post('/v1/messages', [
                         'model' => $this->model,
