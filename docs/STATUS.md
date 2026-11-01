@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-10-31 · **Saúde local:** 278 testes verdes / 770 asserções · **Estado:** Grafo Causal Interativo (/graph), Modal Neo-Brutalista de Tokens MCP, Sprints 1–3 + Ondas 1–8 concluídas; suite completa de testes verde e assets compilados.
+**Atualizado:** 2026-11-01 · **Saúde local:** 304 testes verdes / 840 asserções · **Estado:** Promoção para produção concluída: consistência de embeddings Ollama 768, correção de chave estrangeira em Memory::memoryProject, resiliência JSON-RPC no MCP Server e compatibilidade SQLite no Grafo Causal.
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
@@ -20,7 +20,7 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
    ┌────────────────────────────────────────────────────────┐
    │  DEV-MEMORY HUB                                         │
    │                                                        │
-   │  UI Livewire "neo" (auth)      MemoryMcpServer (18 tools)│
+   │  UI Livewire "neo" (auth)      MemoryMcpServer (19 tools)│
    │   ├ Dashboard / Memórias        ├ leitura   (list/search/get/related/stats)
    │   ├ Admin: Captures             ├ escrita   (create/update/validate/
    │   │        Skill Groups         │            promote/delete✋)
@@ -28,11 +28,11 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
    │   └ MCP Tokens                                          │
    │                                                        │
    │  Pipeline de curadoria (fila)                          │
-   │   capture → sanitize → curate(MiniMax) → policy →      │
-   │   recurrence → doc-validate(Context7) → group →        │
-   │   compile → publish(git)                               │
+   │   capture → sanitize → curate (Router OpenCode:         │
+   │   free-first + fallback) → policy → recurrence →       │
+   │   doc-validate (Context7) → group → compile → publish   │
    │                                                        │
-   │  PostgreSQL + pgvector + grafo · Redis · repo de skills│
+   │  PostgreSQL + pgvector (768) + grafo · Redis · skills  │
    └────────────────────────────────────────────────────────┘
 
    ✋ = ação destrutiva com confirmação em duas fases
@@ -40,18 +40,18 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 ## Capacidades (o que funciona)
 
-- ✅ **Embeddings consistentes** — um espaço canônico `provider/model` por ambiente, dimensão estrita, hash versionado e busca vetorial isolada por modelo
+- ✅ **Embeddings consistentes** — espaço canônico padronizado em **Ollama (`nomic-embed-text`, 768 dimensões)**, dimensão estrita no pgvector, hash versionado e busca vetorial isolada por modelo
 - ✅ **Busca híbrida verdadeira** — full-text PostgreSQL (`tsvector` + GIN) e pgvector combinados por Reciprocal Rank Fusion; fallback lexical quando o provedor não responde
 - ✅ **Knowledge graph PostgreSQL** — nós, arestas e evidências governadas; projeção determinística de stack; consulta explicável e isolada por escopo via `memory_related`, sem equivalência entre `project_id` nulo
 - ✅ **Ciclo de maturidade** — `MemoryMaturity` (workaround → provisional → recommended → canonical → consolidated) com políticas de transição governadas
 - ✅ **Autenticação** — login neo, rotas protegidas, `memory:make-admin`
 - ✅ **Gestão de memórias** — CRUD, filtros, validação, promoção a global
-- ✅ **Pipeline de curadoria** — ingestão imutável, sanitização, curadoria MiniMax (structured output + reparo), política de promoção, recorrência composta
+- ✅ **Pipeline de curadoria v2** — ingestão imutável, sanitização determinística, **curadoria via Router OpenCode (API compatível Anthropic `/messages`) com cadeia inteligente multi-modelo (`CurationModelChain`: gratuitos tier free primeiro, fallback automático para pagos baratos, auto-reparo e probe semanal `memory:models-check`)**, política de promoção e recorrência composta
 - ✅ **Validação documental** — Context7 (RAG fundamentado), auto-validação só de `confirmed` ≥ 0.8
 - ✅ **Skills** — agrupamento por IA, compilação com rastreabilidade de fonte, publicação git versionada
-- ✅ **MCP remoto** — 18 tools, HTTP + stdio; token comum vinculado a um projeto, com leitura limitada ao projeto e a memórias globais; token global é exclusivo de administrador
+- ✅ **MCP remoto** — 19 tools, HTTP + stdio; token comum vinculado a um projeto, com leitura limitada ao projeto e a memórias globais; token global é exclusivo de administrador
 - ✅ **Consulta preventiva** — `hub_briefing` antes de implementar
-- ✅ **Provisionamento de harness (Claude Code)** — sobe a config do ambiente (sanitizada) e replica em máquina limpa via MCP (`harness_capture/provision`, página **HARNESS**, `harness:capture-local`); perfis MCP pertencem ao emissor do token
+- ✅ **Provisionamento de harness** — sobe a config do ambiente (sanitizada) e replica em máquina limpa via MCP (`harness_capture/provision`, página **HARNESS**, `harness:capture-local`); perfis isolados por usuário
 - ✅ **Segurança** — sem credenciais hardcoded, confirmação de ações destrutivas, sem API aberta, segredos redigidos na captura de config e instalador HTTP restrito a administrador autenticado
 
 ## Dados atuais
@@ -72,9 +72,15 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 1. **Validar na UI** — 88 memórias `pending` em prod (`/memories`); 6 grupos + 6 skills já aprovados/publicados.
 2. **Provisionamento agnóstico de harness (Sprint 4)** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity (isolado/adiável).
-3. **Investigar qualidade do motor MiniMax** — curadoria em chinês em dev (idioma/prompt).
-4. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
-5. **🔒 BACKLOG DE SEGURANÇA** — (a) rotacionar token global admin de prod e demais tokens/keys vazados em chat (MINIMAX, postgres, MCP); (b) mover credenciais de prod para env vars via wrapper de inicialização dos harnesses (nunca hardcoded em config); (c) reemitir tokens project-bound com escopo mínimo para integrações MCP; (d) auditar e remover qualquer credencial real remanescente em `~/.config/opencode/opencode.json`, `~/.zshrc`, `.mcp.json`, etc. (substituir por placeholders + env vars). Regra operacional registrada: nunca exibir credenciais reais em chat.
+3. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
+4. **🔒 BACKLOG DE SEGURANÇA** — (a) rotacionar token global admin de prod e demais tokens/keys vazados em chat (chaves de router, postgres, MCP); (b) mover credenciais de prod para env vars via wrapper de inicialização dos harnesses (nunca hardcoded em config); (c) reemitir tokens project-bound com escopo mínimo para integrações MCP; (d) auditar e remover qualquer credencial real remanescente em `~/.config/opencode/opencode.json`, `~/.zshrc`, `.mcp.json`, etc. (substituir por placeholders + env vars). Regra operacional registrada: nunca exibir credenciais reais em chat.
+
+## Concluído (Curadoria v2 & Router OpenCode — 2026-11-01)
+
+- ✅ **Router OpenCode (`https://opencode.ai/zen/go/v1`)** — migração para roteador de IA compatível com Messages API e identificação de sessão `x-opencode-session: devmemory-hub`.
+- ✅ **Cadeia inteligente multi-modelo (`CurationModelChain`)** — arquitetura de dois tiers: modelos gratuitos (`free_models`, ex: beam-free, iceman-contributor-free) tentados primeiro; fallback automático para modelos pagos de baixo custo (`fallback_models`, ex: claude-haiku-5-5, qwen3.8-flash, minimax-m3) em caso de erro 402 ou indisponibilidade.
+- ✅ **Probe semanal de capacidade (`memory:models-check`)** — agendado toda segunda às 06:00, testa as 3 tarefas de curadoria reais por candidato e atualiza o ranking no banco de dados (`Setting`), garantindo que apenas modelos vivos recebam tráfego prioritário.
+- ✅ **Alinhamento definitivo de embeddings** — padrão canônico fixado em **Ollama (`nomic-embed-text`, 768 dimensões)** para dev e prod, em perfeita paridade com a migração pgvector.
 
 ## Concluído (Sprint 1 — 2026-08-11)
 
@@ -97,30 +103,18 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 - ✅ **Gate 3.3 — associação administrativa em prod** — 11 `projects` criados (um por `source_project` real: global-standards, events, nandolz, etc.); 51 memórias + 52 captures associadas (0 legadas); token `Projeto-Eventos-Control` (is_global, admin) preservado como operador — enxerga 51/51 via `McpAccessPolicy`; backup `devmemory-pre-gate33-20260813-0631.dump`.
 - ✅ **Gate 3.4 — ingestão remota + skills em prod** — 75 novas memórias da escavação ingeridas via `POST /api/mcp` (token global, `source_project` preservado, associadas por mapeamento a 18 projetos); 110 memórias totais; curadoria 0 failed (1 descartada por confiança); pipeline de skills: 6 grupos novos → 6 skills compiladas → **6 publicadas** (total 11 skills, 11 grupos); site HTTP 200, sem erros.
 
-## Concluído (Ondas 1+4+5+6 — 2026-08-22, plano `docs/plans/ondas-2026-08-22.md`)
-
-- ✅ **Onda 1 (Operação DSH)** — token global `dsh-global-new` emitido via DB, `~/.dsh/.env` atualizado, DSH reiniciado, `memory_stats` pulou de 12 → **145** (17 projetos, 9 globais). Higiene do repo: `cookies.txt` removido, commitado em `75ae68a`. **HSTS ativo** no Cloudflare (`max-age=31536000; includeSubDomains; preload`).
-- ✅ **Onda 2 (Prova do ciclo de harness)** — perfil `claude-code` v1.0.0 capturado (`files_stored: 3`, `files_with_redactions: 0`, sem segredos). Provision retorna 3 passos `write_file` ordenados (CLAUDE.md → settings.json → .mcp.json) com `had_secrets: false`. Instalador bash validado em `/tmp/harness-test` (HOME fake): (a) execução 1 cria os 3 arquivos exit 0; (b) execução 2 sem `--force` aborta com exit 2 ("Arquivo existe e stdin não é TTY") sem alterar arquivos; (c) execução 3 com `--force` sobrescreve; (d) `FORCE_OVERWRITE=1` equivalente a `--force`.
-- ✅ **Onda 3 (Captura contínua via hooks)** — projeto `dev-memory-laravel` criado; token project-bound `hook-dev-memory-laravel` emitido (expira em 90 dias); hook `post_tool_use.sh` instalado em `~/.claude/hooks/`, registrado no `settings.json` em `hooks.PostToolUse`. Token persistido em `~/.claude/.dev-memory-token` (0600). **Smoke test**: (a) evento real → capture `sanitized` → curadoria MiniMax → `curated` (1ª vez) ou `discarded` por baixa confiança (texto genérico); (b) mesmo evento 2× → `deduplicated: true` com **mesmo capture_id** (`01a02cb4-313b-71ac-b91d-b9238d9dabc9`). **Recurrence**: 3 paráfrases enviadas — 2 linkaram à memória existente via `RecurrenceScorer` top-K (text scores 0.55 e 0.70, total 0.56 e 0.66) com `independent=false` (mesmo dia, sem commit); 1 ficou fora do top-K e criou memória nova (trade-off documentado da Onda 4). `recurrence_count` não subiu porque `isIndependent` bloqueia no mesmo dia sem commit — comportamento correto e documentado; para increment real seria preciso `metadata.commit` distinto ou datas diferentes.
-- ✅ **Onda 7 (Spike `laravel/mcp` + ADR)** — branch `spike/laravel-mcp` criada com ADR 0002 (`docs/adr/0002-transporte-mcp-laravel-mcp.md`) — análise comparativa entre o servidor MCP manual atual (1.019 LOC) e o pacote oficial `laravel/mcp`. Mapa de equivalência das 20 tools (18 triviais, 2 com design adicional: `memory_delete` 2-phase + `relation_extract_propose` knowledge graph). Decisão proposta: **MIGRAR na Onda 9** (pós-rotação de segredos), após validar 7 critérios de aceite (auth bridge, ConfirmationGuard, knowledge graph, performance, testes, headers, cliente externo). Spike **não entra na main** — fica como research artifact na branch isolada.
-- 🟡 **Onda 8 (Rotação de segredos — parcial)** — **Categoria 1 (tokens do hub) concluída**: 2 tokens órfãos revogados via `expires_at = NOW() - INTERVAL '1 hour'` (preserva histórico de auditoria, sem DELETE): `Projeto-Eventos-Control` (12 dias sem uso, plaintext pode ter vazado em chat) e `escavacao-2026-08-13` (nunca usado). Middleware `AuthenticateMcpToken` valida `isExpired()` e rejeita. Mantidos: `dsh-global-new` (DSH), `escavacao-global-2026-08-13` (script de escavação ativo), `DeepSeekHarness`, `Hermes Agent`, `hook-dev-memory-laravel`. Pendente: **Categoria 2** (3 chaves de IA em `~/.dsh/.credentials.yaml` plaintext — reemitir nos painéis), **Categoria 3** (DB/Redis/Mail passwords — rotacionar nos serviços), **Categoria 4** (`APP_KEY` — decisão arquitetural, rotacionar custa re-criptografar `raw_content`/`sanitized_content`).
-- ✅ **Onda 4 (Escala de dedup)** — `RecurrenceScorer` indexado via `MemorySearchService` (top-K=30), troca full-scan O(n) por candidatura lexical+semântica+RRF. Floors `TEXT_FLOOR=0.55`/`TOTAL_FLOOR=0.50` mantidos. Deploy em `c705984` via rebase+ff em `main`. 262 testes (3 novos: outside top-K, score máximo, delegação com filtro).
-- ✅ **Onda 5 (Busca híbrida na UI)** — `MemoryList::render` delega ao `MemorySearchService` quando `$search` não vazio; badge `search_mode` (hybrid/semantic/lexical/filter) no header da view. Filtros type/scope/stack vão para o serviço; status/doc/maturity aplicados post-search. Paridade UI↔MCP verificada por teste. Deploy em `3ec1c00`. 266 testes (4 novos).
-- ✅ **Onda 6 (Operação VPS)** — scheduler `php artisan schedule:run` registrado em `/etc/cron.d/laravel-devmemory` (não estava instalado — auto-cura da fila não rodava). 2 workers `queue:work` confirmados via `supervisorctl status`. Script de visibilidade `devmemory-health-check.sh` em `/usr/local/bin/` + cron a cada 15min em `/etc/cron.d/devmemory-health-check` (alerta se `captures.failed > 0` ou workers < 2). Baseline atual: `captures_failed=0 workers=2 scheduler=1`.
-
-## Concluído (Grafo Causal Interativo e Modal MCP — 2026-10-31)
+## Concluído (Grafo Causal Interativo — 2026-10-31)
 
 - ✅ **Página dedicada `/graph`** — explorer interativo com física de molas (Vis-Network), nós heterogêneos (memórias com cores por maturidade e tecnologia/hubs elípticos), exploração em 2 saltos (`?focus={id}`).
 - ✅ **Drawer lateral responsivo** — visualização limpa com lista de memórias conectadas ocupando o espaço vertical completo sem quebrar a proporção do canvas.
 - ✅ **Reatividade Livewire + Alpine** — sincronização em tempo real via payload DOM (`#graph-data-payload`), isolamento de proxy Alpine para estabilidade de private fields do Vis-Network.
 - ✅ **Metodologia Ponytail no detalhe da memória** — remoção do diagrama Mermaid estático em favor de cards limpos de 2 saltos e CTA direcionando para `/graph?focus={id}`.
-- ✅ **Modal Neo-Brutalista de Tokens MCP** — substituição de `wire:confirm` nativo do navegador por `<x-neo.modal>` estilizado com confirmação de impacto.
 - ✅ **Testes e cobertura** — 278 testes verdes (770 asserções) com testes de feature dedicados (`KnowledgeGraphExplorerTest` e `MemoryDetailTest`).
 
 ## Notas operacionais
 
 - **Rebuildar assets após mudanças de CSS/Blade** (`npm run build` ou `npm run dev`/`composer dev`). Servir build velho quebra layout/scroll.
-- Motor de curadoria: `MINIMAX_API_KEY` no `.env`. Validação documental: `CONTEXT7_API_KEY` (opcional).
+- Motor de curadoria: **Router OpenCode** via endpoint compatível Anthropic `/messages` (lido de `config('services.minimax.*')`, autenticado com Bearer token / `MINIMAX_API_KEY` no `.env` ou tela de **CONFIGURAÇÕES**; cadeia *free-first* inteligente gerenciada por `CurationModelChain` e auditada via `memory:models-check`). Validação documental: `CONTEXT7_API_KEY` (opcional).
 - Catálogo de tools MCP: [`docs/mcp-tools.md`](mcp-tools.md).
 - Decisão de escopo MCP: [`docs/adr/0001-fronteira-de-projeto-mcp.md`](adr/0001-fronteira-de-projeto-mcp.md).
 - Arquitetura semântica e do grafo: [`docs/architecture/memoria-semantica-e-knowledge-graph.md`](architecture/memoria-semantica-e-knowledge-graph.md).

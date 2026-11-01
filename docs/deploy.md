@@ -29,20 +29,29 @@ workers **precisam** do `queue:restart` no hook para não rodarem código/config
 
 - `APP_ENV=production`, **`APP_DEBUG=false`** (nunca true em prod — vaza stack/segredos em erro), `APP_KEY` (gerar 1×), `APP_URL=https://devmemory.fssdev.com.br`
 - **`DB_CONNECTION=pgsql`, `DB_PORT=5432`** (ver gotcha #2)
-- **`MINIMAX_API_KEY`** — obrigatório p/ a curadoria (lido via `config('services.minimax.api_key')`); pode também ser administrado pela tela **CONFIGURAÇÕES** (criptografado em DB, sobrepõe o env)
+- **`MINIMAX_API_KEY`** — credencial Bearer do **Router OpenCode** / Messages API (lido via `config('services.minimax.api_key')`); pode também ser administrado pela tela **CONFIGURAÇÕES** (criptografado em DB, sobrepõe o env)
 - `CONTEXT7_API_KEY` — **opcional** (validação documental funciona keyless; ver gotcha #6)
 - `SESSION_DRIVER`/`CACHE_STORE`/`QUEUE_CONNECTION` = `database`/`file`/`database` (ver gotcha #3)
 - **`DB_QUEUE_RETRY_AFTER=330`** — precisa ser MAIOR que o timeout dos jobs (300s); com o default (90s) um job lento de curadoria é re-reservado por outro worker e marcado como falho enquanto ainda roda
 - `SESSION_SECURE_COOKIE=true` — cookie de sessão só via HTTPS
 
+### Curadoria v2 (Router OpenCode & Multi-Modelo)
+
+A curadoria opera através do **Router OpenCode** (compatível com a Messages API da Anthropic) com roteamento inteligente em dois tiers gerenciado pela classe `CurationModelChain`:
+
+1. **Tier Free (Gratuito Primeiro)**: modelos de custo zero (`MINIMAX_FREE_MODELS`, ex.: `beam-free,iceman-contributor-free`) descobertos dinamicamente via `MINIMAX_MODELS_URL` (`https://opencode.ai/zen/go/v1/models`).
+2. **Tier Paid (Fallback Barato)**: modelos estáveis de baixo custo (`MINIMAX_FALLBACK_MODELS`, ex.: `claude-haiku-5-5,qwen3.8-flash,minimax-m3`) acionados de forma transparente caso os gratuitos falhem ou retornem 402/rate-limit.
+3. **Auditoria Semanal (`memory:models-check`)**: agendado toda segunda às 06:00 pelo cron do Laravel, roda testes de capacidade sintéticos nas 3 tarefas do motor e persiste o ranking dos modelos vivos em banco de dados (`Setting`).
+4. **Header de Sessão**: todas as chamadas enviam `x-opencode-session: devmemory-hub` para rastreamento e cotas do router.
+
 ### Embeddings (`services.embeddings.*`)
 
-Dois provedores suportados. A escolha afeta o **tamanho do vetor** (`EMBEDDING_DIMENSIONS`):
+O padrão consolidado do ambiente é **Ollama local (`nomic-embed-text`) com 768 dimensões**:
 
-| Provider | Modelo | Dimensões | Custo | Privacidade |
+| Provider | Modelo | Dimensões | Custo | Status |
 |---|---|---|---|---|
-| `minimax` | `embo-01` | 1536 | $$ (API MiniMax) | nuvem |
-| `ollama` | `nomic-embed-text` | 768 | $0 (local) | local |
+| `ollama` | `nomic-embed-text` | 768 | $0 (local) | **Padrão Ativo (banco vector(768))** |
+| `minimax` | `embo-01` | 1536 | $$ (API) | Suportado (requer migração DDL) |
 
 **Ollama local (recomendado para VPS pequena):**
 
@@ -105,5 +114,5 @@ php artisan memory:make-admin --email=… --name="…"   # senha é interativa, 
 3. Emitir um **API token** em `/admin/tokens` (mostrado 1× só). Tokens novos são vinculados a projeto; use token global somente para operação administrativa deliberada.
 4. Ingerir via **MCP HTTP**: `POST https://devmemory.fssdev.com.br/api/mcp` com
    `Authorization: Bearer <token>`, JSON-RPC `tools/call` → `memory_ingest`.
-5. Os workers processam a fila e a curadoria roda automática (MiniMax). Validação documental:
+5. Os workers processam a fila e a curadoria roda automática via **Router OpenCode (Curadoria v2)**. Validação documental:
    `php artisan memory:validate-docs`.
