@@ -20,7 +20,7 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
    ┌────────────────────────────────────────────────────────┐
    │  DEV-MEMORY HUB                                         │
    │                                                        │
-   │  UI Livewire "neo" (auth)      MemoryMcpServer (18 tools)│
+   │  UI Livewire "neo" (auth)      MemoryMcpServer (19 tools)│
    │   ├ Dashboard / Memórias        ├ leitura   (list/search/get/related/stats)
    │   ├ Admin: Captures             ├ escrita   (create/update/validate/
    │   │        Skill Groups         │            promote/delete✋)
@@ -28,11 +28,11 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
    │   └ MCP Tokens                                          │
    │                                                        │
    │  Pipeline de curadoria (fila)                          │
-   │   capture → sanitize → curate(MiniMax) → policy →      │
-   │   recurrence → doc-validate(Context7) → group →        │
-   │   compile → publish(git)                               │
+   │   capture → sanitize → curate (Router OpenCode:         │
+   │   free-first + fallback) → policy → recurrence →       │
+   │   doc-validate (Context7) → group → compile → publish   │
    │                                                        │
-   │  PostgreSQL + pgvector + grafo · Redis · repo de skills│
+   │  PostgreSQL + pgvector (768) + grafo · Redis · skills  │
    └────────────────────────────────────────────────────────┘
 
    ✋ = ação destrutiva com confirmação em duas fases
@@ -40,18 +40,18 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 ## Capacidades (o que funciona)
 
-- ✅ **Embeddings consistentes** — um espaço canônico `provider/model` por ambiente, dimensão estrita, hash versionado e busca vetorial isolada por modelo
+- ✅ **Embeddings consistentes** — espaço canônico padronizado em **Ollama (`nomic-embed-text`, 768 dimensões)**, dimensão estrita no pgvector, hash versionado e busca vetorial isolada por modelo
 - ✅ **Busca híbrida verdadeira** — full-text PostgreSQL (`tsvector` + GIN) e pgvector combinados por Reciprocal Rank Fusion; fallback lexical quando o provedor não responde
 - ✅ **Knowledge graph PostgreSQL** — nós, arestas e evidências governadas; projeção determinística de stack; consulta explicável e isolada por escopo via `memory_related`, sem equivalência entre `project_id` nulo
 - ✅ **Ciclo de maturidade** — `MemoryMaturity` (workaround → provisional → recommended → canonical → consolidated) com políticas de transição governadas
 - ✅ **Autenticação** — login neo, rotas protegidas, `memory:make-admin`
 - ✅ **Gestão de memórias** — CRUD, filtros, validação, promoção a global
-- ✅ **Pipeline de curadoria** — ingestão imutável, sanitização, curadoria MiniMax (structured output + reparo), política de promoção, recorrência composta
+- ✅ **Pipeline de curadoria v2** — ingestão imutável, sanitização determinística, **curadoria via Router OpenCode (API compatível Anthropic `/messages`) com cadeia inteligente multi-modelo (`CurationModelChain`: gratuitos tier free primeiro, fallback automático para pagos baratos, auto-reparo e probe semanal `memory:models-check`)**, política de promoção e recorrência composta
 - ✅ **Validação documental** — Context7 (RAG fundamentado), auto-validação só de `confirmed` ≥ 0.8
 - ✅ **Skills** — agrupamento por IA, compilação com rastreabilidade de fonte, publicação git versionada
-- ✅ **MCP remoto** — 18 tools, HTTP + stdio; token comum vinculado a um projeto, com leitura limitada ao projeto e a memórias globais; token global é exclusivo de administrador
+- ✅ **MCP remoto** — 19 tools, HTTP + stdio; token comum vinculado a um projeto, com leitura limitada ao projeto e a memórias globais; token global é exclusivo de administrador
 - ✅ **Consulta preventiva** — `hub_briefing` antes de implementar
-- ✅ **Provisionamento de harness (Claude Code)** — sobe a config do ambiente (sanitizada) e replica em máquina limpa via MCP (`harness_capture/provision`, página **HARNESS**, `harness:capture-local`); perfis MCP pertencem ao emissor do token
+- ✅ **Provisionamento de harness** — sobe a config do ambiente (sanitizada) e replica em máquina limpa via MCP (`harness_capture/provision`, página **HARNESS**, `harness:capture-local`); perfis isolados por usuário
 - ✅ **Segurança** — sem credenciais hardcoded, confirmação de ações destrutivas, sem API aberta, segredos redigidos na captura de config e instalador HTTP restrito a administrador autenticado
 
 ## Dados atuais
@@ -72,9 +72,15 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 
 1. **Validar na UI** — 88 memórias `pending` em prod (`/memories`); 6 grupos + 6 skills já aprovados/publicados.
 2. **Provisionamento agnóstico de harness (Sprint 4)** — script `curl|bash` idempotente e suporte aos harnesses Codex, Hermes e Antigravity (isolado/adiável).
-3. **Investigar qualidade do motor MiniMax** — curadoria em chinês em dev (idioma/prompt).
-4. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
-5. **🔒 BACKLOG DE SEGURANÇA** — (a) rotacionar token global admin de prod e demais tokens/keys vazados em chat (MINIMAX, postgres, MCP); (b) mover credenciais de prod para env vars via wrapper de inicialização dos harnesses (nunca hardcoded em config); (c) reemitir tokens project-bound com escopo mínimo para integrações MCP; (d) auditar e remover qualquer credencial real remanescente em `~/.config/opencode/opencode.json`, `~/.zshrc`, `.mcp.json`, etc. (substituir por placeholders + env vars). Regra operacional registrada: nunca exibir credenciais reais em chat.
+3. **Criar o scavador** — ferramenta de escavação automatizada (processo hoje manual/script).
+4. **🔒 BACKLOG DE SEGURANÇA** — (a) rotacionar token global admin de prod e demais tokens/keys vazados em chat (chaves de router, postgres, MCP); (b) mover credenciais de prod para env vars via wrapper de inicialização dos harnesses (nunca hardcoded em config); (c) reemitir tokens project-bound com escopo mínimo para integrações MCP; (d) auditar e remover qualquer credencial real remanescente em `~/.config/opencode/opencode.json`, `~/.zshrc`, `.mcp.json`, etc. (substituir por placeholders + env vars). Regra operacional registrada: nunca exibir credenciais reais em chat.
+
+## Concluído (Curadoria v2 & Router OpenCode — 2026-11-01)
+
+- ✅ **Router OpenCode (`https://opencode.ai/zen/go/v1`)** — migração para roteador de IA compatível com Messages API e identificação de sessão `x-opencode-session: devmemory-hub`.
+- ✅ **Cadeia inteligente multi-modelo (`CurationModelChain`)** — arquitetura de dois tiers: modelos gratuitos (`free_models`, ex: beam-free, iceman-contributor-free) tentados primeiro; fallback automático para modelos pagos de baixo custo (`fallback_models`, ex: claude-haiku-5-5, qwen3.8-flash, minimax-m3) em caso de erro 402 ou indisponibilidade.
+- ✅ **Probe semanal de capacidade (`memory:models-check`)** — agendado toda segunda às 06:00, testa as 3 tarefas de curadoria reais por candidato e atualiza o ranking no banco de dados (`Setting`), garantindo que apenas modelos vivos recebam tráfego prioritário.
+- ✅ **Alinhamento definitivo de embeddings** — padrão canônico fixado em **Ollama (`nomic-embed-text`, 768 dimensões)** para dev e prod, em perfeita paridade com a migração pgvector.
 
 ## Concluído (Sprint 1 — 2026-08-11)
 
@@ -108,7 +114,7 @@ Hub de conhecimento **autenticado** + **servidor MCP remoto**: captura, cura, va
 ## Notas operacionais
 
 - **Rebuildar assets após mudanças de CSS/Blade** (`npm run build` ou `npm run dev`/`composer dev`). Servir build velho quebra layout/scroll.
-- Motor de curadoria: `MINIMAX_API_KEY` no `.env`. Validação documental: `CONTEXT7_API_KEY` (opcional).
+- Motor de curadoria: **Router OpenCode** via endpoint compatível Anthropic `/messages` (lido de `config('services.minimax.*')`, autenticado com Bearer token / `MINIMAX_API_KEY` no `.env` ou tela de **CONFIGURAÇÕES**; cadeia *free-first* inteligente gerenciada por `CurationModelChain` e auditada via `memory:models-check`). Validação documental: `CONTEXT7_API_KEY` (opcional).
 - Catálogo de tools MCP: [`docs/mcp-tools.md`](mcp-tools.md).
 - Decisão de escopo MCP: [`docs/adr/0001-fronteira-de-projeto-mcp.md`](adr/0001-fronteira-de-projeto-mcp.md).
 - Arquitetura semântica e do grafo: [`docs/architecture/memoria-semantica-e-knowledge-graph.md`](architecture/memoria-semantica-e-knowledge-graph.md).

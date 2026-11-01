@@ -31,20 +31,21 @@ app/
 │   ├── Search/               # Busca lexical + vetorial e fusão RRF
 │   ├── KnowledgeGraph/       # Projeção governada e consulta explicável
 │   └── Curation/             # Pipeline: CaptureService, CaptureSanitizer,
-│                             # AnthropicCurationEngine (MiniMax), DocumentationValidator
-│                             # (Context7), RecurrenceScorer, PromotionPolicy,
-│                             # SkillGroupProposer, SkillCompiler, SkillPublisher
+│                             # AnthropicCurationEngine (Router OpenCode / Messages API),
+│                             # CurationModelChain (free-first + fallback),
+│                             # DocumentationValidator (Context7), RecurrenceScorer,
+│                             # PromotionPolicy, SkillGroupProposer, SkillCompiler, SkillPublisher
 ├── Jobs/                     # CurateCaptureJob, ValidateMemoryDocumentationJob
 ├── Http/
 │   ├── Controllers/McpController.php     # Endpoint MCP remoto (HTTP)
 │   └── Middleware/AuthenticateMcpToken.php
-└── Mcp/MemoryMcpServer.php   # Servidor MCP (18 tools, stdio + HTTP)
+└── Mcp/MemoryMcpServer.php   # Servidor MCP (19 tools, stdio + HTTP)
 ```
 
-Pipeline de curadoria (P1–P6): captura imutável → sanitização determinística →
-curadoria com structured output (MiniMax) → política de promoção → recorrência composta →
-validação documental (Context7) → agrupamento e compilação de skills com rastreabilidade de fonte →
-publicação em repositório git. Detalhes em `docs/plans/essencia-inicial.md`.
+Pipeline de curadoria (Curadoria v2): captura imutável → sanitização determinística →
+curadoria com structured output via Router OpenCode (cadeia inteligente de modelos com fallback automático) →
+política de promoção → recorrência composta → validação documental (Context7) →
+agrupamento e compilação de skills com rastreabilidade de fonte → publicação em repositório git.
 
 ## Modelo de Dados
 
@@ -221,7 +222,7 @@ php artisan memory:graph:backfill --sync      # Projeta memórias existentes no 
 A arquitetura de embeddings, busca híbrida e knowledge graph está documentada em
 [`docs/architecture/memoria-semantica-e-knowledge-graph.md`](docs/architecture/memoria-semantica-e-knowledge-graph.md).
 
-> O motor de curadoria usa MiniMax (API compatível com Anthropic) — configure `MINIMAX_API_KEY` no `.env`.
+> O motor de curadoria opera via **Router OpenCode** (compatível com Anthropic Messages `/messages`) com cadeia inteligente de modelos gratuitos e pagos — configure `MINIMAX_API_KEY` no `.env` ou gerencie via painel em `/admin/settings`.
 > A validação documental usa Context7 (free tier funciona sem chave; `CONTEXT7_API_KEY` sobe limites).
 
 ## Environment
