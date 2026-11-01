@@ -15,3 +15,19 @@ Artisan::command('inspire', function () {
 Schedule::command('memory:process-captures --retry-failed')
     ->hourly()
     ->withoutOverlapping();
+
+// Backup diário automatizado do banco de dados (GAP 2 de Homologação)
+// com retenção automática de 14 dias.
+Schedule::command('memory:backup-db --retention=14')
+    ->dailyAt('02:00')
+    ->withoutOverlapping();
+
+// Telemetria e monitoramento ativo do motor de IA/Embeddings (GAP 3 de Homologação)
+Schedule::command('memory:health-check')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
+
+// Governança e descarte seguro de tokens expirados (GAP 4 de Homologação)
+Schedule::command('memory:prune-tokens --days=30')
+    ->weekly()
+    ->withoutOverlapping();
