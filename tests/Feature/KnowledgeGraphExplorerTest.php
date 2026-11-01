@@ -147,4 +147,32 @@ class KnowledgeGraphExplorerTest extends TestCase
             ->assertSet('focus', null)
             ->assertDispatched('graph-data-updated');
     }
+
+    public function test_can_filter_overview_by_stack(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $memA = $this->makeMemory(['title' => 'Memoria Laravel', 'stack' => 'Laravel, PHP']);
+        $memB = $this->makeMemory(['title' => 'Memoria React', 'stack' => 'React, Vite']);
+
+        $projector = app(KnowledgeGraphProjector::class);
+        $projector->projectMemory($memA);
+        $projector->projectMemory($memB);
+
+        $nodeA = KnowledgeNode::where('memory_id', $memA->id)->firstOrFail();
+        $nodeB = KnowledgeNode::where('memory_id', $memB->id)->firstOrFail();
+
+        KnowledgeEdge::factory()->create([
+            'source_node_id' => $nodeA->id,
+            'target_node_id' => $nodeB->id,
+            'relation_type' => KnowledgeRelationType::SUPPORTS,
+            'status' => KnowledgeEdgeStatus::VALIDATED,
+        ]);
+
+        Livewire::withQueryParams(['stack' => 'laravel'])
+            ->test(KnowledgeGraphExplorer::class)
+            ->assertSet('stack', 'laravel')
+            ->assertSee('Memoria Laravel');
+    }
 }

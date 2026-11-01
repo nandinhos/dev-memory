@@ -53,8 +53,8 @@ return [
     ],
 
     'embeddings' => [
-        'provider' => env('EMBEDDING_PROVIDER', 'minimax'),
-        'dimensions' => (int) env('EMBEDDING_DIMENSIONS', 1536),
+        'provider' => env('EMBEDDING_PROVIDER', 'ollama'),
+        'dimensions' => (int) env('EMBEDDING_DIMENSIONS', 768),
         'ollama' => [
             'host' => env('OLLAMA_HOST', 'http://host.docker.internal:11434'),
             'model' => env('OLLAMA_EMBED_MODEL', 'nomic-embed-text'),
