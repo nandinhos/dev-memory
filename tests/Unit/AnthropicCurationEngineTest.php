@@ -55,6 +55,43 @@ class AnthropicCurationEngineTest extends TestCase
         $this->assertSame(200, $engine->lastUsage['output_tokens']);
     }
 
+    public function test_falls_back_to_next_model_when_first_fails_with_402(): void
+    {
+        Http::fake(function ($request) {
+            if (($request->data()['model'] ?? null) === 'beam-free') {
+                return Http::response(['error' => 'payment required'], 402);
+            }
+
+            return Http::response($this->apiResponse($this->validDraftJson()));
+        });
+
+        $engine = new AnthropicCurationEngine(
+            baseUrl: 'https://fake.minimax.test/anthropic',
+            apiKey: 'test-key',
+            model: 'beam-free',
+            models: ['beam-free', 'minimax-m3'],
+        );
+
+        $draft = $engine->prepare('captura de teste');
+
+        $this->assertSame('error', $draft->category);
+        $this->assertSame('minimax-m3', $engine->lastModel);
+    }
+
+    public function test_sends_opencode_session_and_user_agent_headers(): void
+    {
+        Http::fake(['*' => Http::response($this->apiResponse($this->validDraftJson()))]);
+
+        $this->engine()->prepare('captura de teste');
+
+        // OpenCode Go recusa sem sessão estável (HTTP 400 MissingSessionID,
+        // provado em prod 2026-10-31); header extra é inofensivo p/ demais
+        // endpoints Anthropic-compatible.
+        Http::assertSent(fn ($request) => $request->hasHeader('x-opencode-session')
+            && $request->header('x-opencode-session')[0] !== ''
+            && str_contains($request->header('User-Agent')[0] ?? '', 'devmemory-hub'));
+    }
+
     public function test_strips_code_fences_from_response(): void
     {
         Http::fake([

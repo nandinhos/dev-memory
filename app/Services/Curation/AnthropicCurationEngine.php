@@ -26,18 +26,40 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 
     public int $lastAttempts = 0;
 
+    /** Modelo que efetivamente respondeu (pós-fallback). */
+    public ?string $lastModel = null;
+
     private string $baseUrl;
 
     private string $apiKey;
 
     private string $model;
 
-    public function __construct(?string $baseUrl = null, ?string $apiKey = null, ?string $model = null)
+    /** @var list<string> */
+    private array $models;
+
+    /**
+     * @param  list<string>|null  $models  cadeia explícita (testes/probe);
+     *                                     null usa CurationModelChain.
+     */
+    public function __construct(?string $baseUrl = null, ?string $apiKey = null, ?string $model = null, ?array $models = null)
     {
         // "?: ''" cobre env/painel ausentes (config devolve null) sem TypeError nas props string.
         $this->baseUrl = $baseUrl ?? (config('services.minimax.base_url') ?: '');
         $this->apiKey = $apiKey ?? (config('services.minimax.api_key') ?: '');
         $this->model = $model ?? (config('services.minimax.model') ?: '');
+
+        $chain = $models ?? CurationModelChain::orderedModelIds();
+
+        if ($model !== null && ! in_array($model, $chain, true)) {
+            array_unshift($chain, $model);
+        }
+
+        $this->models = array_values(array_filter(array_unique($chain)));
+
+        if ($this->models === [] && $this->model !== '') {
+            $this->models = [$this->model];
+        }
     }
 
     public function prepare(string $capture): LessonDraft
@@ -56,6 +78,26 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
      */
     public function completeJson(string $systemPrompt, string $userContent, callable $validator): mixed
     {
+        // Fallback entre modelos (Curadoria v2): falha HTTP (402/429/5xx,
+        // modelo removido) ou JSON irreparável derruba para o próximo da
+        // cadeia free→pago. O último erro é o que sobe.
+        $lastFailure = null;
+
+        foreach ($this->models as $candidate) {
+            try {
+                return $this->completeJsonWithModel($candidate, $systemPrompt, $userContent, $validator);
+            } catch (CurationFailedException $e) {
+                $lastFailure = $e;
+            }
+        }
+
+        throw $lastFailure ?? new CurationFailedException('Nenhum modelo configurado na cadeia de curadoria.');
+    }
+
+    private function completeJsonWithModel(string $model, string $systemPrompt, string $userContent, callable $validator): mixed
+    {
+        $this->lastModel = $model;
+
         $messages = [
             ['role' => 'user', 'content' => $userContent],
         ];
@@ -85,9 +127,15 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
                     ->withHeaders([
                         'x-api-key' => $this->apiKey,
                         'anthropic-version' => '2023-06-01',
+                        // OpenCode Go exige sessão estável (HTTP 400
+                        // MissingSessionID sem ela, provado em prod) e
+                        // User-Agent próprio; inofensivo nos demais
+                        // endpoints Anthropic-compatible.
+                        'x-opencode-session' => 'devmemory-hub',
+                        'User-Agent' => 'devmemory-hub/1.0',
                     ])
                     ->post('/v1/messages', [
-                        'model' => $this->model,
+                        'model' => $model,
                         'max_tokens' => 6000,
                         'temperature' => self::TEMPERATURE,
                         'system' => $systemPrompt,
@@ -145,7 +193,7 @@ class AnthropicCurationEngine implements KnowledgePreparationEngine
 
         return [
             'provider' => $provider,
-            'model' => $this->model,
+            'model' => $this->lastModel ?? $this->model,
             'prompt_version' => self::PROMPT_VERSION,
             'temperature' => self::TEMPERATURE,
             'attempts' => $this->lastAttempts,

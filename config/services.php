@@ -39,6 +39,17 @@ return [
         'base_url' => env('MINIMAX_BASE_URL', 'https://api.minimax.io/anthropic'),
         'api_key' => env('MINIMAX_API_KEY'),
         'model' => env('MINIMAX_MODEL', 'MiniMax-M2.5'),
+        // Cadeia de fallback da curadoria (Curadoria v2): gratuitos primeiro
+        // (até 3; hoje só 2 têm preço 0 no OpenCode Go), depois pagos baratos
+        // em /messages. O probe `memory:models-check` (semanal) mantém a
+        // ordem honesta: capaz primeiro, reprovado por último.
+        'free_models' => array_values(array_filter(array_map(
+            'trim', explode(',', (string) env('MINIMAX_FREE_MODELS', 'beam-free,iceman-contributor-free')),
+        ))),
+        'fallback_models' => array_values(array_filter(array_map(
+            'trim', explode(',', (string) env('MINIMAX_FALLBACK_MODELS', 'claude-haiku-5-5,qwen3.8-flash,minimax-m3')),
+        ))),
+        'models_url' => env('MINIMAX_MODELS_URL', 'https://opencode.ai/zen/go/v1/models'),
     ],
 
     'embeddings' => [
