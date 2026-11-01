@@ -218,4 +218,28 @@ class McpHttpTest extends TestCase
         $this->assertStringContainsString('Pre-flight Guard Hook', $result['script']);
         $this->assertStringContainsString('hub_briefing', $result['script']);
     }
+
+    public function test_expired_token_is_rejected_with_specific_error(): void
+    {
+        $user = User::factory()->create();
+        [$model, $plain] = ApiToken::issue($user, 'token-expirado', now()->subHour());
+
+        $this->rpc($plain, ['jsonrpc' => '2.0', 'method' => 'initialize', 'id' => 1])
+            ->assertStatus(401)
+            ->assertJsonPath('error.code', -32001)
+            ->assertJsonPath('error.message', 'Token de API expirado');
+    }
+
+    public function test_valid_token_updates_last_used_at(): void
+    {
+        $user = User::factory()->create();
+        [$model, $plain] = ApiToken::issue($user, 'token-ativo', now()->addDays(30));
+
+        $this->assertNull($model->last_used_at);
+
+        $this->rpc($plain, ['jsonrpc' => '2.0', 'method' => 'initialize', 'id' => 1])
+            ->assertOk();
+
+        $this->assertNotNull($model->fresh()->last_used_at);
+    }
 }

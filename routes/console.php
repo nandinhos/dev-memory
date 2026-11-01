@@ -26,3 +26,8 @@ Schedule::command('memory:backup-db --retention=14')
 Schedule::command('memory:health-check')
     ->everyThirtyMinutes()
     ->withoutOverlapping();
+
+// Governança e descarte seguro de tokens expirados (GAP 4 de Homologação)
+Schedule::command('memory:prune-tokens --days=30')
+    ->weekly()
+    ->withoutOverlapping();
