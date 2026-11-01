@@ -8,6 +8,7 @@ use App\Enums\KnowledgeRelationType;
 use App\Enums\MemoryScope;
 use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
+use App\Livewire\Admin\RelationProposalsReview;
 use App\Livewire\MemoryDetail;
 use App\Models\ApiToken;
 use App\Models\KnowledgeEdge;
@@ -219,6 +220,40 @@ class CurationV2Test extends TestCase
 
         $this->assertSame(ValidationStatus::PENDING, Memory::find($result['id'])->validation_status);
         $this->assertNull(Memory::find($result['id'])->validation_evidence);
+    }
+
+    public function test_approving_supersedes_via_proposals_page_also_marks_superseded(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin);
+
+        $old = Memory::create([
+            'title' => 'Antiga (propostas)',
+            'description' => 'x',
+            'type' => MemoryType::LESSON,
+            'validation_status' => ValidationStatus::VALIDATED,
+            'scope' => MemoryScope::GLOBAL,
+        ]);
+        $new = Memory::create([
+            'title' => 'Nova (propostas)',
+            'description' => 'y',
+            'type' => MemoryType::LESSON,
+            'validation_status' => ValidationStatus::VALIDATED,
+            'scope' => MemoryScope::GLOBAL,
+        ]);
+
+        $edge = KnowledgeEdge::create([
+            'source_node_id' => $this->nodeFor($new)->id,
+            'target_node_id' => $this->nodeFor($old)->id,
+            'relation_type' => KnowledgeRelationType::SUPERSEDES,
+            'status' => KnowledgeEdgeStatus::PROPOSED,
+            'origin' => KnowledgeEdgeOrigin::HUMAN,
+        ]);
+
+        Livewire::test(RelationProposalsReview::class)
+            ->call('approve', $edge->id);
+
+        $this->assertSame(ValidationStatus::SUPERSEDED, $old->fresh()->validation_status);
     }
 
     public function test_approving_supersedes_relation_marks_old_memory_superseded(): void

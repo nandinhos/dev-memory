@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Enums\DocumentationValidationStatus;
 use App\Enums\KnowledgeEdgeStatus;
-use App\Enums\KnowledgeRelationType;
 use App\Enums\ValidationStatus;
 use App\Jobs\ValidateMemoryDocumentationJob;
 use App\Models\KnowledgeEdge;
@@ -216,13 +215,7 @@ class MemoryDetail extends Component
 
         // Curadoria v2 §3: supersedes confirmado deprecia a memória antiga
         // (estado existente `superseded`), sem deleção física.
-        if ($edge->relation_type === KnowledgeRelationType::SUPERSEDES) {
-            $oldMemory = $edge->target?->memory;
-
-            if ($oldMemory !== null && $oldMemory->validation_status !== ValidationStatus::SUPERSEDED) {
-                app(MemoryService::class)->supersede($oldMemory);
-            }
-        }
+        app(MemoryService::class)->applySupersedesTransition($edge);
 
         $this->dispatch('show-toast', message: 'Relação validada no grafo', type: 'sucesso');
     }
