@@ -1,6 +1,6 @@
 # STATUS — Dev Memory Hub
 
-**Atualizado:** 2026-10-31 · **Saúde local:** 278 testes verdes / 770 asserções · **Estado:** Grafo Causal Interativo (/graph) entregue com Vis-Network, suporte a nós heterogêneos (memórias + hubs tecnológicos), exploração em 2 saltos, drawer lateral e sincronização reativa Livewire/Alpine; suite completa de testes verde e assets compilados.
+**Atualizado:** 2026-11-01 · **Saúde local:** 304 testes verdes / 840 asserções · **Estado:** Promoção para produção concluída: consistência de embeddings Ollama 768, correção de chave estrangeira em Memory::memoryProject, resiliência JSON-RPC no MCP Server e compatibilidade SQLite no Grafo Causal.
 
 Fonte única de verdade do estado do projeto. Para a visão futura, ver [`docs/roadmap.md`](roadmap.md).
 
