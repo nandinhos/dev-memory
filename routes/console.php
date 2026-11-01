@@ -15,3 +15,9 @@ Artisan::command('inspire', function () {
 Schedule::command('memory:process-captures --retry-failed')
     ->hourly()
     ->withoutOverlapping();
+
+// Backup diário automatizado do banco de dados (GAP 2 de Homologação)
+// com retenção automática de 14 dias.
+Schedule::command('memory:backup-db --retention=14')
+    ->dailyAt('02:00')
+    ->withoutOverlapping();
