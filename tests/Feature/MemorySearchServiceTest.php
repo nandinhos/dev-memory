@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\DocumentationValidationStatus;
+use App\Enums\ValidationStatus;
 use App\Models\Memory;
 use App\Services\Embeddings\EmbeddingGeneratorService;
 use App\Services\Search\MemorySearchService;
@@ -19,7 +21,7 @@ class MemorySearchServiceTest extends TestCase
             'description' => 'Falha ao conectar no banco.',
             'embedding' => [1, 0, 0],
             'embedding_model' => 'ollama/modelo-teste',
-            'validation_status' => \App\Enums\ValidationStatus::PENDING,
+            'validation_status' => ValidationStatus::PENDING,
             'doc_validation_status' => null,
             'recurrence_count' => 0,
             'stack' => null,
@@ -29,7 +31,7 @@ class MemorySearchServiceTest extends TestCase
             'description' => 'Connection refused dentro do container.',
             'embedding' => [0.9, 0.1, 0],
             'embedding_model' => 'ollama/modelo-teste',
-            'validation_status' => \App\Enums\ValidationStatus::PENDING,
+            'validation_status' => ValidationStatus::PENDING,
             'doc_validation_status' => null,
             'recurrence_count' => 0,
             'stack' => null,
@@ -39,7 +41,7 @@ class MemorySearchServiceTest extends TestCase
             'description' => 'Ajustar timestamp das migrations.',
             'embedding' => [0, 1, 0],
             'embedding_model' => 'ollama/modelo-teste',
-            'validation_status' => \App\Enums\ValidationStatus::PENDING,
+            'validation_status' => ValidationStatus::PENDING,
             'doc_validation_status' => null,
             'recurrence_count' => 0,
             'stack' => null,
@@ -49,7 +51,7 @@ class MemorySearchServiceTest extends TestCase
             'description' => 'Não deve entrar por similaridade de outro modelo.',
             'embedding' => [1, 0, 0],
             'embedding_model' => 'minimax/outro-modelo',
-            'validation_status' => \App\Enums\ValidationStatus::PENDING,
+            'validation_status' => ValidationStatus::PENDING,
             'doc_validation_status' => null,
             'recurrence_count' => 0,
             'stack' => null,
@@ -97,7 +99,7 @@ class MemorySearchServiceTest extends TestCase
         $pendingMem = Memory::factory()->create([
             'title' => 'Docker network connection timeout',
             'description' => 'Container sem acesso à rede externa.',
-            'validation_status' => \App\Enums\ValidationStatus::PENDING,
+            'validation_status' => ValidationStatus::PENDING,
             'recurrence_count' => 0,
         ]);
 
@@ -105,8 +107,8 @@ class MemorySearchServiceTest extends TestCase
         $validatedMem = Memory::factory()->create([
             'title' => 'Solução de rede isolada',
             'description' => 'Docker network connection timeout resolvido ajustando MTU.',
-            'validation_status' => \App\Enums\ValidationStatus::VALIDATED,
-            'doc_validation_status' => \App\Enums\DocumentationValidationStatus::CONFIRMED,
+            'validation_status' => ValidationStatus::VALIDATED,
+            'doc_validation_status' => DocumentationValidationStatus::CONFIRMED,
             'recurrence_count' => 5,
         ]);
 
