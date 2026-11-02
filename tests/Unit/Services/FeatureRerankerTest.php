@@ -3,9 +3,6 @@
 namespace Tests\Unit\Services;
 
 use App\Enums\DocumentationValidationStatus;
-use App\Enums\MemoryMaturity;
-use App\Enums\MemoryScope;
-use App\Enums\MemoryType;
 use App\Enums\ValidationStatus;
 use App\Models\Memory;
 use App\Services\Search\FeatureReranker;
