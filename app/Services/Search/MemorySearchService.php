@@ -73,7 +73,7 @@ class MemorySearchService
             ]);
         } else {
             $rankedPool = $pool->map(function (array $item) {
-                $item['rerank_score'] = $item['rank_score'];
+                $item['rerank_score'] = $this->reranker->normalize((float) $item['rank_score']);
 
                 return $item;
             });

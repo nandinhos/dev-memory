@@ -123,6 +123,8 @@ class MemorySearchServiceTest extends TestCase
         // Com rerank ativo, a memória validada e recorrente sobe para o 1º lugar
         $this->assertSame($validatedMem->id, $resultReranked['results']->first()['memory']->id);
         $this->assertArrayHasKey('rerank_score', $resultReranked['results']->first());
+        $this->assertGreaterThan(0.0, $resultReranked['results']->first()['rerank_score']);
+        $this->assertLessThanOrEqual(1.0, $resultReranked['results']->first()['rerank_score']);
 
         // Com rerank desligado, a ordem RRF léxica pura coloca o match de título em 1º
         $this->assertSame($pendingMem->id, $resultPureRrf['results']->first()['memory']->id);

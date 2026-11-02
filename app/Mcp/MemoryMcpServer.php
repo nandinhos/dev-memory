@@ -482,7 +482,7 @@ class MemoryMcpServer
                     'maturity' => $m->maturity?->value ?? 'provisional',
                     'similarity' => round($similarity, 4),
                     'rank_score' => round($rankScore, 6),
-                    'rerank_score' => round($rerankScore, 6),
+                    'rerank_score' => round($rerankScore, 4),
                     'score' => $m->recurrence_count,
                 ];
             })->toArray(),

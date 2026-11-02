@@ -19,14 +19,40 @@ class FeatureReranker
             /** @var Memory $memory */
             $memory = $item['memory'];
             $baseRrf = (float) ($item['rank_score'] ?? 0.0);
-            $item['rerank_score'] = $this->score($memory, $baseRrf, $context);
+            $rawScore = $this->score($memory, $baseRrf, $context);
+
+            $item['_raw_rerank_score'] = $rawScore;
+            $item['rerank_score'] = $this->normalize($rawScore);
 
             return $item;
         })->sortByDesc(fn (array $item) => [
-            $item['rerank_score'],
+            $item['_raw_rerank_score'],
             $item['rank_score'],
             $item['memory']->recurrence_count,
-        ])->values();
+        ])->map(function (array $item) {
+            unset($item['_raw_rerank_score']);
+
+            return $item;
+        })->values();
+    }
+
+    /**
+     * Normaliza a pontuação de rerank para a escala canônica 0.0000 a 1.0000.
+     */
+    public function normalize(float $rawScore): float
+    {
+        if (! config('search.rerank.normalize', true)) {
+            return round($rawScore, 6);
+        }
+
+        $ceiling = (float) config('search.rerank.scale_ceiling', 0.060);
+        if ($ceiling <= 0.0) {
+            return round($rawScore, 6);
+        }
+
+        $normalized = min(1.0, max(0.0, $rawScore / $ceiling));
+
+        return round($normalized, 4);
     }
 
     /**

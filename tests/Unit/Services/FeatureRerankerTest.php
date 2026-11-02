@@ -138,4 +138,20 @@ class FeatureRerankerTest extends TestCase
         $this->assertSame($memoryB->id, $reranked->first()['memory']->id);
         $this->assertGreaterThan($reranked->last()['rerank_score'], $reranked->first()['rerank_score']);
     }
+
+    public function test_normalizes_rerank_score_to_zero_to_one_scale(): void
+    {
+        // Score muito alto não ultrapassa 1.0000
+        $this->assertSame(1.0, $this->reranker->normalize(0.120));
+
+        // Score zero permanece 0.0000
+        $this->assertSame(0.0, $this->reranker->normalize(0.0));
+
+        // Score intermediário é escalonado proporcionalmente ao teto padrão (0.060)
+        // 0.030 / 0.060 = 0.5000
+        $this->assertSame(0.5, $this->reranker->normalize(0.030));
+
+        // Score típico de item validado (ex: 0.045) -> 0.045 / 0.060 = 0.7500
+        $this->assertSame(0.75, $this->reranker->normalize(0.045));
+    }
 }

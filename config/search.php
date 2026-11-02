@@ -5,6 +5,8 @@ return [
 
     'rerank' => [
         'enabled' => env('SEARCH_RERANK_ENABLED', true),
+        'normalize' => env('SEARCH_RERANK_NORMALIZE', true),
+        'scale_ceiling' => (float) env('SEARCH_RERANK_CEILING', 0.060),
 
         'weights' => [
             'validation_status' => [
