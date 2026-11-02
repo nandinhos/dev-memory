@@ -14,9 +14,10 @@ class MemorySearchService
 
     public function __construct(
         private EmbeddingGeneratorService $embeddingGenerator,
+        private FeatureReranker $reranker,
     ) {}
 
-    public function search(string $query, array $filters = [], int $limit = 10): array
+    public function search(string $query, array $filters = [], int $limit = 10, bool $rerank = true): array
     {
         $query = trim($query);
 
@@ -31,6 +32,7 @@ class MemorySearchService
             return [
                 'results' => $memories->limit($limit)->get(),
                 'search_mode' => 'filter',
+                'reranked' => false,
             ];
         }
 
@@ -60,13 +62,31 @@ class MemorySearchService
             );
         }
 
+        $pool = $this->fuse($semanticResults, $lexicalResults);
+
+        $shouldRerank = $rerank && (bool) config('search.rerank.enabled', true);
+
+        if ($shouldRerank) {
+            $rankedPool = $this->reranker->rerank($pool, [
+                'query' => $query,
+                'filters' => $filters,
+            ]);
+        } else {
+            $rankedPool = $pool->map(function (array $item) {
+                $item['rerank_score'] = $item['rank_score'];
+
+                return $item;
+            });
+        }
+
         return [
-            'results' => $this->fuse($semanticResults, $lexicalResults, $limit),
+            'results' => $rankedPool->take($limit)->values(),
             'search_mode' => match (true) {
                 $semanticResults->isNotEmpty() && $lexicalResults->isNotEmpty() => 'hybrid',
                 $semanticResults->isNotEmpty() => 'semantic',
                 default => 'lexical',
             },
+            'reranked' => $shouldRerank,
         ];
     }
 
@@ -75,8 +95,9 @@ class MemorySearchService
      * @param  Collection<int, array{memory: Memory, lexical_score: float}>  $lexical
      * @return Collection<int, array{memory: Memory, similarity: float, lexical_score: float, rank_score: float}>
      */
-    private function fuse(Collection $semantic, Collection $lexical, int $limit): Collection
+    private function fuse(Collection $semantic, Collection $lexical): Collection
     {
+        $k = (int) config('search.rrf_k', self::RRF_K);
         $ranked = [];
 
         foreach ($semantic->values() as $index => $item) {
@@ -85,7 +106,7 @@ class MemorySearchService
                 'memory' => $item['memory'],
                 'similarity' => (float) $item['similarity'],
                 'lexical_score' => 0.0,
-                'rank_score' => 1 / (self::RRF_K + $index + 1),
+                'rank_score' => 1 / ($k + $index + 1),
             ];
         }
 
@@ -98,7 +119,7 @@ class MemorySearchService
                 'rank_score' => 0.0,
             ];
             $ranked[$id]['lexical_score'] = (float) $item['lexical_score'];
-            $ranked[$id]['rank_score'] += 1 / (self::RRF_K + $index + 1);
+            $ranked[$id]['rank_score'] += 1 / ($k + $index + 1);
         }
 
         return collect($ranked)
@@ -106,7 +127,6 @@ class MemorySearchService
                 $item['rank_score'],
                 $item['memory']->recurrence_count,
             ])
-            ->take($limit)
             ->values();
     }
 }

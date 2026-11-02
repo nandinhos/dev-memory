@@ -463,12 +463,14 @@ class MemoryMcpServer
         return [
             'query' => $query,
             'search_mode' => $searchResult['search_mode'],
+            'reranked' => $searchResult['reranked'] ?? false,
             'total' => count($results),
             'results' => collect($results)->map(function ($item) {
                 /** @var Memory $m */
                 $m = $item['memory'] ?? $item;
                 $similarity = $item['similarity'] ?? 0.0;
                 $rankScore = $item['rank_score'] ?? 0.0;
+                $rerankScore = $item['rerank_score'] ?? $rankScore;
 
                 return [
                     'id' => $m->id,
@@ -480,6 +482,7 @@ class MemoryMcpServer
                     'maturity' => $m->maturity?->value ?? 'provisional',
                     'similarity' => round($similarity, 4),
                     'rank_score' => round($rankScore, 6),
+                    'rerank_score' => round($rerankScore, 6),
                     'score' => $m->recurrence_count,
                 ];
             })->toArray(),
