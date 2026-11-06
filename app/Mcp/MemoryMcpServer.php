@@ -389,11 +389,22 @@ class MemoryMcpServer
             return $this->errorResponse($id, "Tool not found: {$toolName}", -32602);
         }
 
+        try {
+            $text = json_encode(
+                $result,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
+            );
+        } catch (\JsonException $exception) {
+            report($exception);
+
+            return $this->errorResponse($id, 'Falha ao serializar o resultado da tool: '.$exception->getMessage(), -32603);
+        }
+
         return $this->response($id, [
             'content' => [
                 [
                     'type' => 'text',
-                    'text' => json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                    'text' => $text,
                 ],
             ],
         ]);
@@ -475,14 +486,14 @@ class MemoryMcpServer
                 return [
                     'id' => $m->id,
                     'title' => $m->title,
-                    'description' => substr($m->description, 0, 200).(strlen($m->description) > 200 ? '...' : ''),
+                    'description' => mb_strcut((string) $m->description, 0, 200, 'UTF-8').(strlen((string) $m->description) > 200 ? '...' : ''),
                     'type' => $m->type->value,
                     'validation_status' => $m->validation_status->value,
                     'scope' => $m->scope->value,
                     'maturity' => $m->maturity?->value ?? 'provisional',
-                    'similarity' => round($similarity, 4),
-                    'rank_score' => round($rankScore, 6),
-                    'rerank_score' => round($rerankScore, 4),
+                    'similarity' => is_finite($similarity) ? round($similarity, 4) : 0.0,
+                    'rank_score' => is_finite($rankScore) ? round($rankScore, 6) : 0.0,
+                    'rerank_score' => is_finite($rerankScore) ? round($rerankScore, 4) : 0.0,
                     'score' => $m->recurrence_count,
                 ];
             })->toArray(),
